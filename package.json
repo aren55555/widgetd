@@ -1,5 +1,6 @@
 {
   "name": "widgetd-workspace",
   "private": true,
+  "license": "Apache-2.0",
   "workspaces": ["client", "sdk/web", "examples/*/view"]
 }

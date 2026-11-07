@@ -37,3 +37,7 @@ just setup   # codegen, client bundle, example widgets
 just test    # everything CI runs
 just run     # standalone server on :8080
 ```
+
+## License
+
+Copyright 2026 Aren Patel. Licensed under the [Apache License, Version 2.0](LICENSE).
