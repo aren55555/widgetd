@@ -1,0 +1,5 @@
+{
+  "name": "widgetd-workspace",
+  "private": true,
+  "workspaces": ["client", "sdk/web", "examples/*/view"]
+}

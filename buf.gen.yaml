@@ -1,0 +1,13 @@
+version: v2
+plugins:
+  - local: [go, run, google.golang.org/protobuf/cmd/protoc-gen-go]
+    out: gen
+    opt: paths=source_relative
+  - local: [go, run, connectrpc.com/connect/cmd/protoc-gen-connect-go]
+    out: gen
+    opt: paths=source_relative
+  # Run through bun explicitly: the plugin's shebang is `#!/usr/bin/env node`.
+  - local: [bun, client/node_modules/.bin/protoc-gen-es]
+    out: client/src/gen
+    opt:
+      - target=ts

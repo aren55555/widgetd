@@ -1,0 +1,175 @@
+syntax = "proto3";
+
+package widgetd.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aren55555/widgetd/gen/widgetd/v1;widgetdv1";
+
+// AuthService covers both kinds of caller:
+//
+//   - Admins hold a passkey. Every admin action happens on a phone (reached by
+//     scanning a QR code a screen shows), over HTTPS, because WebAuthn needs a
+//     secure context.
+//   - Screens (a dashboard tab, a wall tablet) are paired: they show a QR
+//     code, an admin approves it, and the screen is issued a device token. A
+//     screen can view and interact with cards but change nothing.
+//
+// Sessions travel as HttpOnly cookies set by the RPCs that establish them, so
+// no token is ever readable by page script.
+service AuthService {
+  // Who is calling, and whether the server still needs its first admin.
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
+
+  // Passkey registration. The first admin needs the one-time setup token the
+  // server prints when it starts with no admins.
+  rpc BeginEnroll(BeginEnrollRequest) returns (BeginEnrollResponse);
+  rpc FinishEnroll(FinishEnrollRequest) returns (FinishEnrollResponse);
+
+  // Passkey sign-in.
+  rpc BeginLogin(BeginLoginRequest) returns (BeginLoginResponse);
+  rpc FinishLogin(FinishLoginRequest) returns (FinishLoginResponse);
+
+  // Screen side of pairing: start, wait for approval, then collect the token.
+  rpc BeginPairing(BeginPairingRequest) returns (BeginPairingResponse);
+  rpc AwaitPairing(AwaitPairingRequest) returns (stream AwaitPairingResponse);
+  rpc CompletePairing(CompletePairingRequest) returns (CompletePairingResponse);
+
+  // Admin side of pairing, and device management. Admin session required.
+  rpc GetPairing(GetPairingRequest) returns (GetPairingResponse);
+  rpc ApprovePairing(ApprovePairingRequest) returns (ApprovePairingResponse);
+  rpc ListDevices(ListDevicesRequest) returns (ListDevicesResponse);
+  rpc RevokeDevice(RevokeDeviceRequest) returns (RevokeDeviceResponse);
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0; // anonymous
+  ROLE_DEVICE = 1;
+  ROLE_ADMIN = 2;
+}
+
+message GetSessionRequest {}
+
+message GetSessionResponse {
+  Role role = 1;
+  // Set for ROLE_DEVICE.
+  string device_name = 2;
+  // True until the first passkey is enrolled.
+  bool needs_enrollment = 3;
+  // The HTTPS origin admin pages live at. QR codes point here, whatever
+  // origin the screen itself was loaded from.
+  string public_url = 4;
+}
+
+message BeginEnrollRequest {
+  // Required when no admin exists yet. Ignored for a signed-in admin adding
+  // another passkey.
+  string setup_token = 1;
+}
+
+message BeginEnrollResponse {
+  string ceremony_id = 1;
+  // PublicKeyCredentialCreationOptions, as JSON, for navigator.credentials.create.
+  string options_json = 2;
+}
+
+message FinishEnrollRequest {
+  string ceremony_id = 1;
+  // The PublicKeyCredential the browser returned, as JSON.
+  string credential_json = 2;
+  // A label for this passkey ("Pixel", "iPhone").
+  string name = 3;
+}
+
+message FinishEnrollResponse {}
+
+message BeginLoginRequest {}
+
+message BeginLoginResponse {
+  string ceremony_id = 1;
+  // PublicKeyCredentialRequestOptions, as JSON, for navigator.credentials.get.
+  string options_json = 2;
+}
+
+message FinishLoginRequest {
+  string ceremony_id = 1;
+  string credential_json = 2;
+}
+
+message FinishLoginResponse {}
+
+message BeginPairingRequest {}
+
+message BeginPairingResponse {
+  string pairing_id = 1;
+  // Known only to the screen; required to collect the token, so seeing the QR
+  // code is not enough to steal the pairing.
+  string secret = 2;
+  // Short code shown on the screen and on the approving phone, so the admin
+  // can tell they are approving the screen in front of them.
+  string code = 3;
+  // What the QR code encodes.
+  string approve_url = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+message AwaitPairingRequest {
+  string pairing_id = 1;
+  string secret = 2;
+}
+
+enum PairingState {
+  PAIRING_STATE_UNSPECIFIED = 0;
+  PAIRING_STATE_PENDING = 1;
+  PAIRING_STATE_APPROVED = 2;
+  PAIRING_STATE_EXPIRED = 3;
+}
+
+message AwaitPairingResponse {
+  PairingState state = 1;
+}
+
+message CompletePairingRequest {
+  string pairing_id = 1;
+  string secret = 2;
+}
+
+message CompletePairingResponse {
+  string device_name = 1;
+}
+
+message GetPairingRequest {
+  string pairing_id = 1;
+}
+
+message GetPairingResponse {
+  string code = 1;
+  string user_agent = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+message ApprovePairingRequest {
+  string pairing_id = 1;
+  string device_name = 2;
+}
+
+message ApprovePairingResponse {}
+
+message Device {
+  string id = 1;
+  string name = 2;
+  google.protobuf.Timestamp paired_at = 3;
+  google.protobuf.Timestamp last_seen = 4;
+}
+
+message ListDevicesRequest {}
+
+message ListDevicesResponse {
+  repeated Device devices = 1;
+}
+
+message RevokeDeviceRequest {
+  string id = 1;
+}
+
+message RevokeDeviceResponse {}

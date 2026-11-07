@@ -1,0 +1,16 @@
+:root { color-scheme: light dark; font: 16px/1.5 system-ui, sans-serif; }
+body { margin: 0; }
+main { max-width: 28rem; margin: 0 auto; padding: 2rem 1.25rem; }
+h1 { font-size: 1.5rem; margin: 0 0 1rem; }
+h2 { font-size: 1.1rem; margin: 2rem 0 0.5rem; }
+label { display: block; margin: 1rem 0; }
+input { display: block; width: 100%; box-sizing: border-box; margin-top: 0.25rem; padding: 0.6rem; font: inherit; border-radius: 8px; border: 1px solid #8884; }
+button { display: block; width: 100%; padding: 0.8rem; font: inherit; font-weight: 600; border: 0; border-radius: 10px; background: #2563eb; color: #fff; cursor: pointer; }
+button:disabled { opacity: 0.6; }
+.code { font: 600 2rem/1.2 ui-monospace, monospace; letter-spacing: 0.1em; text-align: center; margin: 0.5rem 0; }
+.muted { opacity: 0.65; font-size: 0.9rem; }
+.status { min-height: 1.5em; font-size: 0.9rem; }
+.error { color: #dc2626; }
+.devices { list-style: none; padding: 0; }
+.devices li { padding: 0.75rem 0; border-bottom: 1px solid #8883; }
+.devices button { width: auto; display: inline-block; margin-top: 0.5rem; padding: 0.4rem 0.8rem; background: #dc2626; }

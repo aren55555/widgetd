@@ -1,0 +1,7 @@
+# Exact versions, not "latest": mise resolves "latest" against a cached index,
+# so it can drift between a laptop and CI.
+[tools]
+go = "1.27.1"
+buf = "1.72.0"
+bun = "1.4.0"
+just = "1.58.0"

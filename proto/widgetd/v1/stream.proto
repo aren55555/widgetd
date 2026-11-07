@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package widgetd.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aren55555/widgetd/gen/widgetd/v1;widgetdv1";
+
+// WidgetStreamService is the one pipe every card on a screen shares. A screen
+// opens a single StreamWidgets call and receives every card's lifecycle and
+// data over it; there is never a connection per widget.
+service WidgetStreamService {
+  rpc StreamWidgets(StreamWidgetsRequest) returns (stream StreamWidgetsResponse);
+}
+
+// Cursor orders the updates of one card. `seq` increases with every snapshot
+// or delta; `epoch` changes whenever the instance behind the card restarts,
+// which invalidates every cursor issued before it.
+message Cursor {
+  uint64 epoch = 1;
+  uint64 seq = 2;
+}
+
+// Resume tells the server what the client already holds for a card, so a
+// reconnect or reload is sent only what changed.
+message Resume {
+  string card_id = 1;
+  // Digest of the widget build the cached state was produced by. A different
+  // build may use a different schema, so the server ignores the cursor.
+  string digest = 2;
+  Cursor cursor = 3;
+}
+
+message StreamWidgetsRequest {
+  repeated Resume resume = 1;
+}
+
+// An unset `frame` is a keepalive: one is sent as soon as the stream opens and
+// then periodically while it is idle.
+message StreamWidgetsResponse {
+  WidgetFrame frame = 1;
+}
+
+message WidgetFrame {
+  // The configured instance the card belongs to.
+  string instance_id = 1;
+  // What is on screen. Always prefixed by `instance_id` + "/".
+  string card_id = 2;
+
+  oneof body {
+    Mounted mounted = 3;
+    Payload snapshot = 4;
+    Payload delta = 5;
+    Unmounted unmounted = 6;
+    Fault fault = 7;
+  }
+}
+
+message WidgetRef {
+  string name = 1;
+  string version = 2;
+  // Content digest of the widget build. Changes with any change to its view
+  // or schema, so it is safe to cache the view bundle under it forever.
+  string digest = 3;
+}
+
+// Mounted announces a card. It is always sent before the card's first payload.
+message Mounted {
+  WidgetRef widget = 1;
+  // Where the card's sandboxed frame document is served.
+  string frame_url = 2;
+  // Fully qualified names of the card's message types. A payload whose
+  // type_url names anything else is refused by the view.
+  string state_type = 3;
+  string delta_type = 4;
+  Layout layout = 5;
+  // When the host will unmount the card on its own, if ever.
+  google.protobuf.Timestamp visible_until = 6;
+  string title = 7;
+}
+
+// Layout is a size hint in grid units.
+message Layout {
+  uint32 cols = 1;
+  uint32 rows = 2;
+}
+
+message Payload {
+  // "type.googleapis.com/<full name>", as in google.protobuf.Any.
+  string type_url = 1;
+  bytes value = 2;
+  Cursor cursor = 3;
+  // For a delta: the cursor it applies on top of. A client whose cursor isn't
+  // this one has missed something and must resync.
+  Cursor prev = 4;
+}
+
+message Unmounted {
+  // The card is gone for good (instance deleted, not merely expired from
+  // view), so any state cached for it should be discarded.
+  bool purge = 1;
+}
+
+message Fault {
+  string message = 1;
+}

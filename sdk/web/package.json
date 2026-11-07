@@ -1,0 +1,15 @@
+{
+  "name": "@widgetd/sdk",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./bridge": "./src/bridge.ts",
+    "./checks": "./src/checks.ts"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.14.1",
+    "@bufbuild/protovalidate": "^1.3.0"
+  }
+}

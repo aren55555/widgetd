@@ -1,0 +1,13 @@
+# The widget's manifest. widgetc reads it to wire the widget up; nothing
+# here is secret or Pi-specific.
+name    = "bitcoin-spiral"
+version = "0.1.0"
+title   = "Bitcoin price spiral"
+# The instance configuration message, fully qualified.
+config  = "bitcoinspiral.v1.Config"
+
+# The hosts the server half asks to reach. Enforced from M1b.
+[network]
+hosts   = ["api.exchange.coinbase.com"]
+methods = ["GET"]
+why     = "Daily closing prices and the live BTC price"

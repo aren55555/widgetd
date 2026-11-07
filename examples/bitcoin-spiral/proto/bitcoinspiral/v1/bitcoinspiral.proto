@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package bitcoinspiral.v1;
+
+import "buf/validate/validate.proto";
+
+enum Currency {
+  CURRENCY_UNSPECIFIED = 0;
+  CURRENCY_USD = 1;
+  CURRENCY_EUR = 2;
+  CURRENCY_GBP = 3;
+}
+
+// Config is one instance's settings.
+message Config {
+  // Unspecified means USD.
+  Currency currency = 1 [(buf.validate.field).enum.defined_only = true];
+}
+
+// State is everything the spiral draws.
+message State {
+  Currency currency = 1 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  // One close per UTC day, oldest first.
+  repeated DailyClose daily = 2 [(buf.validate.field).repeated.max_items = 20000];
+  // The most recent trade price, if any.
+  Quote latest = 3;
+}
+
+message DailyClose {
+  // Days since 1970-01-01, UTC.
+  int32 day = 1 [(buf.validate.field).int32.gte = 0];
+  double close = 2 [(buf.validate.field).double = {
+    gt: 0
+    finite: true
+  }];
+}
+
+message Quote {
+  int64 unix_ms = 1 [(buf.validate.field).int64.gt = 0];
+  double price = 2 [(buf.validate.field).double = {
+    gt: 0
+    finite: true
+  }];
+}
+
+// Delta is one change to State.
+message Delta {
+  oneof change {
+    option (buf.validate.oneof).required = true;
+    // A new live price.
+    Quote quote = 1;
+    // A day closed (or a close was revised).
+    DailyClose close = 2;
+  }
+}
+
+// History is what the server half keeps in its own storage between runs.
+message History {
+  repeated DailyClose daily = 1;
+}

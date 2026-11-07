@@ -1,0 +1,18 @@
+{
+  "name": "@widgetd/client",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.14.1",
+    "@connectrpc/connect": "^2.1.2",
+    "@connectrpc/connect-web": "^2.1.2",
+    "@widgetd/sdk": "workspace:*",
+    "uqr": "^0.1.2"
+  },
+  "devDependencies": {
+    "@bufbuild/protoc-gen-es": "^2.14.1",
+    "@types/bun": "1.4.0",
+    "typescript": "~6.0.2"
+  }
+}

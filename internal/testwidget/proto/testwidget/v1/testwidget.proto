@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package testwidget.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/aren55555/widgetd/internal/testwidget/gen/testwidget/v1;testwidgetv1";
+
+message State {
+  repeated int64 values = 1;
+  string label = 2 [(buf.validate.field).string.max_len = 8];
+}
+
+message Delta {
+  int64 value = 1 [(buf.validate.field).int64.gte = 0];
+}
+
+message Config {
+  string label = 1 [(buf.validate.field).string.max_len = 8];
+}

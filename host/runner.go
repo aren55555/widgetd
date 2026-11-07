@@ -1,0 +1,260 @@
+package host
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log/slog"
+	"net/http"
+	"regexp"
+	"runtime/debug"
+	"sync"
+	"time"
+
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	widgetdv1 "github.com/aren55555/widgetd/gen/widgetd/v1"
+	"github.com/aren55555/widgetd/sdk/go/widget"
+)
+
+const (
+	// maxDeltas is how many deltas a card's log holds before the host asks
+	// the widget for a fresh snapshot.
+	maxDeltas = 120
+	// restartMin/Max bound the backoff between restarts of a failing instance.
+	restartMin = time.Second
+	restartMax = 5 * time.Minute
+	// healthyAfter is how long a run must last to reset the backoff.
+	healthyAfter = time.Minute
+)
+
+var cardIDRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
+
+// instance is a configured copy of a widget.
+type instance struct {
+	id     string
+	w      *loadedWidget
+	config []byte // validated
+	srv    *Server
+	log    *slog.Logger
+}
+
+// run keeps the instance's Run going until ctx is done, restarting it with
+// backoff when it returns or panics. Each run gets its own epoch and its own
+// Host, so anything a previous run left behind can no longer emit.
+func (in *instance) run(ctx context.Context) {
+	backoff := restartMin
+	for {
+		started := time.Now()
+		h := &runHost{in: in, epoch: uint64(started.UnixNano()), cards: map[string]*card{}}
+		runCtx, cancel := context.WithCancel(ctx)
+		h.ctx, h.cancel = runCtx, cancel
+		err := in.safeRun(runCtx, h)
+		cancel()
+		h.close()
+		in.srv.board.unmountInstance(in.id, false)
+		if ctx.Err() != nil {
+			return
+		}
+		if time.Since(started) > healthyAfter {
+			backoff = restartMin
+		}
+		in.log.Warn("widget instance stopped; restarting", "err", err, "in", backoff)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(backoff):
+		}
+		backoff = min(backoff*2, restartMax)
+	}
+}
+
+func (in *instance) safeRun(ctx context.Context, h widget.Host) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic: %v\n%s", r, debug.Stack())
+		}
+	}()
+	err = in.w.spec.Run(ctx, h)
+	if err == nil {
+		err = errors.New("Run returned")
+	}
+	return err
+}
+
+// runHost is the widget.Host for one run of one instance.
+type runHost struct {
+	in    *instance
+	epoch uint64
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	mu     sync.Mutex
+	closed bool
+	cards  map[string]*card // by local id
+}
+
+func (h *runHost) close() {
+	h.mu.Lock()
+	h.closed = true
+	h.mu.Unlock()
+}
+
+func (h *runHost) Config(dst proto.Message) error {
+	cfg := h.in.w.spec.Config
+	if cfg == nil {
+		return errors.New("widget declares no Config")
+	}
+	if dst.ProtoReflect().Descriptor().FullName() != cfg.ProtoReflect().Descriptor().FullName() {
+		return fmt.Errorf("config is %s, not %s", cfg.ProtoReflect().Descriptor().FullName(), dst.ProtoReflect().Descriptor().FullName())
+	}
+	return proto.Unmarshal(h.in.config, dst)
+}
+
+func (h *runHost) Fetch(req *http.Request) (*http.Response, error) {
+	if err := h.ctx.Err(); err != nil {
+		return nil, err
+	}
+	return h.in.srv.fetch(h.ctx, h.in, req)
+}
+
+func (h *runHost) KV() widget.KV { return instanceKV{db: h.in.srv.db, instance: h.in.id} }
+
+func (h *runHost) Logger() *slog.Logger { return h.in.log }
+
+func (h *runHost) Mount(id string, opts widget.MountOptions) (widget.RawCard, error) {
+	if !cardIDRE.MatchString(id) {
+		return nil, fmt.Errorf("card id %q: want letters, digits, '.', '_' or '-', at most 64", id)
+	}
+	sch := h.in.w.schema
+	if _, err := sch.message(opts.StateType); err != nil {
+		return nil, fmt.Errorf("card %s state: %w", id, err)
+	}
+	if opts.DeltaType != "" {
+		if _, err := sch.message(opts.DeltaType); err != nil {
+			return nil, fmt.Errorf("card %s delta: %w", id, err)
+		}
+	}
+	if !opts.VisibleUntil.IsZero() && !opts.VisibleUntil.After(time.Now()) {
+		return nil, fmt.Errorf("card %s: visible_until is already past", id)
+	}
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.closed {
+		return nil, errStopped
+	}
+	w := h.in.w
+	c := &card{
+		instanceID: h.in.id,
+		id:         h.in.id + "/" + id,
+		epoch:      h.epoch,
+		digest:     w.digest,
+		stateURL:   typeURL(opts.StateType),
+		deltaURL:   typeURL(opts.DeltaType),
+		log:        newCardLog(h.epoch, maxDeltas),
+		mounted: &widgetdv1.Mounted{
+			Widget:    &widgetdv1.WidgetRef{Name: w.spec.Name, Version: w.spec.Version, Digest: w.digest},
+			FrameUrl:  h.in.srv.frameURL(w),
+			StateType: string(opts.StateType),
+			DeltaType: string(opts.DeltaType),
+			Layout:    &widgetdv1.Layout{Cols: max(opts.Layout.Cols, 1), Rows: max(opts.Layout.Rows, 1)},
+			Title:     opts.Title,
+		},
+	}
+	// Re-mounting with the same types keeps the card's data; anything else
+	// starts it over.
+	if old, ok := h.cards[id]; ok && old.stateURL == c.stateURL && old.deltaURL == c.deltaURL {
+		c.log = old.log
+	}
+	if !opts.VisibleUntil.IsZero() {
+		c.mounted.VisibleUntil = timestamppb.New(opts.VisibleUntil)
+		board := h.in.srv.board
+		c.expiry = time.AfterFunc(time.Until(opts.VisibleUntil), func() { board.unmount(c.id, c, false) })
+	}
+	h.cards[id] = c
+	h.in.srv.board.mount(c)
+	return &rawCard{h: h, c: c, opts: opts}, nil
+}
+
+func (h *runHost) Unmount(id string) error {
+	h.mu.Lock()
+	c, ok := h.cards[id]
+	delete(h.cards, id)
+	h.mu.Unlock()
+	if !ok {
+		return fmt.Errorf("card %s is not mounted", id)
+	}
+	h.in.srv.board.unmount(c.id, c, false)
+	return nil
+}
+
+// rawCard checks every payload against the widget's schema before it can
+// reach a screen.
+type rawCard struct {
+	h    *runHost
+	c    *card
+	opts widget.MountOptions
+}
+
+var errGone = errors.New("card is no longer mounted")
+
+func (r *rawCard) live() error {
+	r.h.mu.Lock()
+	defer r.h.mu.Unlock()
+	if r.h.closed {
+		return errStopped
+	}
+	return nil
+}
+
+func (r *rawCard) refuse(err error) error {
+	r.h.in.log.Error("widget sent a payload that breaks its schema", "card", r.c.id, "err", err)
+	r.h.in.srv.board.fault(r.c, "the widget sent data that doesn't match its schema")
+	return err
+}
+
+func (r *rawCard) Snapshot(state []byte) error {
+	if err := r.live(); err != nil {
+		return err
+	}
+	if _, err := r.h.in.w.schema.check(r.opts.StateType, state); err != nil {
+		return r.refuse(err)
+	}
+	if !r.h.in.srv.board.snapshot(r.c, state) {
+		return errGone
+	}
+	return nil
+}
+
+func (r *rawCard) Delta(delta []byte, current func() ([]byte, error)) error {
+	if err := r.live(); err != nil {
+		return err
+	}
+	if r.opts.DeltaType == "" {
+		return errors.New("card was mounted without a Delta type")
+	}
+	sch := r.h.in.w.schema
+	if _, err := sch.check(r.opts.DeltaType, delta); err != nil {
+		return r.refuse(err)
+	}
+	checked := func() ([]byte, error) {
+		b, err := current()
+		if err != nil {
+			return nil, err
+		}
+		if _, err := sch.check(r.opts.StateType, b); err != nil {
+			return nil, r.refuse(err)
+		}
+		return b, nil
+	}
+	ok, err := r.h.in.srv.board.delta(r.c, delta, checked)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return errGone
+	}
+	return nil
+}
