@@ -2,7 +2,8 @@
 //
 //   <base>enroll/<token>   create the first passkey
 //   <base>pair/<id>        approve a screen
-//   <base>configure/<t>    set up or change one widget instance
+//   <base>configure/<t>    set up or change one widget instance (QR ticket)
+//   <base>edit/<id>        the same, from the admin page
 //   <base>admin            instances, network access, screens, passkeys
 //
 // Plain DOM, no framework: a handful of small forms. The settings form is
@@ -77,7 +78,8 @@ async function route() {
   try {
     if (section === "enroll") return await enroll(arg ?? "");
     if (section === "pair") return await approve(arg ?? "");
-    if (section === "configure") return await configure(arg ?? "");
+    if (section === "configure") return await configure({ ticket: arg ?? "" });
+    if (section === "edit") return await configure({ instanceId: decodeURIComponent(arg ?? "") });
     return await adminHome();
   } catch (e) {
     page("Something went wrong", h("p", { class: "error" }, errorText(e)));
@@ -159,9 +161,12 @@ async function approve(pairingId: string) {
 
 // ---- configure an instance ----
 
-async function configure(ticket: string) {
+/** A QR ticket from a screen, or an instance id from the admin page. */
+type ConfigTarget = { ticket: string } | { instanceId: string };
+
+async function configure(target: ConfigTarget) {
   await requireAdmin(async () => {
-    const form = await admin.getConfigForm({ ticket });
+    const form = await admin.getConfigForm(target);
     const w = form.widget!;
     const label = h("input", { value: form.label, maxlength: 64, placeholder: w.title, "aria-label": "Name" }) as HTMLInputElement;
     const fields = h("div");
@@ -182,7 +187,7 @@ async function configure(ticket: string) {
         st.textContent = "Fix the highlighted fields first.";
         return;
       }
-      const res = await admin.saveConfig({ ticket, label: label.value.trim(), config: desc && msg ? toBinary(desc, msg) : new Uint8Array() });
+      const res = await admin.saveConfig({ ...target, label: label.value.trim(), config: desc && msg ? toBinary(desc, msg) : new Uint8Array() });
       if (res.violations.length) {
         validate(res.violations.map((v) => ({ field: v.field, message: v.message })));
         st.textContent = "The widget didn't accept that; see the fields above.";
@@ -192,6 +197,7 @@ async function configure(ticket: string) {
     });
     page(
       w.title,
+      ...("instanceId" in target ? [h("p", {}, h("a", { href: `${base}admin` }, "← All widgets"))] : []),
       networkNote(w),
       h("label", {}, h("span", { class: "label" }, "Name"), label),
       fields,
@@ -223,6 +229,8 @@ async function adminHome() {
       const title = inst.label || widgets.find((w) => w.name === inst.widget)?.title || inst.widget;
       const state = stateText(inst.status?.state, inst.status?.message);
       const actions = h("div", { class: "actions" });
+      const settings = h("button", {}, inst.status?.state === InstanceStatus_State.NEEDS_CONFIG ? "Set up" : "Settings");
+      settings.addEventListener("click", () => location.assign(`${base}edit/${encodeURIComponent(inst.id)}`));
       const [rename, rs] = button("Rename", async () => {
         const name = prompt("Name", inst.label);
         if (name === null) return;
@@ -243,7 +251,7 @@ async function adminHome() {
         await adminHome();
       });
       del.className = "danger";
-      actions.append(rename, activity, del);
+      actions.append(settings, rename, activity, del);
       widgetList.append(h("li", {}, h("strong", {}, title), h("span", { class: "muted" }, ` ${inst.widget} · ${state}`), actions, rs, as, ds));
     }
     if (!instances.length) widgetList.append(h("li", { class: "muted" }, "No widgets yet. Add one from a screen."));

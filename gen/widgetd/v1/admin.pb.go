@@ -408,8 +408,10 @@ func (x *RequestConfigTicketResponse) GetExpiresAt() *timestamppb.Timestamp {
 }
 
 type GetConfigFormRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ticket        string                 `protobuf:"bytes,1,opt,name=ticket,proto3" json:"ticket,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// One of these. A ticket wins if both are set.
+	Ticket        string `protobuf:"bytes,1,opt,name=ticket,proto3" json:"ticket,omitempty"`
+	InstanceId    string `protobuf:"bytes,2,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -447,6 +449,13 @@ func (*GetConfigFormRequest) Descriptor() ([]byte, []int) {
 func (x *GetConfigFormRequest) GetTicket() string {
 	if x != nil {
 		return x.Ticket
+	}
+	return ""
+}
+
+func (x *GetConfigFormRequest) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
 	}
 	return ""
 }
@@ -548,9 +557,11 @@ func (x *GetConfigFormResponse) GetStatus() *InstanceStatus {
 }
 
 type SaveConfigRequest struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
-	Ticket string                 `protobuf:"bytes,1,opt,name=ticket,proto3" json:"ticket,omitempty"`
-	Label  string                 `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// One of these, as in GetConfigFormRequest. Saving consumes a ticket.
+	Ticket     string `protobuf:"bytes,1,opt,name=ticket,proto3" json:"ticket,omitempty"`
+	InstanceId string `protobuf:"bytes,4,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	Label      string `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`
 	// Encoded as the widget's Config message.
 	Config        []byte `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -590,6 +601,13 @@ func (*SaveConfigRequest) Descriptor() ([]byte, []int) {
 func (x *SaveConfigRequest) GetTicket() string {
 	if x != nil {
 		return x.Ticket
+	}
+	return ""
+}
+
+func (x *SaveConfigRequest) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
 	}
 	return ""
 }
@@ -1366,9 +1384,11 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\x1bRequestConfigTicketResponse\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x129\n" +
 	"\n" +
-	"expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\".\n" +
+	"expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"O\n" +
 	"\x14GetConfigFormRequest\x12\x16\n" +
-	"\x06ticket\x18\x01 \x01(\tR\x06ticket\"\x83\x02\n" +
+	"\x06ticket\x18\x01 \x01(\tR\x06ticket\x12\x1f\n" +
+	"\vinstance_id\x18\x02 \x01(\tR\n" +
+	"instanceId\"\x83\x02\n" +
 	"\x15GetConfigFormResponse\x12\x1f\n" +
 	"\vinstance_id\x18\x01 \x01(\tR\n" +
 	"instanceId\x12.\n" +
@@ -1378,9 +1398,11 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"configType\x12\x16\n" +
 	"\x06schema\x18\x05 \x01(\fR\x06schema\x12\x16\n" +
 	"\x06config\x18\x06 \x01(\fR\x06config\x122\n" +
-	"\x06status\x18\a \x01(\v2\x1a.widgetd.v1.InstanceStatusR\x06status\"Y\n" +
+	"\x06status\x18\a \x01(\v2\x1a.widgetd.v1.InstanceStatusR\x06status\"z\n" +
 	"\x11SaveConfigRequest\x12\x16\n" +
-	"\x06ticket\x18\x01 \x01(\tR\x06ticket\x12\x14\n" +
+	"\x06ticket\x18\x01 \x01(\tR\x06ticket\x12\x1f\n" +
+	"\vinstance_id\x18\x04 \x01(\tR\n" +
+	"instanceId\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12\x16\n" +
 	"\x06config\x18\x03 \x01(\fR\x06config\"@\n" +
 	"\x0eFieldViolation\x12\x14\n" +

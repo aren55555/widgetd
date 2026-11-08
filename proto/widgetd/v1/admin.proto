@@ -25,7 +25,9 @@ service WidgetAdminService {
   // saving needs an admin session.
   rpc RequestConfigTicket(RequestConfigTicketRequest) returns (RequestConfigTicketResponse);
 
-  // What the configuration page needs to render its form. Admin.
+  // What the configuration page needs to render its form. Admin. The
+  // instance is named by a ticket (a phone that scanned a screen's QR code)
+  // or directly by id (the admin page's "Settings" link).
   rpc GetConfigForm(GetConfigFormRequest) returns (GetConfigFormResponse);
 
   // Check and save a configuration, then (re)start the instance. Admin.
@@ -83,7 +85,9 @@ message RequestConfigTicketResponse {
 }
 
 message GetConfigFormRequest {
+  // One of these. A ticket wins if both are set.
   string ticket = 1;
+  string instance_id = 2;
 }
 
 message GetConfigFormResponse {
@@ -101,7 +105,9 @@ message GetConfigFormResponse {
 }
 
 message SaveConfigRequest {
+  // One of these, as in GetConfigFormRequest. Saving consumes a ticket.
   string ticket = 1;
+  string instance_id = 4;
   string label = 2;
   // Encoded as the widget's Config message.
   bytes config = 3;

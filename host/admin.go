@@ -143,10 +143,17 @@ func (a *adminService) RequestConfigTicket(ctx context.Context, req *connect.Req
 	}), nil
 }
 
-// ticketInstance resolves a ticket for an admin.
-func (a *adminService) ticketInstance(c caller, tok string) (*instance, error) {
+// targetInstance resolves the instance a configuration request names, for
+// an admin: by ticket if it carries one, else by id.
+func (a *adminService) targetInstance(c caller, tok, id string) (*instance, error) {
 	if err := requireAdmin(c); err != nil {
 		return nil, err
+	}
+	if tok == "" {
+		if id == "" {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("name an instance"))
+		}
+		return a.srv.instance(id)
 	}
 	id, ok := a.srv.tickets.lookup(tok)
 	if !ok {
@@ -156,7 +163,7 @@ func (a *adminService) ticketInstance(c caller, tok string) (*instance, error) {
 }
 
 func (a *adminService) GetConfigForm(ctx context.Context, req *connect.Request[widgetdv1.GetConfigFormRequest]) (*connect.Response[widgetdv1.GetConfigFormResponse], error) {
-	in, err := a.ticketInstance(a.caller(req), req.Msg.GetTicket())
+	in, err := a.targetInstance(a.caller(req), req.Msg.GetTicket(), req.Msg.GetInstanceId())
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +190,7 @@ func (a *adminService) GetConfigForm(ctx context.Context, req *connect.Request[w
 }
 
 func (a *adminService) SaveConfig(ctx context.Context, req *connect.Request[widgetdv1.SaveConfigRequest]) (*connect.Response[widgetdv1.SaveConfigResponse], error) {
-	in, err := a.ticketInstance(a.caller(req), req.Msg.GetTicket())
+	in, err := a.targetInstance(a.caller(req), req.Msg.GetTicket(), req.Msg.GetInstanceId())
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +209,9 @@ func (a *adminService) SaveConfig(ctx context.Context, req *connect.Request[widg
 	if err := a.srv.configure(in.id, label, cfg); err != nil {
 		return nil, err
 	}
-	a.srv.tickets.consume(req.Msg.GetTicket())
+	if tok := req.Msg.GetTicket(); tok != "" {
+		a.srv.tickets.consume(tok)
+	}
 	return connect.NewResponse(&widgetdv1.SaveConfigResponse{}), nil
 }
 

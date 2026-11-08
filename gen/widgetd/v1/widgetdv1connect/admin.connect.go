@@ -76,7 +76,9 @@ type WidgetAdminServiceClient interface {
 	// admin. The screen shows it as a QR code; the link alone grants nothing:
 	// saving needs an admin session.
 	RequestConfigTicket(context.Context, *connect.Request[v1.RequestConfigTicketRequest]) (*connect.Response[v1.RequestConfigTicketResponse], error)
-	// What the configuration page needs to render its form. Admin.
+	// What the configuration page needs to render its form. Admin. The
+	// instance is named by a ticket (a phone that scanned a screen's QR code)
+	// or directly by id (the admin page's "Settings" link).
 	GetConfigForm(context.Context, *connect.Request[v1.GetConfigFormRequest]) (*connect.Response[v1.GetConfigFormResponse], error)
 	// Check and save a configuration, then (re)start the instance. Admin.
 	SaveConfig(context.Context, *connect.Request[v1.SaveConfigRequest]) (*connect.Response[v1.SaveConfigResponse], error)
@@ -238,7 +240,9 @@ type WidgetAdminServiceHandler interface {
 	// admin. The screen shows it as a QR code; the link alone grants nothing:
 	// saving needs an admin session.
 	RequestConfigTicket(context.Context, *connect.Request[v1.RequestConfigTicketRequest]) (*connect.Response[v1.RequestConfigTicketResponse], error)
-	// What the configuration page needs to render its form. Admin.
+	// What the configuration page needs to render its form. Admin. The
+	// instance is named by a ticket (a phone that scanned a screen's QR code)
+	// or directly by id (the admin page's "Settings" link).
 	GetConfigForm(context.Context, *connect.Request[v1.GetConfigFormRequest]) (*connect.Response[v1.GetConfigFormResponse], error)
 	// Check and save a configuration, then (re)start the instance. Admin.
 	SaveConfig(context.Context, *connect.Request[v1.SaveConfigRequest]) (*connect.Response[v1.SaveConfigResponse], error)

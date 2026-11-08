@@ -134,4 +134,4 @@ func frameCSP(assets string, imageHosts []string) string {
 // phone opens, usually from a QR code. Each serves the same shell; the app
 // reads its route from the URL. A route the app knows but this map doesn't
 // is a 404 before the app can load, so keep the two in step.
-var phonePages = map[string]bool{"enroll": true, "pair": true, "configure": true, "admin": true}
+var phonePages = map[string]bool{"enroll": true, "pair": true, "configure": true, "edit": true, "admin": true}

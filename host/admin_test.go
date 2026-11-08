@@ -129,6 +129,59 @@ func TestConfigureByTicket(t *testing.T) {
 	}
 }
 
+// The admin page edits an instance's settings by id, without a ticket.
+func TestConfigureByID(t *testing.T) {
+	h := newHarness(t)
+	h.host() // the seeded instance, "one"
+	ctx := context.Background()
+	c := h.adminClient()
+	device, admin := h.deviceCookie("d1"), h.adminCookie()
+	f := h.open(device)
+	f.nextInstance("one")
+
+	// Only an admin may, and only for an instance that exists.
+	if _, err := c.GetConfigForm(ctx, withCookie(&widgetdv1.GetConfigFormRequest{InstanceId: "one"}, device)); connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("device reading the form: %v", err)
+	}
+	if _, err := c.SaveConfig(ctx, withCookie(&widgetdv1.SaveConfigRequest{InstanceId: "one", Config: cfgBytes(t, "dev")}, device)); connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("device saving: %v", err)
+	}
+	if _, err := c.GetConfigForm(ctx, withCookie(&widgetdv1.GetConfigFormRequest{InstanceId: "nope"}, admin)); connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatalf("unknown instance: %v", err)
+	}
+	if _, err := c.GetConfigForm(ctx, withCookie(&widgetdv1.GetConfigFormRequest{}, admin)); connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("no target: %v", err)
+	}
+
+	// The form carries the current configuration...
+	form, err := c.GetConfigForm(ctx, withCookie(&widgetdv1.GetConfigFormRequest{InstanceId: "one"}, admin))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cur testwidgetv1.Config
+	if err := proto.Unmarshal(form.Msg.GetConfig(), &cur); err != nil || form.Msg.GetInstanceId() != "one" {
+		t.Fatalf("form = %v, %v", form.Msg, err)
+	}
+
+	// ...rules still apply...
+	bad, err := c.SaveConfig(ctx, withCookie(&widgetdv1.SaveConfigRequest{InstanceId: "one", Config: cfgBytes(t, "far too long")}, admin))
+	if err != nil || len(bad.Msg.GetViolations()) != 1 {
+		t.Fatalf("bad save = %v, %v", bad, err)
+	}
+
+	// ...and a good save restarts it with the change, as often as you like.
+	for _, v := range []string{"new", "newer"} {
+		res, err := c.SaveConfig(ctx, withCookie(&widgetdv1.SaveConfigRequest{InstanceId: "one", Label: "Hall", Config: cfgBytes(t, v)}, admin))
+		if err != nil || len(res.Msg.GetViolations()) != 0 {
+			t.Fatalf("save %q = %v, %v", v, res, err)
+		}
+		var cfg testwidgetv1.Config
+		if err := h.host().Config(&cfg); err != nil || cfg.GetLabel() != v {
+			t.Fatalf("restarted with %v, %v; want %q", &cfg, err, v)
+		}
+	}
+}
+
 func TestRenameAndDelete(t *testing.T) {
 	h := newHarness(t)
 	wh := h.host()
@@ -333,7 +386,7 @@ func TestSendAction(t *testing.T) {
 // 404ed: the app knew the route and the server didn't.)
 func TestPhonePagesAreServed(t *testing.T) {
 	h := newHarness(t)
-	for _, p := range []string{"enroll/tok", "pair/id", "configure/ticket", "admin"} {
+	for _, p := range []string{"enroll/tok", "pair/id", "configure/ticket", "edit/id", "admin"} {
 		resp, err := http.Get(h.http.URL + "/widgetd/" + p)
 		if err != nil {
 			t.Fatal(err)
