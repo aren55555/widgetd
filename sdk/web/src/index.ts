@@ -4,9 +4,9 @@
 // back to the board to keep, so the next page load draws instantly and
 // resumes from where it left off.
 
-import { toBinary, fromBinary, type DescMessage, type MessageShape } from "@bufbuild/protobuf";
+import { toBinary, fromBinary, type DescMessage, type Message, type MessageShape } from "@bufbuild/protobuf";
 import type { Cursor, FromFrame, ToFrame } from "./bridge.ts";
-import { decodeChecked, validated } from "./checks.ts";
+import { decodeChecked, typeUrlOf, validated } from "./checks.ts";
 
 export { decodeChecked, validated, typeUrlOf } from "./checks.ts";
 export type { Cursor } from "./bridge.ts";
@@ -23,6 +23,12 @@ export type WidgetContext = {
   /** The element to render into. It fills the card. */
   root: HTMLElement;
   storage: WidgetStorage;
+  /**
+   * Send the widget's server half something the viewer did (a tap, a
+   * choice). The message must be the widget's `action` type; it is checked
+   * here, and again by the host, before the widget sees it.
+   */
+  act(action: Message): void;
 };
 
 export type View<S, D> = {
@@ -34,6 +40,8 @@ export type View<S, D> = {
 export type WidgetDef<SD extends DescMessage, DD extends DescMessage = DescMessage> = {
   state: SD;
   delta?: DD;
+  /** The message `ctx.act` sends, if the card takes actions. */
+  action?: DescMessage;
   /** Pure: the state after `delta`. Required when `delta` is given. */
   apply?: (state: MessageShape<SD>, delta: MessageShape<DD>) => MessageShape<SD>;
   mount(ctx: WidgetContext): View<MessageShape<SD>, MessageShape<DD>>;
@@ -158,7 +166,14 @@ function start<SD extends DescMessage, DD extends DescMessage>(def: WidgetDef<SD
       if (r.error) throw new Error(r.error);
     },
   };
-  const core = new CardCore(def, send, () => def.mount({ cardId, root, storage }));
+  const act = (action: Message) => {
+    const schema = def.action;
+    if (!schema) throw new Error("this widget declares no action type");
+    const v = validated(schema, action as never);
+    if (!v.ok) throw new Error(v.error);
+    send({ t: "action", typeUrl: typeUrlOf(schema), value: toBinary(schema, action as never) });
+  };
+  const core = new CardCore(def, send, () => def.mount({ cardId, root, storage, act }));
 
   const applyTheme = (theme: Record<string, string>) => {
     for (const [k, v] of Object.entries(theme)) {

@@ -33,7 +33,9 @@ export type FromFrame =
   /** The frame refused the payload at `cursor` and kept its last good state. */
   | { t: "fault"; cursor?: Cursor; message: string }
   | { t: "storage-get"; id: number; key: string }
-  | { t: "storage-set"; id: number; key: string; value: string | null };
+  | { t: "storage-set"; id: number; key: string; value: string | null }
+  /** Something the viewer did, for the widget's server half: the card's action type. */
+  | { t: "action"; typeUrl: string; value: Uint8Array };
 
 export const isFromFrame = (v: unknown): v is FromFrame =>
   typeof v === "object" && v !== null && typeof (v as { t?: unknown }).t === "string";

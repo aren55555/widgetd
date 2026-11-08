@@ -111,8 +111,19 @@ func (h *harness) open(cookie string, resume ...*widgetdv1.Resume) *frames {
 	return &frames{t: h.t, stream: s, cancel: cancel}
 }
 
-// next returns the next non-keepalive frame.
+// next returns the next card frame: not a keepalive, not an instance status.
 func (f *frames) next() *widgetdv1.WidgetFrame {
+	f.t.Helper()
+	for {
+		fr := f.nextAny()
+		if fr.GetInstance() == nil {
+			return fr
+		}
+	}
+}
+
+// nextAny returns the next non-keepalive frame.
+func (f *frames) nextAny() *widgetdv1.WidgetFrame {
 	f.t.Helper()
 	for {
 		got := make(chan bool, 1)
@@ -125,8 +136,8 @@ func (f *frames) next() *widgetdv1.WidgetFrame {
 			if fr := f.stream.Msg().GetFrame(); fr != nil {
 				return fr
 			}
-		case <-time.After(5 * time.Second):
-			f.t.Fatal("no frame within 5s")
+		case <-time.After(30 * time.Second): // generous: a first module compile under -race is slow
+			f.t.Fatal("no frame within 30s")
 		}
 	}
 }
@@ -142,6 +153,9 @@ func (f *frames) burst() []*widgetdv1.WidgetFrame {
 		fr := f.stream.Msg().GetFrame()
 		if fr == nil {
 			return out
+		}
+		if fr.GetInstance() != nil {
+			continue // instance statuses: see TestInstanceStatusFrames
 		}
 		out = append(out, fr)
 	}
@@ -337,7 +351,7 @@ func TestRestartGetsNewEpoch(t *testing.T) {
 	epoch := b[1].GetSnapshot().GetCursor().GetEpoch()
 
 	// Make the run return; the host restarts it after its backoff.
-	h.srv.instances[0].w.spec.Run = func(ctx context.Context, wh widget.Host) error {
+	h.srv.instances["one"].w.spec.Run = func(ctx context.Context, wh widget.Host) error {
 		h.hosts <- wh
 		<-ctx.Done()
 		return ctx.Err()

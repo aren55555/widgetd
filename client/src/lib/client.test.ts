@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { create } from "@bufbuild/protobuf";
 
 import { CardStore, VIEW_QUOTA, type KVBackend } from "./store.ts";
-import { deltaFollows, gridSpan, staleCards, usableStored } from "./sync.ts";
-import { CursorSchema, PayloadSchema } from "../gen/widgetd/v1/stream_pb.ts";
+import { deltaFollows, gridSpan, instanceOf, placeholderFor, staleCards, usableStored } from "./sync.ts";
+import { CursorSchema, InstanceStatus_State, PayloadSchema } from "../gen/widgetd/v1/stream_pb.ts";
 
 function memory(): KVBackend {
   const m = new Map<string, string>();
@@ -83,5 +83,20 @@ describe("sync", () => {
 
   test("cards the burst didn't mount are stale", () => {
     expect(staleCards(["a", "b"], new Set(["b"]))).toEqual(["a"]);
+  });
+});
+
+describe("placeholders", () => {
+  test("a running instance needs none; the others say why", () => {
+    expect(placeholderFor(InstanceStatus_State.RUNNING, "").show).toBe(false);
+    expect(placeholderFor(InstanceStatus_State.NEEDS_CONFIG, "")).toEqual({ show: true, text: "Not set up yet.", setUp: true });
+    expect(placeholderFor(InstanceStatus_State.INVALID_CONFIG, "")).toMatchObject({ show: true, setUp: true });
+    expect(placeholderFor(InstanceStatus_State.FAULTED, "boom")).toMatchObject({ show: true, setUp: false, text: "Stopped: boom. Retrying…" });
+  });
+
+  test("a card's instance is its id's first segment", () => {
+    expect(instanceOf("btc/spiral")).toBe("btc");
+    expect(instanceOf("sports-x7/game/123")).toBe("sports-x7");
+    expect(instanceOf("bare")).toBe("");
   });
 });

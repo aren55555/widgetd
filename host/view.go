@@ -51,7 +51,7 @@ func (s *Server) serveFrame(w http.ResponseWriter, r *http.Request, name, digest
 	_, cssErr := fs.Stat(lw.spec.View, "view.css")
 	h := w.Header()
 	h.Set("Content-Type", "text/html; charset=utf-8")
-	h.Set("Content-Security-Policy", frameCSP(assets, lw.policy.imageSources()))
+	h.Set("Content-Security-Policy", frameCSP(assets, lw.policy.Load().imageSources()))
 	h.Set("Cache-Control", "public, max-age=31536000, immutable")
 	h.Set("X-Content-Type-Options", "nosniff")
 	frameTmpl.Execute(w, struct {

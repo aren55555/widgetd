@@ -14,6 +14,7 @@ import (
 	"testing/fstest"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	widgetdv1 "github.com/aren55555/widgetd/gen/widgetd/v1"
@@ -156,7 +157,7 @@ func TestWasmFetchIsPolicied(t *testing.T) {
 	if s.GetValues()[0] != 1 {
 		t.Fatal("a fetch outside the request should come back as a PolicyError")
 	}
-	acts := h.srv.instances[0].fetcher.Activity()
+	acts := h.srv.instances["fetch"].fetcher.Activity()
 	if len(acts) != 1 || acts[0].Denied == "" {
 		t.Fatalf("activity = %+v", acts)
 	}
@@ -190,7 +191,7 @@ func TestWasmMemoryHogIsStoppedAlone(t *testing.T) {
 			break
 		}
 		time.Sleep(200 * time.Millisecond)
-		if h.srv.instances[0].restarts() > 0 {
+		if h.srv.instances["alloc"].restarts() > 0 {
 			return
 		}
 	}
@@ -276,4 +277,16 @@ func TestPackageRejectsJunk(t *testing.T) {
 	if _, err := LoadPackage([]byte("not a zip")); err == nil {
 		t.Fatal("junk should be refused")
 	}
+}
+
+func TestWasmActions(t *testing.T) {
+	h := newWasmHarness(t, "act")
+	device := h.deviceCookie("d1")
+	f := h.open(device)
+	f.waitState("act/act", func(*testwidgetv1.State) bool { return true })
+	b, _ := proto.Marshal(&testwidgetv1.Action{Tap: 7})
+	if err := h.sendAction(device, "act/act", "type.googleapis.com/testwidget.v1.Action", b); err != nil {
+		t.Fatal(err)
+	}
+	f.waitState("act/act", func(s *testwidgetv1.State) bool { return len(s.GetValues()) == 1 && s.GetValues()[0] == 7 })
 }

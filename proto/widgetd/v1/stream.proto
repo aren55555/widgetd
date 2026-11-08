@@ -11,7 +11,20 @@ option go_package = "github.com/aren55555/widgetd/gen/widgetd/v1;widgetdv1";
 // data over it; there is never a connection per widget.
 service WidgetStreamService {
   rpc StreamWidgets(StreamWidgetsRequest) returns (stream StreamWidgetsResponse);
+
+  // A tap, a choice, a dismissal: something a viewer did on a card, sent
+  // to the widget's server half. Screen or admin. The value must be the
+  // card's declared action type, and pass its rules.
+  rpc SendAction(SendActionRequest) returns (SendActionResponse);
 }
+
+message SendActionRequest {
+  string card_id = 1;
+  string type_url = 2;
+  bytes value = 3;
+}
+
+message SendActionResponse {}
 
 // Cursor orders the updates of one card. `seq` increases with every snapshot
 // or delta; `epoch` changes whenever the instance behind the card restarts,
@@ -44,7 +57,8 @@ message StreamWidgetsResponse {
 message WidgetFrame {
   // The configured instance the card belongs to.
   string instance_id = 1;
-  // What is on screen. Always prefixed by `instance_id` + "/".
+  // What is on screen. Always prefixed by `instance_id` + "/". Empty for
+  // `instance`, which is about the instance rather than any one card.
   string card_id = 2;
 
   oneof body {
@@ -53,7 +67,33 @@ message WidgetFrame {
     Payload delta = 5;
     Unmounted unmounted = 6;
     Fault fault = 7;
+    // An instance appeared, changed state, or (with `removed`) was deleted.
+    // Sent for every instance in the initial burst, then on each change, so
+    // a screen can show an instance that has no cards: one waiting to be
+    // configured, say.
+    InstanceStatus instance = 8;
   }
+}
+
+message InstanceStatus {
+  enum State {
+    STATE_UNSPECIFIED = 0;
+    // Added, but its configuration hasn't been saved yet.
+    STATE_NEEDS_CONFIG = 1;
+    // Running; its cards are whatever it has mounted.
+    STATE_RUNNING = 2;
+    // Stopped by an error and waiting to restart; `message` says why.
+    STATE_FAULTED = 3;
+    // Its stored configuration no longer passes the widget's schema (after
+    // an upgrade, say). It waits to be configured again.
+    STATE_INVALID_CONFIG = 4;
+  }
+  State state = 1;
+  string widget = 2;
+  // What the instance is called: its label, else the widget's title.
+  string title = 3;
+  string message = 4;
+  bool removed = 5;
 }
 
 message WidgetRef {
@@ -77,6 +117,8 @@ message Mounted {
   // When the host will unmount the card on its own, if ever.
   google.protobuf.Timestamp visible_until = 6;
   string title = 7;
+  // The message a card accepts from viewers; empty if it takes none.
+  string action_type = 8;
 }
 
 // Layout is a size hint in grid units.

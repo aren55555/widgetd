@@ -132,6 +132,7 @@ func LoadPackage(b []byte) (widget.Spec, error) {
 	return widget.Spec{
 		Name:    m.Name,
 		Version: m.Version,
+		Title:   m.Title,
 		Files:   own,
 		Config:  cfg,
 		Wasm:    wasm,
@@ -165,24 +166,7 @@ func WritePackage(w io.Writer, m Manifest, files []protoreflect.FileDescriptor, 
 		return err
 	}
 
-	set := &descriptorpb.FileDescriptorSet{}
-	seen := map[string]bool{}
-	var walk func(fd protoreflect.FileDescriptor)
-	walk = func(fd protoreflect.FileDescriptor) {
-		if seen[fd.Path()] {
-			return
-		}
-		seen[fd.Path()] = true
-		imps := fd.Imports()
-		for i := range imps.Len() {
-			walk(imps.Get(i).FileDescriptor)
-		}
-		set.File = append(set.File, protodesc.ToFileDescriptorProto(fd))
-	}
-	for _, fd := range files {
-		walk(fd)
-	}
-	sb, err := proto.MarshalOptions{Deterministic: true}.Marshal(set)
+	sb, err := proto.MarshalOptions{Deterministic: true}.Marshal(descriptorSet(files))
 	if err != nil {
 		return err
 	}

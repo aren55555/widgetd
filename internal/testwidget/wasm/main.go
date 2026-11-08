@@ -10,6 +10,7 @@
 //	bad     emit a delta that breaks its rule; values = [1] if refused
 //	alloc   allocate without bound
 //	spin    loop forever without yielding
+//	act     take actions; echo each tap into values
 package main
 
 import (
@@ -96,6 +97,20 @@ func run(ctx context.Context, h widget.Host) error {
 		for {
 			hog = append(hog, make([]byte, 16<<20))
 			hog[len(hog)-1][0] = 1
+		}
+	case "act":
+		ac, err := widget.Mount[*testwidgetv1.State, *testwidgetv1.Delta](h, "act", widget.WithAction[*testwidgetv1.Action](widget.MountOptions{}))
+		if err != nil {
+			return err
+		}
+		if err := ac.Snapshot(state); err != nil {
+			return err
+		}
+		for a := range widget.Actions[*testwidgetv1.Action](ac) {
+			state.Values = []int64{a.GetTap()}
+			if err := ac.Snapshot(state); err != nil {
+				return err
+			}
 		}
 	case "spin":
 		if err := card.Snapshot(state); err != nil {

@@ -30,7 +30,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file widgetd/abi/v1/abi.proto.
  */
 export const file_widgetd_abi_v1_abi: GenFile = /*@__PURE__*/
-  fileDesc("Chh3aWRnZXRkL2FiaS92MS9hYmkucHJvdG8SDndpZGdldGQuYWJpLnYxIoQDCgRDYWxsEi8KCmNvbmZpZ19nZXQYASABKAsyGS53aWRnZXRkLmFiaS52MS5Db25maWdHZXRIABImCgVmZXRjaBgCIAEoCzIVLndpZGdldGQuYWJpLnYxLkZldGNoSAASJwoGa3ZfZ2V0GAMgASgLMhUud2lkZ2V0ZC5hYmkudjEuS3ZHZXRIABInCgZrdl9wdXQYBCABKAsyFS53aWRnZXRkLmFiaS52MS5LdlB1dEgAEi0KCWt2X2RlbGV0ZRgFIAEoCzIYLndpZGdldGQuYWJpLnYxLkt2RGVsZXRlSAASJgoFbW91bnQYBiABKAsyFS53aWRnZXRkLmFiaS52MS5Nb3VudEgAEioKB3VubW91bnQYByABKAsyFy53aWRnZXRkLmFiaS52MS5Vbm1vdW50SAASJAoEZW1pdBgIIAEoCzIULndpZGdldGQuYWJpLnYxLkVtaXRIABIiCgNsb2cYCSABKAsyEy53aWRnZXRkLmFiaS52MS5Mb2dIAEIECgJvcCLKAQoGUmVzdWx0Eg0KBWVycm9yGAEgASgJEhMKC2RlbmllZF9ydWxlGAIgASgJEhAKBmNvbmZpZxgDIAEoDEgAEi4KBWZldGNoGAQgASgLMh0ud2lkZ2V0ZC5hYmkudjEuRmV0Y2hSZXNwb25zZUgAEiUKAmt2GAUgASgLMhcud2lkZ2V0ZC5hYmkudjEuS3ZWYWx1ZUgAEioKBGVtaXQYBiABKAsyGi53aWRnZXRkLmFiaS52MS5FbWl0UmVzdWx0SABCBwoFdmFsdWUiCwoJQ29uZmlnR2V0IiUKBkhlYWRlchIMCgRuYW1lGAEgASgJEg0KBXZhbHVlGAIgASgJIlsKBUZldGNoEg4KBm1ldGhvZBgBIAEoCRILCgN1cmwYAiABKAkSJwoHaGVhZGVycxgDIAMoCzIWLndpZGdldGQuYWJpLnYxLkhlYWRlchIMCgRib2R5GAQgASgMIlYKDUZldGNoUmVzcG9uc2USDgoGc3RhdHVzGAEgASgFEicKB2hlYWRlcnMYAiADKAsyFi53aWRnZXRkLmFiaS52MS5IZWFkZXISDAoEYm9keRgDIAEoDCIUCgVLdkdldBILCgNrZXkYASABKAkiJwoHS3ZWYWx1ZRINCgVmb3VuZBgBIAEoCBINCgV2YWx1ZRgCIAEoDCIjCgVLdlB1dBILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAwiFwoIS3ZEZWxldGUSCwoDa2V5GAEgASgJIoABCgVNb3VudBIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIMCgRjb2xzGAMgASgNEgwKBHJvd3MYBCABKA0SGAoQdmlzaWJsZV91bnRpbF9tcxgFIAEoAxISCgpzdGF0ZV90eXBlGAYgASgJEhIKCmRlbHRhX3R5cGUYByABKAkiFQoHVW5tb3VudBIKCgJpZBgBIAEoCSKlAQoERW1pdBIPCgdjYXJkX2lkGAEgASgJEicKBGtpbmQYAiABKA4yGS53aWRnZXRkLmFiaS52MS5FbWl0LktpbmQSDQoFdmFsdWUYAyABKAwiVAoES2luZBIUChBLSU5EX1VOU1BFQ0lGSUVEEAASEQoNS0lORF9TTkFQU0hPVBABEg4KCktJTkRfREVMVEEQAhITCg9LSU5EX0NIRUNLUE9JTlQQAyIlCgpFbWl0UmVzdWx0EhcKD3dhbnRfY2hlY2twb2ludBgBIAEoCCLJAQoDTG9nEigKBWxldmVsGAEgASgOMhkud2lkZ2V0ZC5hYmkudjEuTG9nLkxldmVsEg8KB21lc3NhZ2UYAiABKAkSJQoFYXR0cnMYAyADKAsyFi53aWRnZXRkLmFiaS52MS5IZWFkZXIiYAoFTGV2ZWwSFQoRTEVWRUxfVU5TUEVDSUZJRUQQABIPCgtMRVZFTF9ERUJVRxABEg4KCkxFVkVMX0lORk8QAhIOCgpMRVZFTF9XQVJOEAMSDwoLTEVWRUxfRVJST1IQBEI3WjVnaXRodWIuY29tL2FyZW41NTU1NS93aWRnZXRkL2dlbi93aWRnZXRkL2FiaS92MTthYml2MWIGcHJvdG8z");
+  fileDesc("Chh3aWRnZXRkL2FiaS92MS9hYmkucHJvdG8SDndpZGdldGQuYWJpLnYxIrkDCgRDYWxsEi8KCmNvbmZpZ19nZXQYASABKAsyGS53aWRnZXRkLmFiaS52MS5Db25maWdHZXRIABImCgVmZXRjaBgCIAEoCzIVLndpZGdldGQuYWJpLnYxLkZldGNoSAASJwoGa3ZfZ2V0GAMgASgLMhUud2lkZ2V0ZC5hYmkudjEuS3ZHZXRIABInCgZrdl9wdXQYBCABKAsyFS53aWRnZXRkLmFiaS52MS5LdlB1dEgAEi0KCWt2X2RlbGV0ZRgFIAEoCzIYLndpZGdldGQuYWJpLnYxLkt2RGVsZXRlSAASJgoFbW91bnQYBiABKAsyFS53aWRnZXRkLmFiaS52MS5Nb3VudEgAEioKB3VubW91bnQYByABKAsyFy53aWRnZXRkLmFiaS52MS5Vbm1vdW50SAASJAoEZW1pdBgIIAEoCzIULndpZGdldGQuYWJpLnYxLkVtaXRIABIiCgNsb2cYCSABKAsyEy53aWRnZXRkLmFiaS52MS5Mb2dIABIzCgx0YWtlX2FjdGlvbnMYCiABKAsyGy53aWRnZXRkLmFiaS52MS5UYWtlQWN0aW9uc0gAQgQKAm9wIvYBCgZSZXN1bHQSDQoFZXJyb3IYASABKAkSEwoLZGVuaWVkX3J1bGUYAiABKAkSEAoGY29uZmlnGAMgASgMSAASLgoFZmV0Y2gYBCABKAsyHS53aWRnZXRkLmFiaS52MS5GZXRjaFJlc3BvbnNlSAASJQoCa3YYBSABKAsyFy53aWRnZXRkLmFiaS52MS5LdlZhbHVlSAASKgoEZW1pdBgGIAEoCzIaLndpZGdldGQuYWJpLnYxLkVtaXRSZXN1bHRIABIqCgdhY3Rpb25zGAcgASgLMhcud2lkZ2V0ZC5hYmkudjEuQWN0aW9uc0gAQgcKBXZhbHVlIgsKCUNvbmZpZ0dldCIlCgZIZWFkZXISDAoEbmFtZRgBIAEoCRINCgV2YWx1ZRgCIAEoCSJbCgVGZXRjaBIOCgZtZXRob2QYASABKAkSCwoDdXJsGAIgASgJEicKB2hlYWRlcnMYAyADKAsyFi53aWRnZXRkLmFiaS52MS5IZWFkZXISDAoEYm9keRgEIAEoDCJWCg1GZXRjaFJlc3BvbnNlEg4KBnN0YXR1cxgBIAEoBRInCgdoZWFkZXJzGAIgAygLMhYud2lkZ2V0ZC5hYmkudjEuSGVhZGVyEgwKBGJvZHkYAyABKAwiFAoFS3ZHZXQSCwoDa2V5GAEgASgJIicKB0t2VmFsdWUSDQoFZm91bmQYASABKAgSDQoFdmFsdWUYAiABKAwiIwoFS3ZQdXQSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgMIhcKCEt2RGVsZXRlEgsKA2tleRgBIAEoCSKVAQoFTW91bnQSCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkSDAoEY29scxgDIAEoDRIMCgRyb3dzGAQgASgNEhgKEHZpc2libGVfdW50aWxfbXMYBSABKAMSEgoKc3RhdGVfdHlwZRgGIAEoCRISCgpkZWx0YV90eXBlGAcgASgJEhMKC2FjdGlvbl90eXBlGAggASgJIhUKB1VubW91bnQSCgoCaWQYASABKAkipQEKBEVtaXQSDwoHY2FyZF9pZBgBIAEoCRInCgRraW5kGAIgASgOMhkud2lkZ2V0ZC5hYmkudjEuRW1pdC5LaW5kEg0KBXZhbHVlGAMgASgMIlQKBEtpbmQSFAoQS0lORF9VTlNQRUNJRklFRBAAEhEKDUtJTkRfU05BUFNIT1QQARIOCgpLSU5EX0RFTFRBEAISEwoPS0lORF9DSEVDS1BPSU5UEAMiJQoKRW1pdFJlc3VsdBIXCg93YW50X2NoZWNrcG9pbnQYASABKAgiyQEKA0xvZxIoCgVsZXZlbBgBIAEoDjIZLndpZGdldGQuYWJpLnYxLkxvZy5MZXZlbBIPCgdtZXNzYWdlGAIgASgJEiUKBWF0dHJzGAMgAygLMhYud2lkZ2V0ZC5hYmkudjEuSGVhZGVyImAKBUxldmVsEhUKEUxFVkVMX1VOU1BFQ0lGSUVEEAASDwoLTEVWRUxfREVCVUcQARIOCgpMRVZFTF9JTkZPEAISDgoKTEVWRUxfV0FSThADEg8KC0xFVkVMX0VSUk9SEAQiDQoLVGFrZUFjdGlvbnMiNgoHQWN0aW9ucxIrCgdhY3Rpb25zGAEgAygLMhoud2lkZ2V0ZC5hYmkudjEuQ2FyZEFjdGlvbiIsCgpDYXJkQWN0aW9uEg8KB2NhcmRfaWQYASABKAkSDQoFdmFsdWUYAiABKAxCN1o1Z2l0aHViLmNvbS9hcmVuNTU1NTUvd2lkZ2V0ZC9nZW4vd2lkZ2V0ZC9hYmkvdjE7YWJpdjFiBnByb3RvMw");
 
 /**
  * @generated from message widgetd.abi.v1.Call
@@ -93,6 +93,12 @@ export type Call = Message<"widgetd.abi.v1.Call"> & {
      */
     value: Log;
     case: "log";
+  } | {
+    /**
+     * @generated from field: widgetd.abi.v1.TakeActions take_actions = 10;
+     */
+    value: TakeActions;
+    case: "takeActions";
   } | { case: undefined; value?: undefined };
 };
 
@@ -148,6 +154,12 @@ export type Result = Message<"widgetd.abi.v1.Result"> & {
      */
     value: EmitResult;
     case: "emit";
+  } | {
+    /**
+     * @generated from field: widgetd.abi.v1.Actions actions = 7;
+     */
+    value: Actions;
+    case: "actions";
   } | { case: undefined; value?: undefined };
 };
 
@@ -379,6 +391,13 @@ export type Mount = Message<"widgetd.abi.v1.Mount"> & {
    * @generated from field: string delta_type = 7;
    */
   deltaType: string;
+
+  /**
+   * The message viewers may send this card, if any.
+   *
+   * @generated from field: string action_type = 8;
+   */
+  actionType: string;
 };
 
 /**
@@ -552,4 +571,64 @@ export enum Log_Level {
  */
 export const Log_LevelSchema: GenEnum<Log_Level> = /*@__PURE__*/
   enumDesc(file_widgetd_abi_v1_abi, 14, 0);
+
+/**
+ * TakeActions returns, without waiting, what viewers have sent the module's
+ * cards since the last call. A module that mounts a card with an
+ * action_type polls it; the host never calls into the module.
+ *
+ * @generated from message widgetd.abi.v1.TakeActions
+ */
+export type TakeActions = Message<"widgetd.abi.v1.TakeActions"> & {
+};
+
+/**
+ * Describes the message widgetd.abi.v1.TakeActions.
+ * Use `create(TakeActionsSchema)` to create a new message.
+ */
+export const TakeActionsSchema: GenMessage<TakeActions> = /*@__PURE__*/
+  messageDesc(file_widgetd_abi_v1_abi, 15);
+
+/**
+ * @generated from message widgetd.abi.v1.Actions
+ */
+export type Actions = Message<"widgetd.abi.v1.Actions"> & {
+  /**
+   * @generated from field: repeated widgetd.abi.v1.CardAction actions = 1;
+   */
+  actions: CardAction[];
+};
+
+/**
+ * Describes the message widgetd.abi.v1.Actions.
+ * Use `create(ActionsSchema)` to create a new message.
+ */
+export const ActionsSchema: GenMessage<Actions> = /*@__PURE__*/
+  messageDesc(file_widgetd_abi_v1_abi, 16);
+
+/**
+ * @generated from message widgetd.abi.v1.CardAction
+ */
+export type CardAction = Message<"widgetd.abi.v1.CardAction"> & {
+  /**
+   * The card's local id, as mounted.
+   *
+   * @generated from field: string card_id = 1;
+   */
+  cardId: string;
+
+  /**
+   * Encoded as the card's action_type; already checked against it.
+   *
+   * @generated from field: bytes value = 2;
+   */
+  value: Uint8Array;
+};
+
+/**
+ * Describes the message widgetd.abi.v1.CardAction.
+ * Use `create(CardActionSchema)` to create a new message.
+ */
+export const CardActionSchema: GenMessage<CardAction> = /*@__PURE__*/
+  messageDesc(file_widgetd_abi_v1_abi, 17);
 

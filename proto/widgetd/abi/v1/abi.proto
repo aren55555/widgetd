@@ -34,6 +34,7 @@ message Call {
     Unmount unmount = 7;
     Emit emit = 8;
     Log log = 9;
+    TakeActions take_actions = 10;
   }
 }
 
@@ -48,6 +49,7 @@ message Result {
     FetchResponse fetch = 4;
     KvValue kv = 5;
     EmitResult emit = 6;
+    Actions actions = 7;
   }
 }
 
@@ -103,6 +105,8 @@ message Mount {
   // Fully qualified message names from the widget's schema.
   string state_type = 6;
   string delta_type = 7;
+  // The message viewers may send this card, if any.
+  string action_type = 8;
 }
 
 message Unmount {
@@ -142,4 +146,20 @@ message Log {
   Level level = 1;
   string message = 2;
   repeated Header attrs = 3;
+}
+
+// TakeActions returns, without waiting, what viewers have sent the module's
+// cards since the last call. A module that mounts a card with an
+// action_type polls it; the host never calls into the module.
+message TakeActions {}
+
+message Actions {
+  repeated CardAction actions = 1;
+}
+
+message CardAction {
+  // The card's local id, as mounted.
+  string card_id = 1;
+  // Encoded as the card's action_type; already checked against it.
+  bytes value = 2;
 }

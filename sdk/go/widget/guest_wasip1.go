@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 	"unsafe"
 
 	"google.golang.org/protobuf/proto"
@@ -51,6 +52,11 @@ func (e *PolicyError) Error() string { return e.Msg }
 
 type guestHost struct {
 	mu sync.Mutex // one call/take pair at a time
+
+	// Actions: one poller for the module, one channel per card that asked.
+	pollOnce sync.Once
+	actMu    sync.Mutex
+	actChans map[string]chan []byte
 }
 
 func (g *guestHost) call(c *abiv1.Call) (*abiv1.Result, error) {
@@ -134,6 +140,7 @@ func (g *guestHost) Mount(id string, opts MountOptions) (RawCard, error) {
 	m := &abiv1.Mount{
 		Id: id, Title: opts.Title, Cols: opts.Layout.Cols, Rows: opts.Layout.Rows,
 		StateType: string(opts.StateType), DeltaType: string(opts.DeltaType),
+		ActionType: string(opts.ActionType),
 	}
 	if !opts.VisibleUntil.IsZero() {
 		m.VisibleUntilMs = opts.VisibleUntil.UnixMilli()
@@ -239,3 +246,45 @@ func (l *guestLog) WithAttrs(as []slog.Attr) slog.Handler {
 }
 
 func (l *guestLog) WithGroup(string) slog.Handler { return l }
+
+// actionPoll is how often a module asks for viewers' actions. The host
+// can't call in, so it's a poll; 200ms reads as instant to a person.
+const actionPoll = 200 * time.Millisecond
+
+// Actions returns the card's actions channel, starting the module's poller
+// the first time any card asks.
+func (c *guestCard) Actions() <-chan []byte {
+	g := c.g
+	g.actMu.Lock()
+	if g.actChans == nil {
+		g.actChans = map[string]chan []byte{}
+	}
+	ch, ok := g.actChans[c.id]
+	if !ok {
+		ch = make(chan []byte, 16)
+		g.actChans[c.id] = ch
+	}
+	g.actMu.Unlock()
+	g.pollOnce.Do(func() { go g.pollActions() })
+	return ch
+}
+
+func (g *guestHost) pollActions() {
+	for {
+		time.Sleep(actionPoll)
+		res, err := g.call(&abiv1.Call{Op: &abiv1.Call_TakeActions{TakeActions: &abiv1.TakeActions{}}})
+		if err != nil {
+			continue
+		}
+		g.actMu.Lock()
+		for _, a := range res.GetActions().GetActions() {
+			if ch, ok := g.actChans[a.GetCardId()]; ok {
+				select {
+				case ch <- a.GetValue():
+				default: // the widget isn't keeping up; drop, as the host would
+				}
+			}
+		}
+		g.actMu.Unlock()
+	}
+}

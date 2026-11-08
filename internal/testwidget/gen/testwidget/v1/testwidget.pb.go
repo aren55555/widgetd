@@ -162,6 +162,50 @@ func (x *Config) GetLabel() string {
 	return ""
 }
 
+type Action struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tap           int64                  `protobuf:"varint,1,opt,name=tap,proto3" json:"tap,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Action) Reset() {
+	*x = Action{}
+	mi := &file_testwidget_v1_testwidget_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Action) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Action) ProtoMessage() {}
+
+func (x *Action) ProtoReflect() protoreflect.Message {
+	mi := &file_testwidget_v1_testwidget_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Action.ProtoReflect.Descriptor instead.
+func (*Action) Descriptor() ([]byte, []int) {
+	return file_testwidget_v1_testwidget_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Action) GetTap() int64 {
+	if x != nil {
+		return x.Tap
+	}
+	return 0
+}
+
 var File_testwidget_v1_testwidget_proto protoreflect.FileDescriptor
 
 const file_testwidget_v1_testwidget_proto_rawDesc = "" +
@@ -173,7 +217,9 @@ const file_testwidget_v1_testwidget_proto_rawDesc = "" +
 	"\x05Delta\x12\x1d\n" +
 	"\x05value\x18\x01 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\x05value\"'\n" +
 	"\x06Config\x12\x1d\n" +
-	"\x05label\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x18\bR\x05labelB\xca\x01\n" +
+	"\x05label\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x18\bR\x05label\"#\n" +
+	"\x06Action\x12\x19\n" +
+	"\x03tap\x18\x01 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\x03tapB\xca\x01\n" +
 	"\x11com.testwidget.v1B\x0fTestwidgetProtoP\x01ZOgithub.com/aren55555/widgetd/internal/testwidget/gen/testwidget/v1;testwidgetv1\xa2\x02\x03TXX\xaa\x02\rTestwidget.V1\xca\x02\rTestwidget\\V1\xe2\x02\x19Testwidget\\V1\\GPBMetadata\xea\x02\x0eTestwidget::V1b\x06proto3"
 
 var (
@@ -188,11 +234,12 @@ func file_testwidget_v1_testwidget_proto_rawDescGZIP() []byte {
 	return file_testwidget_v1_testwidget_proto_rawDescData
 }
 
-var file_testwidget_v1_testwidget_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_testwidget_v1_testwidget_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_testwidget_v1_testwidget_proto_goTypes = []any{
 	(*State)(nil),  // 0: testwidget.v1.State
 	(*Delta)(nil),  // 1: testwidget.v1.Delta
 	(*Config)(nil), // 2: testwidget.v1.Config
+	(*Action)(nil), // 3: testwidget.v1.Action
 }
 var file_testwidget_v1_testwidget_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -213,7 +260,7 @@ func file_testwidget_v1_testwidget_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_testwidget_v1_testwidget_proto_rawDesc), len(file_testwidget_v1_testwidget_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

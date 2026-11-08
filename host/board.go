@@ -23,6 +23,9 @@ type card struct {
 	mounted    *widgetdv1.Mounted
 	stateURL   string
 	deltaURL   string
+	actionURL  string      // empty: takes no actions
+	actions    chan []byte // to the widget; owned by its runHost
+	host       *runHost
 	log        *cardLog
 	expiry     *time.Timer
 }
@@ -44,10 +47,13 @@ type board struct {
 	order uint64
 	cards map[string]*card
 	subs  map[*subscriber]struct{}
+
+	instances     map[string]*widgetdv1.InstanceStatus
+	instanceOrder []string
 }
 
 func newBoard() *board {
-	return &board{cards: map[string]*card{}, subs: map[*subscriber]struct{}{}}
+	return &board{cards: map[string]*card{}, subs: map[*subscriber]struct{}{}, instances: map[string]*widgetdv1.InstanceStatus{}}
 }
 
 func (b *board) broadcastLocked(f *widgetdv1.WidgetFrame) {
@@ -183,6 +189,9 @@ func (b *board) subscribe(resume map[string]*widgetdv1.Resume) ([]*widgetdv1.Wid
 	sort.Slice(cards, func(i, j int) bool { return cards[i].order < cards[j].order })
 
 	var initial []*widgetdv1.WidgetFrame
+	for _, id := range b.instanceOrder {
+		initial = append(initial, instanceFrame(id, b.instances[id]))
+	}
 	for _, c := range cards {
 		initial = append(initial, mountedFrame(c))
 		var have *widgetdv1.Cursor
@@ -239,4 +248,46 @@ func (b *board) checkpoint(c *card, value []byte) bool {
 	}
 	c.log.checkpoint(c.stateURL, value)
 	return true
+}
+
+// setInstance records an instance's status and tells every screen.
+func (b *board) setInstance(id string, st *widgetdv1.InstanceStatus) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if _, ok := b.instances[id]; !ok {
+		b.instanceOrder = append(b.instanceOrder, id)
+	}
+	b.instances[id] = st
+	b.broadcastLocked(instanceFrame(id, st))
+}
+
+// removeInstance forgets an instance and tells every screen it's gone.
+func (b *board) removeInstance(id string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	st, ok := b.instances[id]
+	if !ok {
+		return
+	}
+	delete(b.instances, id)
+	for i, o := range b.instanceOrder {
+		if o == id {
+			b.instanceOrder = append(b.instanceOrder[:i], b.instanceOrder[i+1:]...)
+			break
+		}
+	}
+	gone := &widgetdv1.InstanceStatus{Widget: st.GetWidget(), Title: st.GetTitle(), Removed: true}
+	b.broadcastLocked(instanceFrame(id, gone))
+}
+
+func instanceFrame(id string, st *widgetdv1.InstanceStatus) *widgetdv1.WidgetFrame {
+	return &widgetdv1.WidgetFrame{InstanceId: id, Body: &widgetdv1.WidgetFrame_Instance{Instance: st}}
+}
+
+// card returns the mounted card with this id.
+func (b *board) card(id string) (*card, bool) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	c, ok := b.cards[id]
+	return c, ok
 }

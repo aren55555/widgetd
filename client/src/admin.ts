@@ -2,18 +2,28 @@
 //
 //   <base>enroll/<token>   create the first passkey
 //   <base>pair/<id>        approve a screen
-//   <base>admin            paired screens; add another passkey
+//   <base>configure/<t>    set up or change one widget instance
+//   <base>admin            instances, network access, screens, passkeys
 //
-// Plain DOM, no framework: these are three small forms.
+// Plain DOM, no framework: a handful of small forms. The settings form is
+// generated from the widget's schema (lib/form.ts).
 
 import { ConnectError, createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 
+import { create, createFileRegistry, fromBinary, toBinary, type DescMessage, type Message } from "@bufbuild/protobuf";
+import { FileDescriptorSetSchema } from "@bufbuild/protobuf/wkt";
+
 import { AuthService, Role } from "./gen/widgetd/v1/auth_pb.ts";
+import { WidgetAdminService, type WidgetInfo } from "./gen/widgetd/v1/admin_pb.ts";
+import { InstanceStatus_State } from "./gen/widgetd/v1/stream_pb.ts";
+import { buildForm } from "./lib/form.ts";
 
 const base = new URL(".", import.meta.url).pathname; // the bundle sits at <base>admin.js
-const auth = createClient(AuthService, createConnectTransport({ baseUrl: location.origin, useBinaryFormat: true }));
+const transport = createConnectTransport({ baseUrl: location.origin, useBinaryFormat: true });
+const auth = createClient(AuthService, transport);
+const admin = createClient(WidgetAdminService, transport);
 const app = document.getElementById("app")!;
 
 type Child = Node | string;
@@ -67,7 +77,8 @@ async function route() {
   try {
     if (section === "enroll") return await enroll(arg ?? "");
     if (section === "pair") return await approve(arg ?? "");
-    return await admin();
+    if (section === "configure") return await configure(arg ?? "");
+    return await adminHome();
   } catch (e) {
     page("Something went wrong", h("p", { class: "error" }, errorText(e)));
   }
@@ -146,27 +157,156 @@ async function approve(pairingId: string) {
   });
 }
 
+// ---- configure an instance ----
+
+async function configure(ticket: string) {
+  await requireAdmin(async () => {
+    const form = await admin.getConfigForm({ ticket });
+    const w = form.widget!;
+    const label = h("input", { value: form.label, maxlength: 64, placeholder: w.title, "aria-label": "Name" }) as HTMLInputElement;
+    const fields = h("div");
+    let validate: (server?: { field: string; message: string }[]) => boolean = () => true;
+    let msg: Message | undefined;
+    let desc: DescMessage | undefined;
+    if (form.configType) {
+      const registry = createFileRegistry(fromBinary(FileDescriptorSetSchema, form.schema));
+      desc = registry.getMessage(form.configType);
+      if (!desc) throw new Error(`the schema has no ${form.configType}`);
+      msg = form.config.length ? fromBinary(desc, form.config) : create(desc);
+      ({ validate } = buildForm(fields, desc, msg, () => validate()));
+    } else {
+      fields.append(h("p", { class: "muted" }, "This widget has no settings."));
+    }
+    const [save, status] = button(form.status?.state === InstanceStatus_State.NEEDS_CONFIG ? "Add to screens" : "Save", async (st) => {
+      if (!validate()) {
+        st.textContent = "Fix the highlighted fields first.";
+        return;
+      }
+      const res = await admin.saveConfig({ ticket, label: label.value.trim(), config: desc && msg ? toBinary(desc, msg) : new Uint8Array() });
+      if (res.violations.length) {
+        validate(res.violations.map((v) => ({ field: v.field, message: v.message })));
+        st.textContent = "The widget didn't accept that; see the fields above.";
+        return;
+      }
+      page("Saved", h("p", {}, `${label.value.trim() || w.title} is running. It'll appear on every paired screen.`), h("a", { href: `${base}admin` }, "Manage widgets"));
+    });
+    page(
+      w.title,
+      networkNote(w),
+      h("label", {}, h("span", { class: "label" }, "Name"), label),
+      fields,
+      save,
+      status,
+    );
+  });
+}
+
+function networkNote(w: WidgetInfo): Node {
+  if (!w.requestedHosts.length) return h("p", { class: "muted" }, "This widget doesn't use the network.");
+  const hosts = w.grantSet ? w.grantedHosts : w.requestedHosts;
+  const text = w.networkDisabled ? "Network access is turned off for this widget." : `Reaches: ${hosts.join(", ") || "nothing"}.`;
+  return h("p", { class: "muted" }, `${text} ${w.networkWhy}`);
+}
+
 // ---- admin home ----
 
-async function admin() {
+async function adminHome() {
   await requireAdmin(async () => {
-    const { devices } = await auth.listDevices({});
-    const list = h("ul", { class: "devices" });
+    const [{ instances }, { widgets }, { devices }] = await Promise.all([
+      admin.listInstances({}),
+      admin.listWidgets({}),
+      auth.listDevices({}),
+    ]);
+
+    const widgetList = h("ul", { class: "devices" });
+    for (const inst of instances) {
+      const title = inst.label || widgets.find((w) => w.name === inst.widget)?.title || inst.widget;
+      const state = stateText(inst.status?.state, inst.status?.message);
+      const actions = h("div", { class: "actions" });
+      const [rename, rs] = button("Rename", async () => {
+        const name = prompt("Name", inst.label);
+        if (name === null) return;
+        await admin.renameInstance({ instanceId: inst.id, label: name });
+        await adminHome();
+      });
+      const [activity, as] = button("Network log", async (st) => {
+        const { fetches } = await admin.getInstanceActivity({ instanceId: inst.id });
+        st.replaceChildren(
+          fetches.length
+            ? h("ul", { class: "log" }, ...fetches.slice().reverse().map((f) => h("li", {}, `${f.method} ${f.host}${f.path} → ${f.denied ? `refused: ${f.denied}` : f.error ? f.error : f.status}`)))
+            : "No requests yet.",
+        );
+      });
+      const [del, ds] = button("Delete", async () => {
+        if (!confirm(`Delete ${title}? Its saved data goes too.`)) return;
+        await admin.deleteInstance({ instanceId: inst.id });
+        await adminHome();
+      });
+      del.className = "danger";
+      actions.append(rename, activity, del);
+      widgetList.append(h("li", {}, h("strong", {}, title), h("span", { class: "muted" }, ` ${inst.widget} · ${state}`), actions, rs, as, ds));
+    }
+    if (!instances.length) widgetList.append(h("li", { class: "muted" }, "No widgets yet. Add one from a screen."));
+
+    const grants = h("ul", { class: "devices" });
+    for (const w of widgets.filter((w) => w.requestedHosts.length)) {
+      const granted = new Set(w.grantSet ? w.grantedHosts : w.requestedHosts);
+      const boxes = w.requestedHosts.map((host) => {
+        const box = h("input", { type: "checkbox" }) as HTMLInputElement;
+        box.checked = !w.networkDisabled && granted.has(host);
+        return [host, box] as const;
+      });
+      const [save, st] = button("Save access", async (s) => {
+        const hosts = boxes.filter(([, b]) => b.checked).map(([host]) => host);
+        await admin.setNetworkGrant({ widget: w.name, hosts, disabled: hosts.length === 0 });
+        s.textContent = "Saved. Running instances use it from their next request.";
+      });
+      grants.append(
+        h(
+          "li",
+          {},
+          h("strong", {}, w.title),
+          h("p", { class: "muted" }, w.networkWhy),
+          ...boxes.map(([host, box]) => h("label", { class: "check" }, box, h("span", {}, host))),
+          save,
+          st,
+        ),
+      );
+    }
+
+    const screens = h("ul", { class: "devices" });
     for (const d of devices) {
       const [revoke, status] = button("Unpair", async () => {
         await auth.revokeDevice({ id: d.id });
-        await admin();
+        await adminHome();
       });
+      revoke.className = "danger";
       const seen = d.lastSeen ? timestampDate(d.lastSeen).toLocaleString() : "never";
-      list.append(h("li", {}, h("strong", {}, d.name), h("span", { class: "muted" }, ` last seen ${seen}`), revoke, status));
+      screens.append(h("li", {}, h("strong", {}, d.name), h("span", { class: "muted" }, ` last seen ${seen}`), revoke, status));
     }
-    if (!devices.length) list.append(h("li", { class: "muted" }, "No screens paired yet. Open a board on a screen and scan its code."));
+    if (!devices.length) screens.append(h("li", { class: "muted" }, "No screens paired yet. Open a board on a screen and scan its code."));
+
     const [add, status] = button("Add another passkey", async (st) => {
       await createPasskey("", deviceGuess(navigator.userAgent));
       st.textContent = "Passkey added.";
     });
-    page("Screens", list, h("h2", {}, "Passkeys"), add, status);
+    page("Widgets", widgetList, h("h2", {}, "Network access"), grants, h("h2", {}, "Screens"), screens, h("h2", {}, "Passkeys"), add, status);
   });
+}
+
+function stateText(s: InstanceStatus_State | undefined, message?: string): string {
+  switch (s) {
+    case InstanceStatus_State.NEEDS_CONFIG:
+      return "waiting to be set up";
+    case InstanceStatus_State.INVALID_CONFIG:
+      return "settings need fixing";
+    case InstanceStatus_State.FAULTED:
+      return `stopped: ${message ?? "error"}`;
+    case InstanceStatus_State.RUNNING:
+      return "running";
+    default:
+      return "unknown";
+  }
 }
 
 function deviceGuess(ua: string): string {

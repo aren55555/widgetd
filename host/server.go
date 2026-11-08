@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/aren55555/widgetd/client"
+	widgetdv1 "github.com/aren55555/widgetd/gen/widgetd/v1"
 	"github.com/aren55555/widgetd/gen/widgetd/v1/widgetdv1connect"
 	"github.com/aren55555/widgetd/sdk/go/widget"
 )
@@ -48,7 +49,9 @@ type Options struct {
 	// Widgets the host can run.
 	Widgets []widget.Spec
 
-	// Instances to run.
+	// Instances seeds the instances to create on first start. More are added,
+	// configured and deleted at runtime, from screens and phones, and kept
+	// in widgetd.db.
 	Instances []Instance
 
 	// Policies grants each widget, by name, its network access. A widget
@@ -64,7 +67,9 @@ type Options struct {
 	wasmCacheDir string
 }
 
-// Instance is a configured copy of a widget.
+// Instance seeds a configured copy of a widget: created on first start if
+// no instance with its ID exists, and left alone after that (it may have
+// been reconfigured from a phone since).
 type Instance struct {
 	// ID is stable across restarts; cached client state is keyed by it.
 	ID     string
@@ -81,16 +86,22 @@ type Server struct {
 	auth      *auth
 	board     *board
 	widgets   map[string]*loadedWidget
-	instances []*instance
+	policies  map[string]NetworkPolicy
 	transport http.RoundTripper
 	wasm      *wasmHost // nil unless a widget is sandboxed
+	tickets   *tickets
+
+	mu            sync.Mutex // guards instances, instanceOrder, runCtx and each instance's run
+	instances     map[string]*instance
+	instanceOrder []string
+	runCtx        context.Context
 
 	stop context.CancelFunc
 	wg   sync.WaitGroup
 }
 
-// New validates the widgets and instances and opens the state database. It
-// starts nothing; call Start.
+// New validates the widgets, opens the state database, seeds and loads the
+// instances. It starts nothing; call Start.
 func New(opts Options) (*Server, error) {
 	base := opts.BasePath
 	if base == "" {
@@ -108,15 +119,15 @@ func New(opts Options) (*Server, error) {
 		log:       log.With("component", "widgetd"),
 		board:     newBoard(),
 		widgets:   map[string]*loadedWidget{},
+		policies:  opts.Policies,
 		transport: newGuardedTransport(opts.allowAddr),
+		tickets:   newTickets(),
+		instances: map[string]*instance{},
 	}
 	for _, spec := range opts.Widgets {
 		w, err := loadWidget(spec)
 		if err != nil {
 			return nil, err
-		}
-		if w.policy, err = newEffectivePolicy(spec.Network, opts.Policies[spec.Name]); err != nil {
-			return nil, fmt.Errorf("widget %s: %w", spec.Name, err)
 		}
 		if _, dup := s.widgets[spec.Name]; dup {
 			return nil, fmt.Errorf("widget %s registered twice", spec.Name)
@@ -130,78 +141,51 @@ func New(opts Options) (*Server, error) {
 	if err := s.compileWasm(cacheDir); err != nil {
 		return nil, err
 	}
-	seen := map[string]bool{}
-	for _, in := range opts.Instances {
-		inst, err := s.newInstance(in)
-		if err != nil {
-			return nil, err
-		}
-		if seen[in.ID] {
-			return nil, fmt.Errorf("instance %s defined twice", in.ID)
-		}
-		seen[in.ID] = true
-		s.instances = append(s.instances, inst)
-	}
 
 	db, err := openDB(opts.StateDir)
 	if err != nil {
 		return nil, fmt.Errorf("state db: %w", err)
 	}
 	s.db = db
-	a, err := newAuth(db, opts.PublicURL, base)
-	if err != nil {
+	fail := func(err error) (*Server, error) {
 		db.Close()
 		return nil, err
+	}
+	for _, w := range s.widgets {
+		if err := s.applyGrant(w); err != nil {
+			return fail(fmt.Errorf("widget %s: %w", w.spec.Name, err))
+		}
+	}
+	if err := s.seed(opts.Instances); err != nil {
+		return fail(err)
+	}
+	if err := s.loadInstances(); err != nil {
+		return fail(fmt.Errorf("instances: %w", err))
+	}
+	a, err := newAuth(db, opts.PublicURL, base)
+	if err != nil {
+		return fail(err)
 	}
 	s.auth = a
 	return s, nil
 }
 
-func (s *Server) newInstance(in Instance) (*instance, error) {
-	if !nameRE.MatchString(in.ID) {
-		return nil, fmt.Errorf("instance id %q: want lowercase letters, digits and dashes", in.ID)
-	}
-	w, ok := s.widgets[in.Widget]
-	if !ok {
-		return nil, fmt.Errorf("instance %s: no widget %q", in.ID, in.Widget)
-	}
-	var cfg []byte
-	if spec := w.spec.Config; spec != nil {
-		want := spec.ProtoReflect().Descriptor().FullName()
-		msg := in.Config
-		if msg == nil {
-			msg = spec.ProtoReflect().New().Interface()
-		}
-		if got := msg.ProtoReflect().Descriptor().FullName(); got != want {
-			return nil, fmt.Errorf("instance %s: config is %s, want %s", in.ID, got, want)
-		}
-		b, err := proto.Marshal(msg)
-		if err != nil {
-			return nil, err
-		}
-		if _, err := w.schema.check(want, b); err != nil {
-			return nil, fmt.Errorf("instance %s: %w", in.ID, err)
-		}
-		cfg = b
-	} else if in.Config != nil {
-		return nil, fmt.Errorf("instance %s: widget %s takes no config", in.ID, in.Widget)
-	}
-	return &instance{
-		id: in.ID, w: w, config: cfg, srv: s,
-		log:     s.log.With("instance", in.ID),
-		fetcher: newFetcher(w.policy, s.transport),
-	}, nil
-}
-
-// Start runs every instance in the background. If no admin has enrolled yet,
-// it logs the one-time setup link.
+// Start runs every configured instance in the background. If no admin has
+// enrolled yet, it logs the one-time setup link.
 func (s *Server) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
 	s.stop = cancel
-	for _, in := range s.instances {
-		s.wg.Add(1)
-		go func() { defer s.wg.Done(); in.run(ctx) }()
+	s.mu.Lock()
+	s.runCtx = ctx
+	for _, id := range s.instanceOrder {
+		in := s.instances[id]
+		if in.configured && in.state != widgetdv1.InstanceStatus_STATE_INVALID_CONFIG {
+			in.state = widgetdv1.InstanceStatus_STATE_RUNNING
+			s.startLocked(in)
+		}
+		s.board.setInstance(id, in.status())
 	}
+	s.mu.Unlock()
 	if u := s.auth.setupURL(); u != "" {
 		s.log.Warn("no admin yet: open this link on your phone to enrol a passkey", "url", u)
 	}
@@ -235,6 +219,7 @@ func (s *Server) Close(ctx context.Context) error {
 func (s *Server) Register(mux *http.ServeMux) {
 	mux.Handle(widgetdv1connect.NewWidgetStreamServiceHandler(&streamService{srv: s}))
 	mux.Handle(widgetdv1connect.NewAuthServiceHandler(&authService{a: s.auth}))
+	mux.Handle(widgetdv1connect.NewWidgetAdminServiceHandler(&adminService{srv: s}))
 	mux.HandleFunc(s.base, s.routes)
 }
 

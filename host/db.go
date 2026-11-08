@@ -40,6 +40,19 @@ CREATE TABLE IF NOT EXISTS devices (
 	paired_at  INTEGER NOT NULL,
 	last_seen  INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS instances (
+	id         TEXT PRIMARY KEY,
+	widget     TEXT NOT NULL,
+	label      TEXT NOT NULL DEFAULT '',
+	config     BLOB,              -- the widget's Config, encoded; NULL until configured
+	configured INTEGER NOT NULL DEFAULT 0,
+	created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS grants (
+	widget   TEXT PRIMARY KEY,
+	disabled INTEGER NOT NULL DEFAULT 0,
+	hosts    TEXT               -- JSON array; NULL grants everything requested
+);
 `
 
 // maxKVValue and maxKVKey bound what one instance can store per key.

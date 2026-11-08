@@ -3,7 +3,10 @@ package host
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
+
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"connectrpc.com/connect"
 
@@ -66,4 +69,31 @@ func (s *streamService) StreamWidgets(ctx context.Context, req *connect.Request[
 			}
 		}
 	}
+}
+
+// SendAction delivers something a viewer did on a card to its widget,
+// after checking it is the card's declared action type and passes that
+// type's rules. Delivery doesn't wait for the widget.
+func (s *streamService) SendAction(ctx context.Context, req *connect.Request[widgetdv1.SendActionRequest]) (*connect.Response[widgetdv1.SendActionResponse], error) {
+	if !s.srv.auth.callerOf(req.Header()).canView() {
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("this screen isn't paired"))
+	}
+	c, ok := s.srv.board.card(req.Msg.GetCardId())
+	if !ok {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("no such card"))
+	}
+	if c.actionURL == "" {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("this card takes no actions"))
+	}
+	if req.Msg.GetTypeUrl() != c.actionURL {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("not this card's action type"))
+	}
+	name := protoreflect.FullName(strings.TrimPrefix(c.actionURL, "type.googleapis.com/"))
+	if _, err := c.host.in.w.schema.check(name, req.Msg.GetValue()); err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	if !c.host.deliver(c, req.Msg.GetValue()) {
+		return nil, connect.NewError(connect.CodeUnavailable, errors.New("the widget isn't taking actions right now"))
+	}
+	return connect.NewResponse(&widgetdv1.SendActionResponse{}), nil
 }

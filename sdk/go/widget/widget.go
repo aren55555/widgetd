@@ -25,6 +25,8 @@ type Spec struct {
 	// digits and dashes.
 	Name    string
 	Version string
+	// Title is what people call it ("Bitcoin price spiral"); Name if empty.
+	Title string
 
 	// Files is the widget's schema: the descriptors generated from its
 	// widget.proto. The host decodes and validates every payload and config
@@ -108,6 +110,9 @@ type MountOptions struct {
 
 	StateType protoreflect.FullName
 	DeltaType protoreflect.FullName // empty if the card sends only snapshots
+	// ActionType is the message viewers may send the card (a tap, a
+	// choice); empty if it takes none. See WithAction and Actions.
+	ActionType protoreflect.FullName
 }
 
 // RawCard sends serialised payloads. Most widgets use the typed Card instead.
@@ -119,6 +124,10 @@ type RawCard interface {
 	// keeps a snapshot plus the deltas since it, so it never has to apply a
 	// delta itself.
 	Delta(delta []byte, current func() ([]byte, error)) error
+
+	// Actions delivers what viewers send the card, encoded as its
+	// ActionType and already checked against it. Nil if it takes none.
+	Actions() <-chan []byte
 }
 
 // Card is a typed card: S is its State message, D its Delta message.
@@ -184,4 +193,37 @@ func (c *StateCard[S]) Snapshot(state S) error {
 		return err
 	}
 	return c.raw.Snapshot(b)
+}
+
+// Raw is the card's untyped side, for Actions.
+func (c *Card[S, D]) Raw() RawCard { return c.raw }
+
+// Raw is the card's untyped side, for Actions.
+func (c *StateCard[S]) Raw() RawCard { return c.raw }
+
+// WithAction declares that the card accepts actions of type A from viewers.
+//
+//	card, err := widget.Mount[*pb.State, *pb.Delta](h, "main", widget.WithAction[*pb.Action](opts))
+func WithAction[A proto.Message](opts MountOptions) MountOptions {
+	var a A
+	opts.ActionType = a.ProtoReflect().Descriptor().FullName()
+	return opts
+}
+
+// Actions decodes a card's actions as A. The channel closes when the card's
+// run ends.
+func Actions[A proto.Message](card interface{ Raw() RawCard }) <-chan A {
+	in := card.Raw().Actions()
+	out := make(chan A, cap(in))
+	go func() {
+		defer close(out)
+		for b := range in {
+			var a A
+			a = a.ProtoReflect().New().Interface().(A)
+			if proto.Unmarshal(b, a) == nil {
+				out <- a
+			}
+		}
+	}()
+	return out
 }

@@ -11,7 +11,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file testwidget/v1/testwidget.proto.
  */
 export const file_testwidget_v1_testwidget: GenFile = /*@__PURE__*/
-  fileDesc("Ch50ZXN0d2lkZ2V0L3YxL3Rlc3R3aWRnZXQucHJvdG8SDXRlc3R3aWRnZXQudjEiLwoFU3RhdGUSDgoGdmFsdWVzGAEgAygDEhYKBWxhYmVsGAIgASgJQge6SARyAhgIIh8KBURlbHRhEhYKBXZhbHVlGAEgASgDQge6SAQiAigAIiAKBkNvbmZpZxIWCgVsYWJlbBgBIAEoCUIHukgEcgIYCELKAQoRY29tLnRlc3R3aWRnZXQudjFCD1Rlc3R3aWRnZXRQcm90b1ABWk9naXRodWIuY29tL2FyZW41NTU1NS93aWRnZXRkL2ludGVybmFsL3Rlc3R3aWRnZXQvZ2VuL3Rlc3R3aWRnZXQvdjE7dGVzdHdpZGdldHYxogIDVFhYqgINVGVzdHdpZGdldC5WMcoCDVRlc3R3aWRnZXRcVjHiAhlUZXN0d2lkZ2V0XFYxXEdQQk1ldGFkYXRh6gIOVGVzdHdpZGdldDo6VjFiBnByb3RvMw", [file_buf_validate_validate]);
+  fileDesc("Ch50ZXN0d2lkZ2V0L3YxL3Rlc3R3aWRnZXQucHJvdG8SDXRlc3R3aWRnZXQudjEiLwoFU3RhdGUSDgoGdmFsdWVzGAEgAygDEhYKBWxhYmVsGAIgASgJQge6SARyAhgIIh8KBURlbHRhEhYKBXZhbHVlGAEgASgDQge6SAQiAigAIiAKBkNvbmZpZxIWCgVsYWJlbBgBIAEoCUIHukgEcgIYCCIeCgZBY3Rpb24SFAoDdGFwGAEgASgDQge6SAQiAigAQsoBChFjb20udGVzdHdpZGdldC52MUIPVGVzdHdpZGdldFByb3RvUAFaT2dpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvaW50ZXJuYWwvdGVzdHdpZGdldC9nZW4vdGVzdHdpZGdldC92MTt0ZXN0d2lkZ2V0djGiAgNUWFiqAg1UZXN0d2lkZ2V0LlYxygINVGVzdHdpZGdldFxWMeICGVRlc3R3aWRnZXRcVjFcR1BCTWV0YWRhdGHqAg5UZXN0d2lkZ2V0OjpWMWIGcHJvdG8z", [file_buf_validate_validate]);
 
 /**
  * @generated from message testwidget.v1.State
@@ -68,4 +68,21 @@ export type Config = Message<"testwidget.v1.Config"> & {
  */
 export const ConfigSchema: GenMessage<Config> = /*@__PURE__*/
   messageDesc(file_testwidget_v1_testwidget, 2);
+
+/**
+ * @generated from message testwidget.v1.Action
+ */
+export type Action = Message<"testwidget.v1.Action"> & {
+  /**
+   * @generated from field: int64 tap = 1;
+   */
+  tap: bigint;
+};
+
+/**
+ * Describes the message testwidget.v1.Action.
+ * Use `create(ActionSchema)` to create a new message.
+ */
+export const ActionSchema: GenMessage<Action> = /*@__PURE__*/
+  messageDesc(file_testwidget_v1_testwidget, 3);
 

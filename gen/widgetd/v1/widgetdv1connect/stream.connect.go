@@ -36,11 +36,18 @@ const (
 	// WidgetStreamServiceStreamWidgetsProcedure is the fully-qualified name of the
 	// WidgetStreamService's StreamWidgets RPC.
 	WidgetStreamServiceStreamWidgetsProcedure = "/widgetd.v1.WidgetStreamService/StreamWidgets"
+	// WidgetStreamServiceSendActionProcedure is the fully-qualified name of the WidgetStreamService's
+	// SendAction RPC.
+	WidgetStreamServiceSendActionProcedure = "/widgetd.v1.WidgetStreamService/SendAction"
 )
 
 // WidgetStreamServiceClient is a client for the widgetd.v1.WidgetStreamService service.
 type WidgetStreamServiceClient interface {
 	StreamWidgets(context.Context, *connect.Request[v1.StreamWidgetsRequest]) (*connect.ServerStreamForClient[v1.StreamWidgetsResponse], error)
+	// A tap, a choice, a dismissal: something a viewer did on a card, sent
+	// to the widget's server half. Screen or admin. The value must be the
+	// card's declared action type, and pass its rules.
+	SendAction(context.Context, *connect.Request[v1.SendActionRequest]) (*connect.Response[v1.SendActionResponse], error)
 }
 
 // NewWidgetStreamServiceClient constructs a client for the widgetd.v1.WidgetStreamService service.
@@ -60,12 +67,19 @@ func NewWidgetStreamServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(widgetStreamServiceMethods.ByName("StreamWidgets")),
 			connect.WithClientOptions(opts...),
 		),
+		sendAction: connect.NewClient[v1.SendActionRequest, v1.SendActionResponse](
+			httpClient,
+			baseURL+WidgetStreamServiceSendActionProcedure,
+			connect.WithSchema(widgetStreamServiceMethods.ByName("SendAction")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // widgetStreamServiceClient implements WidgetStreamServiceClient.
 type widgetStreamServiceClient struct {
 	streamWidgets *connect.Client[v1.StreamWidgetsRequest, v1.StreamWidgetsResponse]
+	sendAction    *connect.Client[v1.SendActionRequest, v1.SendActionResponse]
 }
 
 // StreamWidgets calls widgetd.v1.WidgetStreamService.StreamWidgets.
@@ -73,9 +87,18 @@ func (c *widgetStreamServiceClient) StreamWidgets(ctx context.Context, req *conn
 	return c.streamWidgets.CallServerStream(ctx, req)
 }
 
+// SendAction calls widgetd.v1.WidgetStreamService.SendAction.
+func (c *widgetStreamServiceClient) SendAction(ctx context.Context, req *connect.Request[v1.SendActionRequest]) (*connect.Response[v1.SendActionResponse], error) {
+	return c.sendAction.CallUnary(ctx, req)
+}
+
 // WidgetStreamServiceHandler is an implementation of the widgetd.v1.WidgetStreamService service.
 type WidgetStreamServiceHandler interface {
 	StreamWidgets(context.Context, *connect.Request[v1.StreamWidgetsRequest], *connect.ServerStream[v1.StreamWidgetsResponse]) error
+	// A tap, a choice, a dismissal: something a viewer did on a card, sent
+	// to the widget's server half. Screen or admin. The value must be the
+	// card's declared action type, and pass its rules.
+	SendAction(context.Context, *connect.Request[v1.SendActionRequest]) (*connect.Response[v1.SendActionResponse], error)
 }
 
 // NewWidgetStreamServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -91,10 +114,18 @@ func NewWidgetStreamServiceHandler(svc WidgetStreamServiceHandler, opts ...conne
 		connect.WithSchema(widgetStreamServiceMethods.ByName("StreamWidgets")),
 		connect.WithHandlerOptions(opts...),
 	)
+	widgetStreamServiceSendActionHandler := connect.NewUnaryHandler(
+		WidgetStreamServiceSendActionProcedure,
+		svc.SendAction,
+		connect.WithSchema(widgetStreamServiceMethods.ByName("SendAction")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/widgetd.v1.WidgetStreamService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case WidgetStreamServiceStreamWidgetsProcedure:
 			widgetStreamServiceStreamWidgetsHandler.ServeHTTP(w, r)
+		case WidgetStreamServiceSendActionProcedure:
+			widgetStreamServiceSendActionHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -106,4 +137,8 @@ type UnimplementedWidgetStreamServiceHandler struct{}
 
 func (UnimplementedWidgetStreamServiceHandler) StreamWidgets(context.Context, *connect.Request[v1.StreamWidgetsRequest], *connect.ServerStream[v1.StreamWidgetsResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetStreamService.StreamWidgets is not implemented"))
+}
+
+func (UnimplementedWidgetStreamServiceHandler) SendAction(context.Context, *connect.Request[v1.SendActionRequest]) (*connect.Response[v1.SendActionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetStreamService.SendAction is not implemented"))
 }

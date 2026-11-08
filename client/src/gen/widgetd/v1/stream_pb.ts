@@ -2,8 +2,8 @@
 // @generated from file widgetd/v1/stream.proto (package widgetd.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
@@ -12,7 +12,47 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file widgetd/v1/stream.proto.
  */
 export const file_widgetd_v1_stream: GenFile = /*@__PURE__*/
-  fileDesc("Chd3aWRnZXRkL3YxL3N0cmVhbS5wcm90bxIKd2lkZ2V0ZC52MSIkCgZDdXJzb3ISDQoFZXBvY2gYASABKAQSCwoDc2VxGAIgASgEIk0KBlJlc3VtZRIPCgdjYXJkX2lkGAEgASgJEg4KBmRpZ2VzdBgCIAEoCRIiCgZjdXJzb3IYAyABKAsyEi53aWRnZXRkLnYxLkN1cnNvciI6ChRTdHJlYW1XaWRnZXRzUmVxdWVzdBIiCgZyZXN1bWUYASADKAsyEi53aWRnZXRkLnYxLlJlc3VtZSI/ChVTdHJlYW1XaWRnZXRzUmVzcG9uc2USJgoFZnJhbWUYASABKAsyFy53aWRnZXRkLnYxLldpZGdldEZyYW1lIoICCgtXaWRnZXRGcmFtZRITCgtpbnN0YW5jZV9pZBgBIAEoCRIPCgdjYXJkX2lkGAIgASgJEiYKB21vdW50ZWQYAyABKAsyEy53aWRnZXRkLnYxLk1vdW50ZWRIABInCghzbmFwc2hvdBgEIAEoCzITLndpZGdldGQudjEuUGF5bG9hZEgAEiQKBWRlbHRhGAUgASgLMhMud2lkZ2V0ZC52MS5QYXlsb2FkSAASKgoJdW5tb3VudGVkGAYgASgLMhUud2lkZ2V0ZC52MS5Vbm1vdW50ZWRIABIiCgVmYXVsdBgHIAEoCzIRLndpZGdldGQudjEuRmF1bHRIAEIGCgRib2R5IjoKCVdpZGdldFJlZhIMCgRuYW1lGAEgASgJEg8KB3ZlcnNpb24YAiABKAkSDgoGZGlnZXN0GAMgASgJItEBCgdNb3VudGVkEiUKBndpZGdldBgBIAEoCzIVLndpZGdldGQudjEuV2lkZ2V0UmVmEhEKCWZyYW1lX3VybBgCIAEoCRISCgpzdGF0ZV90eXBlGAMgASgJEhIKCmRlbHRhX3R5cGUYBCABKAkSIgoGbGF5b3V0GAUgASgLMhIud2lkZ2V0ZC52MS5MYXlvdXQSMQoNdmlzaWJsZV91bnRpbBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDQoFdGl0bGUYByABKAkiJAoGTGF5b3V0EgwKBGNvbHMYASABKA0SDAoEcm93cxgCIAEoDSJwCgdQYXlsb2FkEhAKCHR5cGVfdXJsGAEgASgJEg0KBXZhbHVlGAIgASgMEiIKBmN1cnNvchgDIAEoCzISLndpZGdldGQudjEuQ3Vyc29yEiAKBHByZXYYBCABKAsyEi53aWRnZXRkLnYxLkN1cnNvciIaCglVbm1vdW50ZWQSDQoFcHVyZ2UYASABKAgiGAoFRmF1bHQSDwoHbWVzc2FnZRgBIAEoCTJtChNXaWRnZXRTdHJlYW1TZXJ2aWNlElYKDVN0cmVhbVdpZGdldHMSIC53aWRnZXRkLnYxLlN0cmVhbVdpZGdldHNSZXF1ZXN0GiEud2lkZ2V0ZC52MS5TdHJlYW1XaWRnZXRzUmVzcG9uc2UwAUI3WjVnaXRodWIuY29tL2FyZW41NTU1NS93aWRnZXRkL2dlbi93aWRnZXRkL3YxO3dpZGdldGR2MWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+  fileDesc("Chd3aWRnZXRkL3YxL3N0cmVhbS5wcm90bxIKd2lkZ2V0ZC52MSJFChFTZW5kQWN0aW9uUmVxdWVzdBIPCgdjYXJkX2lkGAEgASgJEhAKCHR5cGVfdXJsGAIgASgJEg0KBXZhbHVlGAMgASgMIhQKElNlbmRBY3Rpb25SZXNwb25zZSIkCgZDdXJzb3ISDQoFZXBvY2gYASABKAQSCwoDc2VxGAIgASgEIk0KBlJlc3VtZRIPCgdjYXJkX2lkGAEgASgJEg4KBmRpZ2VzdBgCIAEoCRIiCgZjdXJzb3IYAyABKAsyEi53aWRnZXRkLnYxLkN1cnNvciI6ChRTdHJlYW1XaWRnZXRzUmVxdWVzdBIiCgZyZXN1bWUYASADKAsyEi53aWRnZXRkLnYxLlJlc3VtZSI/ChVTdHJlYW1XaWRnZXRzUmVzcG9uc2USJgoFZnJhbWUYASABKAsyFy53aWRnZXRkLnYxLldpZGdldEZyYW1lIrICCgtXaWRnZXRGcmFtZRITCgtpbnN0YW5jZV9pZBgBIAEoCRIPCgdjYXJkX2lkGAIgASgJEiYKB21vdW50ZWQYAyABKAsyEy53aWRnZXRkLnYxLk1vdW50ZWRIABInCghzbmFwc2hvdBgEIAEoCzITLndpZGdldGQudjEuUGF5bG9hZEgAEiQKBWRlbHRhGAUgASgLMhMud2lkZ2V0ZC52MS5QYXlsb2FkSAASKgoJdW5tb3VudGVkGAYgASgLMhUud2lkZ2V0ZC52MS5Vbm1vdW50ZWRIABIiCgVmYXVsdBgHIAEoCzIRLndpZGdldGQudjEuRmF1bHRIABIuCghpbnN0YW5jZRgIIAEoCzIaLndpZGdldGQudjEuSW5zdGFuY2VTdGF0dXNIAEIGCgRib2R5IvoBCg5JbnN0YW5jZVN0YXR1cxIvCgVzdGF0ZRgBIAEoDjIgLndpZGdldGQudjEuSW5zdGFuY2VTdGF0dXMuU3RhdGUSDgoGd2lkZ2V0GAIgASgJEg0KBXRpdGxlGAMgASgJEg8KB21lc3NhZ2UYBCABKAkSDwoHcmVtb3ZlZBgFIAEoCCJ2CgVTdGF0ZRIVChFTVEFURV9VTlNQRUNJRklFRBAAEhYKElNUQVRFX05FRURTX0NPTkZJRxABEhEKDVNUQVRFX1JVTk5JTkcQAhIRCg1TVEFURV9GQVVMVEVEEAMSGAoUU1RBVEVfSU5WQUxJRF9DT05GSUcQBCI6CglXaWRnZXRSZWYSDAoEbmFtZRgBIAEoCRIPCgd2ZXJzaW9uGAIgASgJEg4KBmRpZ2VzdBgDIAEoCSLmAQoHTW91bnRlZBIlCgZ3aWRnZXQYASABKAsyFS53aWRnZXRkLnYxLldpZGdldFJlZhIRCglmcmFtZV91cmwYAiABKAkSEgoKc3RhdGVfdHlwZRgDIAEoCRISCgpkZWx0YV90eXBlGAQgASgJEiIKBmxheW91dBgFIAEoCzISLndpZGdldGQudjEuTGF5b3V0EjEKDXZpc2libGVfdW50aWwYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg0KBXRpdGxlGAcgASgJEhMKC2FjdGlvbl90eXBlGAggASgJIiQKBkxheW91dBIMCgRjb2xzGAEgASgNEgwKBHJvd3MYAiABKA0icAoHUGF5bG9hZBIQCgh0eXBlX3VybBgBIAEoCRINCgV2YWx1ZRgCIAEoDBIiCgZjdXJzb3IYAyABKAsyEi53aWRnZXRkLnYxLkN1cnNvchIgCgRwcmV2GAQgASgLMhIud2lkZ2V0ZC52MS5DdXJzb3IiGgoJVW5tb3VudGVkEg0KBXB1cmdlGAEgASgIIhgKBUZhdWx0Eg8KB21lc3NhZ2UYASABKAkyugEKE1dpZGdldFN0cmVhbVNlcnZpY2USVgoNU3RyZWFtV2lkZ2V0cxIgLndpZGdldGQudjEuU3RyZWFtV2lkZ2V0c1JlcXVlc3QaIS53aWRnZXRkLnYxLlN0cmVhbVdpZGdldHNSZXNwb25zZTABEksKClNlbmRBY3Rpb24SHS53aWRnZXRkLnYxLlNlbmRBY3Rpb25SZXF1ZXN0Gh4ud2lkZ2V0ZC52MS5TZW5kQWN0aW9uUmVzcG9uc2VCN1o1Z2l0aHViLmNvbS9hcmVuNTU1NTUvd2lkZ2V0ZC9nZW4vd2lkZ2V0ZC92MTt3aWRnZXRkdjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+
+/**
+ * @generated from message widgetd.v1.SendActionRequest
+ */
+export type SendActionRequest = Message<"widgetd.v1.SendActionRequest"> & {
+  /**
+   * @generated from field: string card_id = 1;
+   */
+  cardId: string;
+
+  /**
+   * @generated from field: string type_url = 2;
+   */
+  typeUrl: string;
+
+  /**
+   * @generated from field: bytes value = 3;
+   */
+  value: Uint8Array;
+};
+
+/**
+ * Describes the message widgetd.v1.SendActionRequest.
+ * Use `create(SendActionRequestSchema)` to create a new message.
+ */
+export const SendActionRequestSchema: GenMessage<SendActionRequest> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_stream, 0);
+
+/**
+ * @generated from message widgetd.v1.SendActionResponse
+ */
+export type SendActionResponse = Message<"widgetd.v1.SendActionResponse"> & {
+};
+
+/**
+ * Describes the message widgetd.v1.SendActionResponse.
+ * Use `create(SendActionResponseSchema)` to create a new message.
+ */
+export const SendActionResponseSchema: GenMessage<SendActionResponse> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_stream, 1);
 
 /**
  * Cursor orders the updates of one card. `seq` increases with every snapshot
@@ -38,7 +78,7 @@ export type Cursor = Message<"widgetd.v1.Cursor"> & {
  * Use `create(CursorSchema)` to create a new message.
  */
 export const CursorSchema: GenMessage<Cursor> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 0);
+  messageDesc(file_widgetd_v1_stream, 2);
 
 /**
  * Resume tells the server what the client already holds for a card, so a
@@ -71,7 +111,7 @@ export type Resume = Message<"widgetd.v1.Resume"> & {
  * Use `create(ResumeSchema)` to create a new message.
  */
 export const ResumeSchema: GenMessage<Resume> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 1);
+  messageDesc(file_widgetd_v1_stream, 3);
 
 /**
  * @generated from message widgetd.v1.StreamWidgetsRequest
@@ -88,7 +128,7 @@ export type StreamWidgetsRequest = Message<"widgetd.v1.StreamWidgetsRequest"> & 
  * Use `create(StreamWidgetsRequestSchema)` to create a new message.
  */
 export const StreamWidgetsRequestSchema: GenMessage<StreamWidgetsRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 2);
+  messageDesc(file_widgetd_v1_stream, 4);
 
 /**
  * An unset `frame` is a keepalive: one is sent as soon as the stream opens and
@@ -108,7 +148,7 @@ export type StreamWidgetsResponse = Message<"widgetd.v1.StreamWidgetsResponse"> 
  * Use `create(StreamWidgetsResponseSchema)` to create a new message.
  */
 export const StreamWidgetsResponseSchema: GenMessage<StreamWidgetsResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 3);
+  messageDesc(file_widgetd_v1_stream, 5);
 
 /**
  * @generated from message widgetd.v1.WidgetFrame
@@ -122,7 +162,8 @@ export type WidgetFrame = Message<"widgetd.v1.WidgetFrame"> & {
   instanceId: string;
 
   /**
-   * What is on screen. Always prefixed by `instance_id` + "/".
+   * What is on screen. Always prefixed by `instance_id` + "/". Empty for
+   * `instance`, which is about the instance rather than any one card.
    *
    * @generated from field: string card_id = 2;
    */
@@ -161,6 +202,17 @@ export type WidgetFrame = Message<"widgetd.v1.WidgetFrame"> & {
      */
     value: Fault;
     case: "fault";
+  } | {
+    /**
+     * An instance appeared, changed state, or (with `removed`) was deleted.
+     * Sent for every instance in the initial burst, then on each change, so
+     * a screen can show an instance that has no cards: one waiting to be
+     * configured, say.
+     *
+     * @generated from field: widgetd.v1.InstanceStatus instance = 8;
+     */
+    value: InstanceStatus;
+    case: "instance";
   } | { case: undefined; value?: undefined };
 };
 
@@ -169,7 +221,91 @@ export type WidgetFrame = Message<"widgetd.v1.WidgetFrame"> & {
  * Use `create(WidgetFrameSchema)` to create a new message.
  */
 export const WidgetFrameSchema: GenMessage<WidgetFrame> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 4);
+  messageDesc(file_widgetd_v1_stream, 6);
+
+/**
+ * @generated from message widgetd.v1.InstanceStatus
+ */
+export type InstanceStatus = Message<"widgetd.v1.InstanceStatus"> & {
+  /**
+   * @generated from field: widgetd.v1.InstanceStatus.State state = 1;
+   */
+  state: InstanceStatus_State;
+
+  /**
+   * @generated from field: string widget = 2;
+   */
+  widget: string;
+
+  /**
+   * What the instance is called: its label, else the widget's title.
+   *
+   * @generated from field: string title = 3;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string message = 4;
+   */
+  message: string;
+
+  /**
+   * @generated from field: bool removed = 5;
+   */
+  removed: boolean;
+};
+
+/**
+ * Describes the message widgetd.v1.InstanceStatus.
+ * Use `create(InstanceStatusSchema)` to create a new message.
+ */
+export const InstanceStatusSchema: GenMessage<InstanceStatus> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_stream, 7);
+
+/**
+ * @generated from enum widgetd.v1.InstanceStatus.State
+ */
+export enum InstanceStatus_State {
+  /**
+   * @generated from enum value: STATE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Added, but its configuration hasn't been saved yet.
+   *
+   * @generated from enum value: STATE_NEEDS_CONFIG = 1;
+   */
+  NEEDS_CONFIG = 1,
+
+  /**
+   * Running; its cards are whatever it has mounted.
+   *
+   * @generated from enum value: STATE_RUNNING = 2;
+   */
+  RUNNING = 2,
+
+  /**
+   * Stopped by an error and waiting to restart; `message` says why.
+   *
+   * @generated from enum value: STATE_FAULTED = 3;
+   */
+  FAULTED = 3,
+
+  /**
+   * Its stored configuration no longer passes the widget's schema (after
+   * an upgrade, say). It waits to be configured again.
+   *
+   * @generated from enum value: STATE_INVALID_CONFIG = 4;
+   */
+  INVALID_CONFIG = 4,
+}
+
+/**
+ * Describes the enum widgetd.v1.InstanceStatus.State.
+ */
+export const InstanceStatus_StateSchema: GenEnum<InstanceStatus_State> = /*@__PURE__*/
+  enumDesc(file_widgetd_v1_stream, 7, 0);
 
 /**
  * @generated from message widgetd.v1.WidgetRef
@@ -199,7 +335,7 @@ export type WidgetRef = Message<"widgetd.v1.WidgetRef"> & {
  * Use `create(WidgetRefSchema)` to create a new message.
  */
 export const WidgetRefSchema: GenMessage<WidgetRef> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 5);
+  messageDesc(file_widgetd_v1_stream, 8);
 
 /**
  * Mounted announces a card. It is always sent before the card's first payload.
@@ -248,6 +384,13 @@ export type Mounted = Message<"widgetd.v1.Mounted"> & {
    * @generated from field: string title = 7;
    */
   title: string;
+
+  /**
+   * The message a card accepts from viewers; empty if it takes none.
+   *
+   * @generated from field: string action_type = 8;
+   */
+  actionType: string;
 };
 
 /**
@@ -255,7 +398,7 @@ export type Mounted = Message<"widgetd.v1.Mounted"> & {
  * Use `create(MountedSchema)` to create a new message.
  */
 export const MountedSchema: GenMessage<Mounted> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 6);
+  messageDesc(file_widgetd_v1_stream, 9);
 
 /**
  * Layout is a size hint in grid units.
@@ -279,7 +422,7 @@ export type Layout = Message<"widgetd.v1.Layout"> & {
  * Use `create(LayoutSchema)` to create a new message.
  */
 export const LayoutSchema: GenMessage<Layout> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 7);
+  messageDesc(file_widgetd_v1_stream, 10);
 
 /**
  * @generated from message widgetd.v1.Payload
@@ -316,7 +459,7 @@ export type Payload = Message<"widgetd.v1.Payload"> & {
  * Use `create(PayloadSchema)` to create a new message.
  */
 export const PayloadSchema: GenMessage<Payload> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 8);
+  messageDesc(file_widgetd_v1_stream, 11);
 
 /**
  * @generated from message widgetd.v1.Unmounted
@@ -336,7 +479,7 @@ export type Unmounted = Message<"widgetd.v1.Unmounted"> & {
  * Use `create(UnmountedSchema)` to create a new message.
  */
 export const UnmountedSchema: GenMessage<Unmounted> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 9);
+  messageDesc(file_widgetd_v1_stream, 12);
 
 /**
  * @generated from message widgetd.v1.Fault
@@ -353,7 +496,7 @@ export type Fault = Message<"widgetd.v1.Fault"> & {
  * Use `create(FaultSchema)` to create a new message.
  */
 export const FaultSchema: GenMessage<Fault> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 10);
+  messageDesc(file_widgetd_v1_stream, 13);
 
 /**
  * WidgetStreamService is the one pipe every card on a screen shares. A screen
@@ -370,6 +513,18 @@ export const WidgetStreamService: GenService<{
     methodKind: "server_streaming";
     input: typeof StreamWidgetsRequestSchema;
     output: typeof StreamWidgetsResponseSchema;
+  },
+  /**
+   * A tap, a choice, a dismissal: something a viewer did on a card, sent
+   * to the widget's server half. Screen or admin. The value must be the
+   * card's declared action type, and pass its rules.
+   *
+   * @generated from rpc widgetd.v1.WidgetStreamService.SendAction
+   */
+  sendAction: {
+    methodKind: "unary";
+    input: typeof SendActionRequestSchema;
+    output: typeof SendActionResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_widgetd_v1_stream, 0);

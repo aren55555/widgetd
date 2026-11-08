@@ -19,15 +19,17 @@ import { renderSVG } from "uqr";
 import { THEME_TOKENS, type FromFrame, type ToFrame } from "@widgetd/sdk/bridge";
 
 import { AuthService, PairingState, Role } from "./gen/widgetd/v1/auth_pb.ts";
+import { WidgetAdminService } from "./gen/widgetd/v1/admin_pb.ts";
 import {
   ResumeSchema,
   WidgetStreamService,
+  type InstanceStatus,
   type Mounted,
   type Payload,
   type WidgetFrame,
 } from "./gen/widgetd/v1/stream_pb.ts";
 import { CardStore } from "./lib/store.ts";
-import { deltaFollows, gridSpan, staleCards, toBridgeCursor, usableStored } from "./lib/sync.ts";
+import { deltaFollows, gridSpan, instanceOf, placeholderFor, staleCards, toBridgeCursor, usableStored } from "./lib/sync.ts";
 import type { Cursor } from "@widgetd/sdk/bridge";
 
 const STYLE = `
@@ -47,6 +49,20 @@ const STYLE = `
 .qr svg { width: 100%; height: 100%; display: block; }
 .code { font: 600 22px/28px var(--wd-font-mono, ui-monospace, monospace); letter-spacing: 0.1em; color: var(--wd-ink, #e5e7eb); }
 .status { font-size: 12px; color: var(--wd-ink-faint, #71717a); }
+.gear { position: absolute; right: 6px; top: 4px; z-index: 2; padding: 0 4px; border: 0; background: none; cursor: pointer;
+  font-size: 14px; line-height: 20px; color: var(--wd-ink-faint, #71717a); opacity: 0; transition: opacity 0.15s; }
+.card:hover .gear, .card:focus-within .gear { opacity: 1; }
+@media (hover: none) { .gear { opacity: 0.6; } }
+.card.placeholder, .card.add { align-items: center; justify-content: center; gap: 8px; padding: 12px; text-align: center; border-style: dashed; }
+.card.placeholder p { margin: 0; font: 13px/18px var(--wd-font-mono, ui-monospace, monospace); color: var(--wd-ink-muted, #a1a1aa); }
+.action { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--wd-edge, #27272a); cursor: pointer;
+  background: var(--wd-raised, #27272a); color: var(--wd-ink, #e5e7eb); font: 13px/18px var(--wd-font-mono, ui-monospace, monospace); }
+.link { border: 0; background: none; cursor: pointer; color: var(--wd-ink-faint, #71717a); font: 12px var(--wd-font-mono, monospace); }
+.picker { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.overlay { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px; text-align: center; background: var(--wd-surface, #18181b); font: 12px/16px var(--wd-font-mono, monospace); color: var(--wd-ink-muted, #a1a1aa); }
+.overlay .close { position: absolute; right: 6px; top: 4px; border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--wd-ink-faint, #71717a); }
+.qr.small { width: 120px; height: 120px; padding: 6px; }
 `;
 
 const RECONNECT_MIN = 1000;
@@ -72,6 +88,10 @@ class WidgetBoard extends HTMLElement {
   private grid = document.createElement("div");
   private store = new CardStore(localStorage);
   private cards = new Map<string, CardHost>();
+  private instances = new Map<string, { status: InstanceStatus; tile?: HTMLElement }>();
+  private addTile = document.createElement("section");
+  /** An instance this screen just added: show its set-up code as soon as it appears. */
+  private justAdded = "";
   private abort?: AbortController;
   private stopped = true;
 
@@ -121,7 +141,7 @@ class WidgetBoard extends HTMLElement {
       } catch (e) {
         if (this.stopped) return;
         if (e instanceof ConnectError && e.code === Code.Unauthenticated) continue; // re-check: show pairing
-        this.setStatus(`reconnecting… (${e instanceof Error ? e.message : String(e)})`);
+        this.setStatus(`reconnectingâ¦ (${e instanceof Error ? e.message : String(e)})`);
         await sleep(delay);
         delay = Math.min(delay * 2, RECONNECT_MAX);
       }
@@ -169,9 +189,11 @@ class WidgetBoard extends HTMLElement {
         cursor: { epoch: BigInt(stored.cursor.epoch), seq: BigInt(stored.cursor.seq) },
       }),
     );
-    // Cards from a previous connection are rebuilt from the burst.
+    // Cards and instances from a previous connection are rebuilt from the burst.
     this.cards.clear();
+    this.instances.clear();
     this.grid.replaceChildren();
+    this.resetAddTile();
     this.grid.style.setProperty("--cols", String(this.maxCols));
 
     this.abort = new AbortController();
@@ -198,8 +220,8 @@ class WidgetBoard extends HTMLElement {
   }
 
   private render() {
-    if (this.cards.size === 0) this.notice("No widgets yet.");
-    else if (this.grid.parentNode !== this.body) this.body.replaceChildren(this.grid);
+    if (this.grid.parentNode !== this.body) this.body.replaceChildren(this.grid);
+    this.grid.append(this.addTile); // always last
   }
 
   /** Handle one frame; false means the board missed something and must resync. */
@@ -224,6 +246,9 @@ class WidgetBoard extends HTMLElement {
       }
       case "fault":
         this.showFault(f.cardId, f.body.value.message);
+        return true;
+      case "instance":
+        this.instanceStatus(f.instanceId, f.body.value);
         return true;
       default:
         return true;
@@ -255,14 +280,135 @@ class WidgetBoard extends HTMLElement {
     frame.setAttribute("loading", "eager");
     frame.title = m.title || id;
     frame.src = new URL(m.frameUrl, this.api).href;
+    const gear = document.createElement("button");
+    gear.className = "gear";
+    gear.title = "Settings";
+    gear.setAttribute("aria-label", "Settings");
+    gear.textContent = "\u2699";
+    gear.addEventListener("click", () => void this.showSetUp(el, instanceOf(id)));
     if (m.title) el.append(title);
-    el.append(fault, frame);
+    el.append(gear, fault, frame);
     Object.assign(el.style, gridSpan(m.layout?.cols ?? 1, m.layout?.rows ?? 1, this.maxCols));
 
     const stored = usableStored(this.store.load(id), m.widget?.digest ?? "", m.stateType);
     const card: CardHost = { id, mounted: m, el, frame, title, fault, ready: false, queue: [], last: stored?.cursor };
     this.cards.set(id, card);
     this.grid.append(el);
+  }
+
+  // ---- instances, placeholders, set-up codes ----
+
+  private instanceStatus(id: string, st: InstanceStatus) {
+    const known = this.instances.get(id);
+    if (st.removed) {
+      known?.tile?.remove();
+      this.instances.delete(id);
+      return;
+    }
+    const entry = known ?? { status: st };
+    entry.status = st;
+    this.instances.set(id, entry);
+    const p = placeholderFor(st.state, st.message);
+    if (!p.show) {
+      entry.tile?.remove();
+      entry.tile = undefined;
+      return;
+    }
+    const tile = entry.tile ?? document.createElement("section");
+    tile.className = "card placeholder";
+    const title = document.createElement("h3");
+    title.textContent = st.title;
+    const text = document.createElement("p");
+    text.textContent = p.text;
+    tile.replaceChildren(title, text);
+    if (p.setUp) {
+      const btn = document.createElement("button");
+      btn.className = "action";
+      btn.textContent = "Set up";
+      btn.addEventListener("click", () => void this.showSetUp(tile, id));
+      tile.append(btn);
+    }
+    if (!entry.tile) {
+      entry.tile = tile;
+      this.grid.append(tile);
+      this.grid.append(this.addTile);
+    }
+    if (this.justAdded === id) {
+      this.justAdded = "";
+      void this.showSetUp(tile, id);
+    }
+  }
+
+  /**
+   * Cover `within` with a QR code that opens this instance's settings on a
+   * phone. The code is good for one use and ten minutes; the phone still
+   * needs an admin passkey to save anything.
+   */
+  private async showSetUp(within: HTMLElement, instanceId: string) {
+    within.querySelector(".overlay")?.remove();
+    const overlay = document.createElement("div");
+    overlay.className = "overlay";
+    const close = document.createElement("button");
+    close.className = "close";
+    close.setAttribute("aria-label", "Close");
+    close.textContent = "\u00d7";
+    close.addEventListener("click", () => overlay.remove());
+    overlay.append(close, "Getting a code…");
+    within.append(overlay);
+    try {
+      const admin = createClient(WidgetAdminService, this.transport());
+      const t = await admin.requestConfigTicket({ instanceId });
+      const qr = document.createElement("div");
+      qr.className = "qr small";
+      qr.innerHTML = renderSVG(t.url, { border: 1 });
+      overlay.replaceChildren(close, qr, "Scan with your phone to set this up.");
+      const ttl = t.expiresAt ? Number(t.expiresAt.seconds) * 1000 - Date.now() : 600_000;
+      setTimeout(() => overlay.remove(), Math.max(1000, ttl));
+    } catch (e) {
+      overlay.replaceChildren(close, `Couldn't get a code: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  /** The last tile: add a widget from this screen. */
+  private resetAddTile() {
+    const t = this.addTile;
+    t.className = "card add";
+    const btn = document.createElement("button");
+    btn.className = "action";
+    btn.textContent = "+ Add widget";
+    btn.addEventListener("click", () => void this.pickWidget());
+    t.replaceChildren(btn);
+  }
+
+  private async pickWidget() {
+    const t = this.addTile;
+    const admin = createClient(WidgetAdminService, this.transport());
+    try {
+      const { widgets } = await admin.listWidgets({});
+      const list = document.createElement("div");
+      list.className = "picker";
+      for (const w of widgets) {
+        const b = document.createElement("button");
+        b.className = "action";
+        b.textContent = w.title;
+        b.addEventListener("click", async () => {
+          const { instanceId } = await admin.addInstance({ widget: w.name });
+          this.justAdded = instanceId;
+          const known = this.instances.get(instanceId);
+          if (known?.tile) void this.showSetUp(known.tile, instanceId);
+          this.resetAddTile();
+        });
+        list.append(b);
+      }
+      const cancel = document.createElement("button");
+      cancel.className = "link";
+      cancel.textContent = "Cancel";
+      cancel.addEventListener("click", () => this.resetAddTile());
+      t.replaceChildren(list, cancel);
+    } catch (e) {
+      t.replaceChildren(`Couldn't list widgets: ${e instanceof Error ? e.message : String(e)}`);
+      setTimeout(() => this.resetAddTile(), 4000);
+    }
   }
 
   private forward(id: string, t: "snapshot" | "delta", p: Payload): boolean {
@@ -339,6 +485,14 @@ class WidgetBoard extends HTMLElement {
         return;
       case "fault":
         this.showFault(card.id, String(m.message));
+        return;
+      case "action":
+        if (m.value instanceof Uint8Array && typeof m.typeUrl === "string") {
+          const admin = createClient(WidgetStreamService, this.transport());
+          admin.sendAction({ cardId: card.id, typeUrl: m.typeUrl, value: m.value }).catch((err) =>
+            this.showFault(card.id, `action refused: ${err instanceof Error ? err.message : String(err)}`),
+          );
+        }
         return;
       case "storage-get":
         reply({ t: "storage", id: m.id, value: this.store.viewGet(card.id, String(m.key)) });

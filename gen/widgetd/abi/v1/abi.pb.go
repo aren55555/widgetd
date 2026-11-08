@@ -166,6 +166,7 @@ type Call struct {
 	//	*Call_Unmount
 	//	*Call_Emit
 	//	*Call_Log
+	//	*Call_TakeActions
 	Op            isCall_Op `protobuf_oneof:"op"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -289,6 +290,15 @@ func (x *Call) GetLog() *Log {
 	return nil
 }
 
+func (x *Call) GetTakeActions() *TakeActions {
+	if x != nil {
+		if x, ok := x.Op.(*Call_TakeActions); ok {
+			return x.TakeActions
+		}
+	}
+	return nil
+}
+
 type isCall_Op interface {
 	isCall_Op()
 }
@@ -329,6 +339,10 @@ type Call_Log struct {
 	Log *Log `protobuf:"bytes,9,opt,name=log,proto3,oneof"`
 }
 
+type Call_TakeActions struct {
+	TakeActions *TakeActions `protobuf:"bytes,10,opt,name=take_actions,json=takeActions,proto3,oneof"`
+}
+
 func (*Call_ConfigGet) isCall_Op() {}
 
 func (*Call_Fetch) isCall_Op() {}
@@ -347,6 +361,8 @@ func (*Call_Emit) isCall_Op() {}
 
 func (*Call_Log) isCall_Op() {}
 
+func (*Call_TakeActions) isCall_Op() {}
+
 type Result struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when the call failed; `value` is then unset.
@@ -359,6 +375,7 @@ type Result struct {
 	//	*Result_Fetch
 	//	*Result_Kv
 	//	*Result_Emit
+	//	*Result_Actions
 	Value         isResult_Value `protobuf_oneof:"value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -451,6 +468,15 @@ func (x *Result) GetEmit() *EmitResult {
 	return nil
 }
 
+func (x *Result) GetActions() *Actions {
+	if x != nil {
+		if x, ok := x.Value.(*Result_Actions); ok {
+			return x.Actions
+		}
+	}
+	return nil
+}
+
 type isResult_Value interface {
 	isResult_Value()
 }
@@ -471,6 +497,10 @@ type Result_Emit struct {
 	Emit *EmitResult `protobuf:"bytes,6,opt,name=emit,proto3,oneof"`
 }
 
+type Result_Actions struct {
+	Actions *Actions `protobuf:"bytes,7,opt,name=actions,proto3,oneof"`
+}
+
 func (*Result_Config) isResult_Value() {}
 
 func (*Result_Fetch) isResult_Value() {}
@@ -478,6 +508,8 @@ func (*Result_Fetch) isResult_Value() {}
 func (*Result_Kv) isResult_Value() {}
 
 func (*Result_Emit) isResult_Value() {}
+
+func (*Result_Actions) isResult_Value() {}
 
 // ConfigGet returns the instance's configuration, encoded as the widget's
 // Config message.
@@ -900,8 +932,10 @@ type Mount struct {
 	// Unix milliseconds; 0 means the card stays until unmounted.
 	VisibleUntilMs int64 `protobuf:"varint,5,opt,name=visible_until_ms,json=visibleUntilMs,proto3" json:"visible_until_ms,omitempty"`
 	// Fully qualified message names from the widget's schema.
-	StateType     string `protobuf:"bytes,6,opt,name=state_type,json=stateType,proto3" json:"state_type,omitempty"`
-	DeltaType     string `protobuf:"bytes,7,opt,name=delta_type,json=deltaType,proto3" json:"delta_type,omitempty"`
+	StateType string `protobuf:"bytes,6,opt,name=state_type,json=stateType,proto3" json:"state_type,omitempty"`
+	DeltaType string `protobuf:"bytes,7,opt,name=delta_type,json=deltaType,proto3" json:"delta_type,omitempty"`
+	// The message viewers may send this card, if any.
+	ActionType    string `protobuf:"bytes,8,opt,name=action_type,json=actionType,proto3" json:"action_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -981,6 +1015,13 @@ func (x *Mount) GetStateType() string {
 func (x *Mount) GetDeltaType() string {
 	if x != nil {
 		return x.DeltaType
+	}
+	return ""
+}
+
+func (x *Mount) GetActionType() string {
+	if x != nil {
+		return x.ActionType
 	}
 	return ""
 }
@@ -1194,11 +1235,148 @@ func (x *Log) GetAttrs() []*Header {
 	return nil
 }
 
+// TakeActions returns, without waiting, what viewers have sent the module's
+// cards since the last call. A module that mounts a card with an
+// action_type polls it; the host never calls into the module.
+type TakeActions struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TakeActions) Reset() {
+	*x = TakeActions{}
+	mi := &file_widgetd_abi_v1_abi_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TakeActions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TakeActions) ProtoMessage() {}
+
+func (x *TakeActions) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_abi_v1_abi_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TakeActions.ProtoReflect.Descriptor instead.
+func (*TakeActions) Descriptor() ([]byte, []int) {
+	return file_widgetd_abi_v1_abi_proto_rawDescGZIP(), []int{15}
+}
+
+type Actions struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Actions       []*CardAction          `protobuf:"bytes,1,rep,name=actions,proto3" json:"actions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Actions) Reset() {
+	*x = Actions{}
+	mi := &file_widgetd_abi_v1_abi_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Actions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Actions) ProtoMessage() {}
+
+func (x *Actions) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_abi_v1_abi_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Actions.ProtoReflect.Descriptor instead.
+func (*Actions) Descriptor() ([]byte, []int) {
+	return file_widgetd_abi_v1_abi_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *Actions) GetActions() []*CardAction {
+	if x != nil {
+		return x.Actions
+	}
+	return nil
+}
+
+type CardAction struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The card's local id, as mounted.
+	CardId string `protobuf:"bytes,1,opt,name=card_id,json=cardId,proto3" json:"card_id,omitempty"`
+	// Encoded as the card's action_type; already checked against it.
+	Value         []byte `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CardAction) Reset() {
+	*x = CardAction{}
+	mi := &file_widgetd_abi_v1_abi_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CardAction) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CardAction) ProtoMessage() {}
+
+func (x *CardAction) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_abi_v1_abi_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CardAction.ProtoReflect.Descriptor instead.
+func (*CardAction) Descriptor() ([]byte, []int) {
+	return file_widgetd_abi_v1_abi_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *CardAction) GetCardId() string {
+	if x != nil {
+		return x.CardId
+	}
+	return ""
+}
+
+func (x *CardAction) GetValue() []byte {
+	if x != nil {
+		return x.Value
+	}
+	return nil
+}
+
 var File_widgetd_abi_v1_abi_proto protoreflect.FileDescriptor
 
 const file_widgetd_abi_v1_abi_proto_rawDesc = "" +
 	"\n" +
-	"\x18widgetd/abi/v1/abi.proto\x12\x0ewidgetd.abi.v1\"\xc9\x03\n" +
+	"\x18widgetd/abi/v1/abi.proto\x12\x0ewidgetd.abi.v1\"\x8b\x04\n" +
 	"\x04Call\x12:\n" +
 	"\n" +
 	"config_get\x18\x01 \x01(\v2\x19.widgetd.abi.v1.ConfigGetH\x00R\tconfigGet\x12-\n" +
@@ -1209,8 +1387,10 @@ const file_widgetd_abi_v1_abi_proto_rawDesc = "" +
 	"\x05mount\x18\x06 \x01(\v2\x15.widgetd.abi.v1.MountH\x00R\x05mount\x123\n" +
 	"\aunmount\x18\a \x01(\v2\x17.widgetd.abi.v1.UnmountH\x00R\aunmount\x12*\n" +
 	"\x04emit\x18\b \x01(\v2\x14.widgetd.abi.v1.EmitH\x00R\x04emit\x12'\n" +
-	"\x03log\x18\t \x01(\v2\x13.widgetd.abi.v1.LogH\x00R\x03logB\x04\n" +
-	"\x02op\"\xf6\x01\n" +
+	"\x03log\x18\t \x01(\v2\x13.widgetd.abi.v1.LogH\x00R\x03log\x12@\n" +
+	"\ftake_actions\x18\n" +
+	" \x01(\v2\x1b.widgetd.abi.v1.TakeActionsH\x00R\vtakeActionsB\x04\n" +
+	"\x02op\"\xab\x02\n" +
 	"\x06Result\x12\x14\n" +
 	"\x05error\x18\x01 \x01(\tR\x05error\x12\x1f\n" +
 	"\vdenied_rule\x18\x02 \x01(\tR\n" +
@@ -1218,7 +1398,8 @@ const file_widgetd_abi_v1_abi_proto_rawDesc = "" +
 	"\x06config\x18\x03 \x01(\fH\x00R\x06config\x125\n" +
 	"\x05fetch\x18\x04 \x01(\v2\x1d.widgetd.abi.v1.FetchResponseH\x00R\x05fetch\x12)\n" +
 	"\x02kv\x18\x05 \x01(\v2\x17.widgetd.abi.v1.KvValueH\x00R\x02kv\x120\n" +
-	"\x04emit\x18\x06 \x01(\v2\x1a.widgetd.abi.v1.EmitResultH\x00R\x04emitB\a\n" +
+	"\x04emit\x18\x06 \x01(\v2\x1a.widgetd.abi.v1.EmitResultH\x00R\x04emit\x123\n" +
+	"\aactions\x18\a \x01(\v2\x17.widgetd.abi.v1.ActionsH\x00R\aactionsB\a\n" +
 	"\x05value\"\v\n" +
 	"\tConfigGet\"2\n" +
 	"\x06Header\x12\x12\n" +
@@ -1242,7 +1423,7 @@ const file_widgetd_abi_v1_abi_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\fR\x05value\"\x1c\n" +
 	"\bKvDelete\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\"\xbd\x01\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\"\xde\x01\n" +
 	"\x05Mount\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
@@ -1252,7 +1433,9 @@ const file_widgetd_abi_v1_abi_proto_rawDesc = "" +
 	"\n" +
 	"state_type\x18\x06 \x01(\tR\tstateType\x12\x1d\n" +
 	"\n" +
-	"delta_type\x18\a \x01(\tR\tdeltaType\"\x19\n" +
+	"delta_type\x18\a \x01(\tR\tdeltaType\x12\x1f\n" +
+	"\vaction_type\x18\b \x01(\tR\n" +
+	"actionType\"\x19\n" +
 	"\aUnmount\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\xba\x01\n" +
 	"\x04Emit\x12\x17\n" +
@@ -1279,7 +1462,14 @@ const file_widgetd_abi_v1_abi_proto_rawDesc = "" +
 	"LEVEL_INFO\x10\x02\x12\x0e\n" +
 	"\n" +
 	"LEVEL_WARN\x10\x03\x12\x0f\n" +
-	"\vLEVEL_ERROR\x10\x04B7Z5github.com/aren55555/widgetd/gen/widgetd/abi/v1;abiv1b\x06proto3"
+	"\vLEVEL_ERROR\x10\x04\"\r\n" +
+	"\vTakeActions\"?\n" +
+	"\aActions\x124\n" +
+	"\aactions\x18\x01 \x03(\v2\x1a.widgetd.abi.v1.CardActionR\aactions\";\n" +
+	"\n" +
+	"CardAction\x12\x17\n" +
+	"\acard_id\x18\x01 \x01(\tR\x06cardId\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\fR\x05valueB7Z5github.com/aren55555/widgetd/gen/widgetd/abi/v1;abiv1b\x06proto3"
 
 var (
 	file_widgetd_abi_v1_abi_proto_rawDescOnce sync.Once
@@ -1294,7 +1484,7 @@ func file_widgetd_abi_v1_abi_proto_rawDescGZIP() []byte {
 }
 
 var file_widgetd_abi_v1_abi_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_widgetd_abi_v1_abi_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_widgetd_abi_v1_abi_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_widgetd_abi_v1_abi_proto_goTypes = []any{
 	(Emit_Kind)(0),        // 0: widgetd.abi.v1.Emit.Kind
 	(Log_Level)(0),        // 1: widgetd.abi.v1.Log.Level
@@ -1313,6 +1503,9 @@ var file_widgetd_abi_v1_abi_proto_goTypes = []any{
 	(*Emit)(nil),          // 14: widgetd.abi.v1.Emit
 	(*EmitResult)(nil),    // 15: widgetd.abi.v1.EmitResult
 	(*Log)(nil),           // 16: widgetd.abi.v1.Log
+	(*TakeActions)(nil),   // 17: widgetd.abi.v1.TakeActions
+	(*Actions)(nil),       // 18: widgetd.abi.v1.Actions
+	(*CardAction)(nil),    // 19: widgetd.abi.v1.CardAction
 }
 var file_widgetd_abi_v1_abi_proto_depIdxs = []int32{
 	4,  // 0: widgetd.abi.v1.Call.config_get:type_name -> widgetd.abi.v1.ConfigGet
@@ -1324,19 +1517,22 @@ var file_widgetd_abi_v1_abi_proto_depIdxs = []int32{
 	13, // 6: widgetd.abi.v1.Call.unmount:type_name -> widgetd.abi.v1.Unmount
 	14, // 7: widgetd.abi.v1.Call.emit:type_name -> widgetd.abi.v1.Emit
 	16, // 8: widgetd.abi.v1.Call.log:type_name -> widgetd.abi.v1.Log
-	7,  // 9: widgetd.abi.v1.Result.fetch:type_name -> widgetd.abi.v1.FetchResponse
-	9,  // 10: widgetd.abi.v1.Result.kv:type_name -> widgetd.abi.v1.KvValue
-	15, // 11: widgetd.abi.v1.Result.emit:type_name -> widgetd.abi.v1.EmitResult
-	5,  // 12: widgetd.abi.v1.Fetch.headers:type_name -> widgetd.abi.v1.Header
-	5,  // 13: widgetd.abi.v1.FetchResponse.headers:type_name -> widgetd.abi.v1.Header
-	0,  // 14: widgetd.abi.v1.Emit.kind:type_name -> widgetd.abi.v1.Emit.Kind
-	1,  // 15: widgetd.abi.v1.Log.level:type_name -> widgetd.abi.v1.Log.Level
-	5,  // 16: widgetd.abi.v1.Log.attrs:type_name -> widgetd.abi.v1.Header
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	17, // 9: widgetd.abi.v1.Call.take_actions:type_name -> widgetd.abi.v1.TakeActions
+	7,  // 10: widgetd.abi.v1.Result.fetch:type_name -> widgetd.abi.v1.FetchResponse
+	9,  // 11: widgetd.abi.v1.Result.kv:type_name -> widgetd.abi.v1.KvValue
+	15, // 12: widgetd.abi.v1.Result.emit:type_name -> widgetd.abi.v1.EmitResult
+	18, // 13: widgetd.abi.v1.Result.actions:type_name -> widgetd.abi.v1.Actions
+	5,  // 14: widgetd.abi.v1.Fetch.headers:type_name -> widgetd.abi.v1.Header
+	5,  // 15: widgetd.abi.v1.FetchResponse.headers:type_name -> widgetd.abi.v1.Header
+	0,  // 16: widgetd.abi.v1.Emit.kind:type_name -> widgetd.abi.v1.Emit.Kind
+	1,  // 17: widgetd.abi.v1.Log.level:type_name -> widgetd.abi.v1.Log.Level
+	5,  // 18: widgetd.abi.v1.Log.attrs:type_name -> widgetd.abi.v1.Header
+	19, // 19: widgetd.abi.v1.Actions.actions:type_name -> widgetd.abi.v1.CardAction
+	20, // [20:20] is the sub-list for method output_type
+	20, // [20:20] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_widgetd_abi_v1_abi_proto_init() }
@@ -1354,12 +1550,14 @@ func file_widgetd_abi_v1_abi_proto_init() {
 		(*Call_Unmount)(nil),
 		(*Call_Emit)(nil),
 		(*Call_Log)(nil),
+		(*Call_TakeActions)(nil),
 	}
 	file_widgetd_abi_v1_abi_proto_msgTypes[1].OneofWrappers = []any{
 		(*Result_Config)(nil),
 		(*Result_Fetch)(nil),
 		(*Result_Kv)(nil),
 		(*Result_Emit)(nil),
+		(*Result_Actions)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1367,7 +1565,7 @@ func file_widgetd_abi_v1_abi_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_widgetd_abi_v1_abi_proto_rawDesc), len(file_widgetd_abi_v1_abi_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   15,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

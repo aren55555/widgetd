@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -310,7 +311,7 @@ type Activity struct {
 // fetcher performs one instance's requests under its policy, and keeps a
 // short record of them.
 type fetcher struct {
-	policy    *effectivePolicy
+	policy    atomic.Pointer[effectivePolicy]
 	transport http.RoundTripper
 	limiter   *rate.Limiter
 
@@ -319,11 +320,16 @@ type fetcher struct {
 }
 
 func newFetcher(p *effectivePolicy, transport http.RoundTripper) *fetcher {
-	return &fetcher{
-		policy:    p,
-		transport: transport,
-		limiter:   rate.NewLimiter(rate.Limit(float64(p.perMinute)/60), max(1, p.perMinute/6)),
-	}
+	f := &fetcher{transport: transport, limiter: rate.NewLimiter(rate.Limit(float64(p.perMinute)/60), max(1, p.perMinute/6))}
+	f.policy.Store(p)
+	return f
+}
+
+// setPolicy swaps in a new policy; the next request is checked against it.
+func (f *fetcher) setPolicy(p *effectivePolicy) {
+	f.policy.Store(p)
+	f.limiter.SetLimit(rate.Limit(float64(p.perMinute) / 60))
+	f.limiter.SetBurst(max(1, p.perMinute/6))
 }
 
 // headers a widget may not set: the host owns them.
@@ -363,8 +369,9 @@ func (f *fetcher) do(ctx context.Context, req *http.Request) (*http.Response, er
 	if err := f.checkURL(req.Method, req); err != nil {
 		return fail(err)
 	}
+	p := f.policy.Load()
 	if !f.limiter.Allow() {
-		return fail(&PolicyDenied{Rule: fmt.Sprintf("over %d requests per minute", f.policy.perMinute), URL: req.URL.Redacted()})
+		return fail(&PolicyDenied{Rule: fmt.Sprintf("over %d requests per minute", p.perMinute), URL: req.URL.Redacted()})
 	}
 
 	out := req.Clone(ctx)
@@ -372,7 +379,7 @@ func (f *fetcher) do(ctx context.Context, req *http.Request) (*http.Response, er
 	for _, h := range hostOwnedHeaders {
 		out.Header.Del(h)
 	}
-	ctx, cancel := context.WithTimeout(ctx, f.policy.timeout)
+	ctx, cancel := context.WithTimeout(ctx, p.timeout)
 	client := &http.Client{
 		Transport: f.transport,
 		CheckRedirect: func(next *http.Request, via []*http.Request) error {
@@ -395,7 +402,7 @@ func (f *fetcher) do(ctx context.Context, req *http.Request) (*http.Response, er
 	}
 	act.Status = resp.StatusCode
 	resp.Body = &cappedBody{
-		r: io.LimitReader(resp.Body, f.policy.maxBytes+1), c: resp.Body, limit: f.policy.maxBytes,
+		r: io.LimitReader(resp.Body, p.maxBytes+1), c: resp.Body, limit: p.maxBytes,
 		done: func(n int64, err error) {
 			cancel()
 			act.Bytes, act.Duration = n, time.Since(start)
@@ -414,7 +421,7 @@ func (f *fetcher) checkURL(method string, req *http.Request) error {
 	if port == "" {
 		port = map[string]string{"https": "443", "http": "80"}[u.Scheme]
 	}
-	return f.policy.check(method, u.Redacted(), u.Scheme, strings.ToLower(u.Hostname()), port)
+	return f.policy.Load().check(method, u.Redacted(), u.Scheme, strings.ToLower(u.Hostname()), port)
 }
 
 var errBodyTooLarge = errors.New("response body over the policy's size limit")

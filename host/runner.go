@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -23,6 +24,8 @@ const (
 	// maxDeltas is how many deltas a card's log holds before the host asks
 	// the widget for a fresh snapshot.
 	maxDeltas = 120
+	// actionBuffer is how many actions a card holds for a widget that's busy.
+	actionBuffer = 16
 	// restartMin/Max bound the backoff between restarts of a failing instance.
 	restartMin = time.Second
 	restartMax = 5 * time.Minute
@@ -32,15 +35,29 @@ const (
 
 var cardIDRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
 
-// instance is a configured copy of a widget.
+// instance is a copy of a widget, configured or waiting to be.
 type instance struct {
 	id       string
 	w        *loadedWidget
-	config   []byte // validated
 	srv      *Server
 	log      *slog.Logger
 	fetcher  *fetcher
+	created  time.Time
 	restartN atomic.Int64
+
+	mu         sync.Mutex
+	label      string
+	config     []byte // validated, when configured
+	configured bool
+	state      widgetdv1.InstanceStatus_State
+	message    string
+
+	// Set while running; guarded by srv.mu.
+	cancel context.CancelFunc
+	done   chan struct{}
+	// deleting makes the run's final unmount a purge: screens drop what
+	// they cached for it.
+	deleting atomic.Bool
 }
 
 // run keeps the instance's Run going until ctx is done, restarting it with
@@ -49,6 +66,7 @@ type instance struct {
 func (in *instance) run(ctx context.Context) {
 	backoff := restartMin
 	for {
+		in.setState(widgetdv1.InstanceStatus_STATE_RUNNING, "")
 		started := time.Now()
 		h := &runHost{in: in, epoch: uint64(started.UnixNano()), cards: map[string]*card{}}
 		runCtx, cancel := context.WithCancel(ctx)
@@ -56,7 +74,7 @@ func (in *instance) run(ctx context.Context) {
 		err := in.safeRun(runCtx, h)
 		cancel()
 		h.close()
-		in.srv.board.unmountInstance(in.id, false)
+		in.srv.board.unmountInstance(in.id, in.deleting.Load())
 		if ctx.Err() != nil {
 			return
 		}
@@ -65,6 +83,7 @@ func (in *instance) run(ctx context.Context) {
 		}
 		in.log.Warn("widget instance stopped; restarting", "err", err, "in", backoff)
 		in.restartN.Add(1)
+		in.setState(widgetdv1.InstanceStatus_STATE_FAULTED, firstLine(err))
 		select {
 		case <-ctx.Done():
 			return
@@ -108,9 +127,34 @@ type runHost struct {
 
 func (h *runHost) close() {
 	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.closed = true
-	h.mu.Unlock()
+	for _, c := range h.cards {
+		if c.actions != nil {
+			close(c.actions)
+			c.actions = nil
+		}
+	}
 }
+
+// deliver hands a viewer's action to the card's widget without waiting: a
+// widget that isn't keeping up loses actions rather than holding up the
+// screen that sent them.
+func (h *runHost) deliver(c *card, b []byte) bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.closed || c.actions == nil || h.cards[localID(c)] != c {
+		return false
+	}
+	select {
+	case c.actions <- b:
+		return true
+	default:
+		return false
+	}
+}
+
+func localID(c *card) string { return strings.TrimPrefix(c.id, c.instanceID+"/") }
 
 func (h *runHost) Config(dst proto.Message) error {
 	cfg := h.in.w.spec.Config
@@ -120,7 +164,10 @@ func (h *runHost) Config(dst proto.Message) error {
 	if dst.ProtoReflect().Descriptor().FullName() != cfg.ProtoReflect().Descriptor().FullName() {
 		return fmt.Errorf("config is %s, not %s", cfg.ProtoReflect().Descriptor().FullName(), dst.ProtoReflect().Descriptor().FullName())
 	}
-	return proto.Unmarshal(h.in.config, dst)
+	h.in.mu.Lock()
+	b := h.in.config
+	h.in.mu.Unlock()
+	return proto.Unmarshal(b, dst)
 }
 
 func (h *runHost) Fetch(req *http.Request) (*http.Response, error) {
@@ -147,6 +194,11 @@ func (h *runHost) Mount(id string, opts widget.MountOptions) (widget.RawCard, er
 			return nil, fmt.Errorf("card %s delta: %w", id, err)
 		}
 	}
+	if opts.ActionType != "" {
+		if _, err := sch.message(opts.ActionType); err != nil {
+			return nil, fmt.Errorf("card %s action: %w", id, err)
+		}
+	}
 	if !opts.VisibleUntil.IsZero() && !opts.VisibleUntil.After(time.Now()) {
 		return nil, fmt.Errorf("card %s: visible_until is already past", id)
 	}
@@ -164,20 +216,29 @@ func (h *runHost) Mount(id string, opts widget.MountOptions) (widget.RawCard, er
 		digest:     w.digest,
 		stateURL:   typeURL(opts.StateType),
 		deltaURL:   typeURL(opts.DeltaType),
+		actionURL:  typeURL(opts.ActionType),
+		host:       h,
 		log:        newCardLog(h.epoch, maxDeltas),
 		mounted: &widgetdv1.Mounted{
-			Widget:    &widgetdv1.WidgetRef{Name: w.spec.Name, Version: w.spec.Version, Digest: w.digest},
-			FrameUrl:  h.in.srv.frameURL(w),
-			StateType: string(opts.StateType),
-			DeltaType: string(opts.DeltaType),
-			Layout:    &widgetdv1.Layout{Cols: max(opts.Layout.Cols, 1), Rows: max(opts.Layout.Rows, 1)},
-			Title:     opts.Title,
+			Widget:     &widgetdv1.WidgetRef{Name: w.spec.Name, Version: w.spec.Version, Digest: w.digest},
+			FrameUrl:   h.in.srv.frameURL(w),
+			StateType:  string(opts.StateType),
+			DeltaType:  string(opts.DeltaType),
+			ActionType: string(opts.ActionType),
+			Layout:     &widgetdv1.Layout{Cols: max(opts.Layout.Cols, 1), Rows: max(opts.Layout.Rows, 1)},
+			Title:      opts.Title,
 		},
 	}
 	// Re-mounting with the same types keeps the card's data; anything else
 	// starts it over.
 	if old, ok := h.cards[id]; ok && old.stateURL == c.stateURL && old.deltaURL == c.deltaURL {
 		c.log = old.log
+	}
+	if c.actionURL != "" {
+		c.actions = make(chan []byte, actionBuffer)
+		if old, ok := h.cards[id]; ok && old.actions != nil {
+			close(old.actions)
+		}
 	}
 	if !opts.VisibleUntil.IsZero() {
 		c.mounted.VisibleUntil = timestamppb.New(opts.VisibleUntil)
@@ -193,6 +254,10 @@ func (h *runHost) Unmount(id string) error {
 	h.mu.Lock()
 	c, ok := h.cards[id]
 	delete(h.cards, id)
+	if ok && c.actions != nil {
+		close(c.actions)
+		c.actions = nil
+	}
 	h.mu.Unlock()
 	if !ok {
 		return fmt.Errorf("card %s is not mounted", id)
@@ -304,3 +369,20 @@ func (r *rawCard) checkpoint(state []byte) error {
 
 // restarts is how many times the instance has stopped and been restarted.
 func (in *instance) restarts() int64 { return in.restartN.Load() }
+
+// firstLine is an error's first line: enough to show on a card, without a
+// panic's stack trace.
+func firstLine(err error) string {
+	if err == nil {
+		return ""
+	}
+	s, _, _ := strings.Cut(err.Error(), "\n")
+	return truncate(s, 200)
+}
+
+// Actions implements widget.RawCard.
+func (r *rawCard) Actions() <-chan []byte {
+	r.h.mu.Lock()
+	defer r.h.mu.Unlock()
+	return r.c.actions
+}

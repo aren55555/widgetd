@@ -3,7 +3,7 @@
 // whether an incoming delta follows on from it. Pure, so it is tested
 // directly.
 
-import type { Cursor as WireCursor, Payload } from "../gen/widgetd/v1/stream_pb.ts";
+import { InstanceStatus_State, type Cursor as WireCursor, type Payload } from "../gen/widgetd/v1/stream_pb.ts";
 import type { Cursor } from "@widgetd/sdk/bridge";
 import type { Stored } from "./store.ts";
 
@@ -36,3 +36,27 @@ export const gridSpan = (cols: number, rows: number, maxCols: number) => ({
 /** Cards a finished initial burst didn't mention: gone while we were away. */
 export const staleCards = (cached: Iterable<string>, mounted: ReadonlySet<string>) =>
   [...cached].filter((id) => !mounted.has(id));
+
+/**
+ * What a screen shows for an instance in a given state, apart from its
+ * cards: nothing while it runs (its cards speak for it), otherwise a
+ * placeholder tile saying why, with a way to set it up where that's what
+ * it needs.
+ */
+export function placeholderFor(state: InstanceStatus_State, message: string): { show: false } | { show: true; text: string; setUp: boolean } {
+  switch (state) {
+    case InstanceStatus_State.RUNNING:
+      return { show: false };
+    case InstanceStatus_State.NEEDS_CONFIG:
+      return { show: true, text: "Not set up yet.", setUp: true };
+    case InstanceStatus_State.INVALID_CONFIG:
+      return { show: true, text: "Its settings need updating.", setUp: true };
+    case InstanceStatus_State.FAULTED:
+      return { show: true, text: message ? `Stopped: ${message}. Retrying…` : "Stopped. Retrying…", setUp: false };
+    default:
+      return { show: false };
+  }
+}
+
+/** A card id's instance: the part before the first "/". */
+export const instanceOf = (cardId: string) => cardId.slice(0, Math.max(0, cardId.indexOf("/")));

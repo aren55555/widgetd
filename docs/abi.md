@@ -50,6 +50,7 @@ network policy refused a fetch.
 | `Unmount` | Removes a card | empty |
 | `Emit` | Sends data for a card (below) | `emit.want_checkpoint` |
 | `Log` | A log line at a level, with attributes | empty |
+| `TakeActions` | What viewers sent the module's cards since the last call, without waiting. Poll it (the Go SDK does, every 200 ms) if any card was mounted with an `action_type` | `actions`: card id and encoded action, each already checked against the card's type |
 
 ## Sending card data
 

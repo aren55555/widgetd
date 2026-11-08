@@ -1,0 +1,177 @@
+syntax = "proto3";
+
+package widgetd.v1;
+
+import "google/protobuf/timestamp.proto";
+import "widgetd/v1/stream.proto";
+
+option go_package = "github.com/aren55555/widgetd/gen/widgetd/v1;widgetdv1";
+
+// WidgetAdminService manages what runs. Screens (paired devices) may add a
+// placeholder and ask for a configuration QR code; everything that changes
+// a running instance's configuration, its network access, or which
+// instances exist needs an admin's passkey session, which in practice means
+// a phone that scanned a QR code.
+service WidgetAdminService {
+  // Installed widgets. Screen or admin.
+  rpc ListWidgets(ListWidgetsRequest) returns (ListWidgetsResponse);
+
+  // Add an unconfigured instance of a widget. Screen or admin. It appears on
+  // every screen as a placeholder until it's configured.
+  rpc AddInstance(AddInstanceRequest) returns (AddInstanceResponse);
+
+  // A one-time, short-lived link to configure one instance. Screen or
+  // admin. The screen shows it as a QR code; the link alone grants nothing:
+  // saving needs an admin session.
+  rpc RequestConfigTicket(RequestConfigTicketRequest) returns (RequestConfigTicketResponse);
+
+  // What the configuration page needs to render its form. Admin.
+  rpc GetConfigForm(GetConfigFormRequest) returns (GetConfigFormResponse);
+
+  // Check and save a configuration, then (re)start the instance. Admin.
+  rpc SaveConfig(SaveConfigRequest) returns (SaveConfigResponse);
+
+  // Admin.
+  rpc ListInstances(ListInstancesRequest) returns (ListInstancesResponse);
+  rpc RenameInstance(RenameInstanceRequest) returns (RenameInstanceResponse);
+  rpc DeleteInstance(DeleteInstanceRequest) returns (DeleteInstanceResponse);
+
+  // A widget's network grant, and an instance's recent fetches. Admin.
+  rpc SetNetworkGrant(SetNetworkGrantRequest) returns (SetNetworkGrantResponse);
+  rpc GetInstanceActivity(GetInstanceActivityRequest) returns (GetInstanceActivityResponse);
+}
+
+message WidgetInfo {
+  string name = 1;
+  string version = 2;
+  string title = 3;
+  // What the widget asks to reach, and why.
+  repeated string requested_hosts = 4;
+  repeated string requested_methods = 5;
+  string network_why = 6;
+  // What it has been granted. Unset `granted_hosts` with `grant_set` false
+  // means "everything requested".
+  bool grant_set = 7;
+  repeated string granted_hosts = 8;
+  bool network_disabled = 9;
+  // Whether it takes a configuration at all.
+  bool configurable = 10;
+}
+
+message ListWidgetsRequest {}
+
+message ListWidgetsResponse {
+  repeated WidgetInfo widgets = 1;
+}
+
+message AddInstanceRequest {
+  string widget = 1;
+}
+
+message AddInstanceResponse {
+  string instance_id = 1;
+}
+
+message RequestConfigTicketRequest {
+  string instance_id = 1;
+}
+
+message RequestConfigTicketResponse {
+  // What the QR code encodes: <public url><base>configure/<ticket>.
+  string url = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message GetConfigFormRequest {
+  string ticket = 1;
+}
+
+message GetConfigFormResponse {
+  string instance_id = 1;
+  WidgetInfo widget = 2;
+  string label = 3;
+  // The fully qualified Config message, in `schema`. Empty if the widget
+  // takes no configuration (the page then only names and starts it).
+  string config_type = 4;
+  // google.protobuf.FileDescriptorSet: the widget's protos and imports.
+  bytes schema = 5;
+  // The current configuration, encoded as config_type. Empty for a new one.
+  bytes config = 6;
+  InstanceStatus status = 7;
+}
+
+message SaveConfigRequest {
+  string ticket = 1;
+  string label = 2;
+  // Encoded as the widget's Config message.
+  bytes config = 3;
+}
+
+message FieldViolation {
+  // Dotted field path, e.g. "teams[0].league"; empty for the whole message.
+  string field = 1;
+  string message = 2;
+}
+
+message SaveConfigResponse {
+  // Empty means saved and started; otherwise nothing changed.
+  repeated FieldViolation violations = 1;
+}
+
+message ListInstancesRequest {}
+
+message ListInstancesResponse {
+  repeated InstanceInfo instances = 1;
+}
+
+message InstanceInfo {
+  string id = 1;
+  string widget = 2;
+  string label = 3;
+  InstanceStatus status = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message RenameInstanceRequest {
+  string instance_id = 1;
+  string label = 2;
+}
+
+message RenameInstanceResponse {}
+
+message DeleteInstanceRequest {
+  string instance_id = 1;
+}
+
+message DeleteInstanceResponse {}
+
+message SetNetworkGrantRequest {
+  string widget = 1;
+  // Hosts granted, each from the widget's request. Ignored with `use_default`.
+  repeated string hosts = 2;
+  bool disabled = 3;
+  // Back to the default: everything the widget requests.
+  bool use_default = 4;
+}
+
+message SetNetworkGrantResponse {}
+
+message GetInstanceActivityRequest {
+  string instance_id = 1;
+}
+
+message Fetch {
+  google.protobuf.Timestamp at = 1;
+  string method = 2;
+  string host = 3;
+  string path = 4;
+  int32 status = 5;
+  int64 bytes = 6;
+  string denied = 7;
+  string error = 8;
+  int64 duration_ms = 9;
+}
+
+message GetInstanceActivityResponse {
+  repeated Fetch fetches = 1;
+}

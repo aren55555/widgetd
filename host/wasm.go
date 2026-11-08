@@ -187,7 +187,10 @@ func (g *guest) dispatch(ctx context.Context, call *abiv1.Call) *abiv1.Result {
 	h := g.h
 	switch op := call.GetOp().(type) {
 	case *abiv1.Call_ConfigGet:
-		return &abiv1.Result{Value: &abiv1.Result_Config{Config: h.in.config}}
+		h.in.mu.Lock()
+		cfg := h.in.config
+		h.in.mu.Unlock()
+		return &abiv1.Result{Value: &abiv1.Result_Config{Config: cfg}}
 
 	case *abiv1.Call_Fetch:
 		return g.fetch(ctx, op.Fetch)
@@ -214,10 +217,11 @@ func (g *guest) dispatch(ctx context.Context, call *abiv1.Call) *abiv1.Result {
 	case *abiv1.Call_Mount:
 		m := op.Mount
 		opts := widget.MountOptions{
-			Title:     m.GetTitle(),
-			Layout:    widget.Layout{Cols: m.GetCols(), Rows: m.GetRows()},
-			StateType: protoreflect.FullName(m.GetStateType()),
-			DeltaType: protoreflect.FullName(m.GetDeltaType()),
+			Title:      m.GetTitle(),
+			Layout:     widget.Layout{Cols: m.GetCols(), Rows: m.GetRows()},
+			StateType:  protoreflect.FullName(m.GetStateType()),
+			DeltaType:  protoreflect.FullName(m.GetDeltaType()),
+			ActionType: protoreflect.FullName(m.GetActionType()),
 		}
 		if ms := m.GetVisibleUntilMs(); ms > 0 {
 			opts.VisibleUntil = time.UnixMilli(ms)
@@ -264,6 +268,28 @@ func (g *guest) dispatch(ctx context.Context, call *abiv1.Call) *abiv1.Result {
 			return errResult(err)
 		}
 		return &abiv1.Result{Value: &abiv1.Result_Emit{Emit: &abiv1.EmitResult{WantCheckpoint: want}}}
+
+	case *abiv1.Call_TakeActions:
+		out := &abiv1.Actions{}
+		g.mu.Lock()
+		for id, rc := range g.cards {
+			ch := rc.Actions()
+			for ch != nil {
+				select {
+				case b, ok := <-ch:
+					if !ok {
+						ch = nil
+						break
+					}
+					out.Actions = append(out.Actions, &abiv1.CardAction{CardId: id, Value: b})
+					continue
+				default:
+				}
+				break
+			}
+		}
+		g.mu.Unlock()
+		return &abiv1.Result{Value: &abiv1.Result_Actions{Actions: out}}
 
 	case *abiv1.Call_Log:
 		l := op.Log

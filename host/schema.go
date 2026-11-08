@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"sort"
 	"sync"
+	"sync/atomic"
 
 	"buf.build/go/protovalidate"
 	"github.com/tetratelabs/wazero"
@@ -125,7 +126,7 @@ type loadedWidget struct {
 	spec   widget.Spec
 	schema *schema
 	digest string
-	policy *effectivePolicy
+	policy atomic.Pointer[effectivePolicy]
 	// For sandboxed widgets: the module, compiled once on first use.
 	compileOnce sync.Once
 	wasm        wazero.CompiledModule
@@ -205,4 +206,11 @@ func (w *loadedWidget) compiled(wh *wasmHost) (wazero.CompiledModule, error) {
 		w.wasm, w.compileErr = wh.compile(context.Background(), w.spec.Wasm)
 	})
 	return w.wasm, w.compileErr
+}
+
+func (w *loadedWidget) title() string {
+	if w.spec.Title != "" {
+		return w.spec.Title
+	}
+	return w.spec.Name
 }
