@@ -4,6 +4,10 @@
 //	widgetd -public-url https://widgets.example.com -acme-domain widgets.example.com
 //	widgetd -public-url http://localhost:8080          # development
 //
+// Widgets are the packages built in, plus any installed with
+//
+//	widgetd -state ./data install some-widget.wpkg
+//
 // Instances come from a TOML file (-config):
 //
 //	[[instance]]
@@ -31,15 +35,85 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/aren55555/widgetd/examples"
 	bitcoinspiral "github.com/aren55555/widgetd/examples/bitcoin-spiral"
 	"github.com/aren55555/widgetd/host"
 	"github.com/aren55555/widgetd/sdk/go/widget"
 )
 
-// builtin are the widgets compiled into this binary. Runtime-installed
-// packages arrive in M1b.
-func builtin() []widget.Spec {
-	return []widget.Spec{bitcoinspiral.Widget()}
+// builtin are the packages shipped inside this binary. Packages installed
+// with `widgetd install` sit beside them, and win on a name clash.
+var builtin = [][]byte{bitcoinspiral.Package, examples.Clock}
+
+// loadWidgets reads the built-in packages, then every .wpkg in dir.
+func loadWidgets(dir string) ([]widget.Spec, error) {
+	byName := map[string]widget.Spec{}
+	var order []string
+	add := func(b []byte, from string) error {
+		spec, err := host.LoadPackage(b)
+		if err != nil {
+			return fmt.Errorf("%s: %w", from, err)
+		}
+		if _, ok := byName[spec.Name]; !ok {
+			order = append(order, spec.Name)
+		}
+		byName[spec.Name] = spec
+		return nil
+	}
+	for _, b := range builtin {
+		if err := add(b, "built-in package"); err != nil {
+			return nil, err
+		}
+	}
+	paths, _ := filepath.Glob(filepath.Join(dir, "*.wpkg"))
+	for _, p := range paths {
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return nil, err
+		}
+		if err := add(b, p); err != nil {
+			return nil, err
+		}
+	}
+	out := make([]widget.Spec, 0, len(order))
+	for _, n := range order {
+		out = append(out, byName[n])
+	}
+	return out, nil
+}
+
+// install checks a package loads, then copies it into dir as <name>.wpkg.
+// Running instances pick it up on the next start.
+func install(dir, path string) error {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	spec, err := host.LoadPackage(b)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	tmp, err := os.CreateTemp(dir, ".install-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp.Name())
+	if _, err := tmp.Write(b); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	dst := filepath.Join(dir, spec.Name+".wpkg")
+	if err := os.Rename(tmp.Name(), dst); err != nil {
+		return err
+	}
+	fmt.Printf("installed %s %s (asks for: %v) to %s; restart widgetd to load it\n", spec.Name, spec.Version, spec.Network.Hosts, dst)
+	return nil
 }
 
 type config struct {
@@ -58,6 +132,18 @@ func main() {
 	acmeDomain := flag.String("acme-domain", "", "serve HTTPS on :443 with a Let's Encrypt certificate for this domain")
 	flag.Parse()
 
+	if flag.Arg(0) == "install" {
+		if flag.NArg() != 2 {
+			fmt.Fprintln(os.Stderr, "usage: widgetd [-state dir] install <file.wpkg>")
+			os.Exit(2)
+		}
+		if err := install(filepath.Join(*stateDir, "packages"), flag.Arg(1)); err != nil {
+			fmt.Fprintln(os.Stderr, "widgetd install:", err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	if err := run(log, *addr, *stateDir, *publicURL, *configPath, *acmeDomain); err != nil {
 		log.Error("widgetd", "err", err)
@@ -66,7 +152,10 @@ func main() {
 }
 
 func run(log *slog.Logger, addr, stateDir, publicURL, configPath, acmeDomain string) error {
-	specs := builtin()
+	specs, err := loadWidgets(filepath.Join(stateDir, "packages"))
+	if err != nil {
+		return err
+	}
 	instances, err := loadInstances(configPath, specs)
 	if err != nil {
 		return err

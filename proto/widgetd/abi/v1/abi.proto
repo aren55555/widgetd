@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+// The interface between a sandboxed widget (a WASI preview 1 module) and the
+// host. It is two imports, from the module "widgetd":
+//
+//   call(ptr: i32, len: i32) -> i32
+//       Performs the Call encoded at [ptr, ptr+len) in the module's memory.
+//       Returns the length of the encoded Result, which the host holds until
+//       the next take.
+//   take(ptr: i32, len: i32)
+//       Copies the held Result into [ptr, ptr+len). `len` must be the length
+//       call returned.
+//
+// That's the whole surface. The module runs as a WASI command: its _start
+// is the widget's long-running loop, and it gets a clock, sleep and random
+// numbers from WASI, and nothing else: no files, no environment, no
+// sockets. Every effect on the world goes through call, which is where the
+// host enforces the network policy, the storage quota, and the schema.
+//
+// Any language that compiles to wasm32-wasip1 and can encode protobuf can
+// implement a widget's server half against this file alone.
+package widgetd.abi.v1;
+
+option go_package = "github.com/aren55555/widgetd/gen/widgetd/abi/v1;abiv1";
+
+message Call {
+  oneof op {
+    ConfigGet config_get = 1;
+    Fetch fetch = 2;
+    KvGet kv_get = 3;
+    KvPut kv_put = 4;
+    KvDelete kv_delete = 5;
+    Mount mount = 6;
+    Unmount unmount = 7;
+    Emit emit = 8;
+    Log log = 9;
+  }
+}
+
+message Result {
+  // Set when the call failed; `value` is then unset.
+  string error = 1;
+  // Set when the network policy refused a fetch: the rule it broke.
+  string denied_rule = 2;
+
+  oneof value {
+    bytes config = 3;
+    FetchResponse fetch = 4;
+    KvValue kv = 5;
+    EmitResult emit = 6;
+  }
+}
+
+// ConfigGet returns the instance's configuration, encoded as the widget's
+// Config message.
+message ConfigGet {}
+
+message Header {
+  string name = 1;
+  string value = 2;
+}
+
+message Fetch {
+  string method = 1;
+  string url = 2;
+  repeated Header headers = 3;
+  bytes body = 4;
+}
+
+// FetchResponse carries the whole body; the policy caps its size.
+message FetchResponse {
+  int32 status = 1;
+  repeated Header headers = 2;
+  bytes body = 3;
+}
+
+message KvGet {
+  string key = 1;
+}
+
+message KvValue {
+  bool found = 1;
+  bytes value = 2;
+}
+
+message KvPut {
+  string key = 1;
+  bytes value = 2;
+}
+
+message KvDelete {
+  string key = 1;
+}
+
+// Mount shows (or updates) a card. `id` is local to the instance.
+message Mount {
+  string id = 1;
+  string title = 2;
+  uint32 cols = 3;
+  uint32 rows = 4;
+  // Unix milliseconds; 0 means the card stays until unmounted.
+  int64 visible_until_ms = 5;
+  // Fully qualified message names from the widget's schema.
+  string state_type = 6;
+  string delta_type = 7;
+}
+
+message Unmount {
+  string id = 1;
+}
+
+message Emit {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    // The card's whole state.
+    KIND_SNAPSHOT = 1;
+    // A change to it.
+    KIND_DELTA = 2;
+    // The whole state, sent because a delta's EmitResult asked for one: the
+    // host keeps it as the card's new starting point but doesn't broadcast
+    // it, since every screen already has the delta it equals.
+    KIND_CHECKPOINT = 3;
+  }
+  string card_id = 1;
+  Kind kind = 2;
+  bytes value = 3;
+}
+
+message EmitResult {
+  // After a delta: send a KIND_CHECKPOINT with the current state now.
+  bool want_checkpoint = 1;
+}
+
+message Log {
+  enum Level {
+    LEVEL_UNSPECIFIED = 0;
+    LEVEL_DEBUG = 1;
+    LEVEL_INFO = 2;
+    LEVEL_WARN = 3;
+    LEVEL_ERROR = 4;
+  }
+  Level level = 1;
+  string message = 2;
+  repeated Header attrs = 3;
+}

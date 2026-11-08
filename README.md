@@ -11,8 +11,11 @@ Raspberry Pi, or embed it in an existing Go server.
   generated from the same `.proto`. The host checks every payload against it
   (including protovalidate rules) before sending, and the view checks it again
   on arrival.
-- **Sandboxed views.** Each card renders in its own iframe in an opaque
-  origin, with no network access: data reaches it only through the stream.
+- **Sandboxed both ends.** A widget's server half is a WASI module run by
+  [wazero](https://wazero.io): its own memory, no files, no sockets; its only
+  way out is a fetch the host checks against a per-widget network policy. Each
+  card renders in its own iframe in an opaque origin, with no network access:
+  data reaches it only through the stream.
 - **Passkeys and paired screens.** Admins sign in with a passkey. A screen
   shows a QR code; an admin approves it from their phone.
 
@@ -26,7 +29,9 @@ Raspberry Pi, or embed it in an existing Go server.
 | `sdk/go/widget/` | Server-half SDK |
 | `sdk/web/` | View-half SDK (`defineWidget`) |
 | `client/` | `<widget-board>` and the admin pages (built output committed in `client/dist`) |
-| `examples/bitcoin-spiral/` | Example widget |
+| `examples/bitcoin-spiral/` | Example widget, as a folder |
+| `examples/clock.widget` | Example widget, as a single file |
+| `docs/abi.md` | The sandbox ABI, for writing a widget in another language |
 
 ## Develop
 

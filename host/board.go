@@ -210,3 +210,33 @@ func (b *board) subscribe(resume map[string]*widgetdv1.Resume) ([]*widgetdv1.Wid
 		b.mu.Unlock()
 	}
 }
+
+// deltaDeferred is delta for a widget that checkpoints separately.
+func (b *board) deltaDeferred(c *card, value []byte) (wantCheckpoint, ok bool, err error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.cards[c.id] != c {
+		return false, false, nil
+	}
+	p, want, err := c.log.putDeltaDeferred(c.deltaURL, value)
+	if err != nil {
+		return true, true, err
+	}
+	b.broadcastLocked(&widgetdv1.WidgetFrame{
+		InstanceId: c.instanceID, CardId: c.id,
+		Body: &widgetdv1.WidgetFrame_Delta{Delta: p},
+	})
+	return want, true, nil
+}
+
+// checkpoint stores the card's current state as its new starting point. It
+// is not broadcast: every listener already has the updates it sums up.
+func (b *board) checkpoint(c *card, value []byte) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.cards[c.id] != c {
+		return false
+	}
+	c.log.checkpoint(c.stateURL, value)
+	return true
+}

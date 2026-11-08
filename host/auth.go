@@ -41,7 +41,9 @@ type caller struct {
 	subject string // admin id (hex) or device id
 }
 
-func (c caller) canView() bool { return c.role == widgetdv1.Role_ROLE_ADMIN || c.role == widgetdv1.Role_ROLE_DEVICE }
+func (c caller) canView() bool {
+	return c.role == widgetdv1.Role_ROLE_ADMIN || c.role == widgetdv1.Role_ROLE_DEVICE
+}
 
 // auth implements AuthService and answers "who is this?" for the others.
 type auth struct {

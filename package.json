@@ -1,6 +1,9 @@
 {
   "name": "widgetd-workspace",
   "private": true,
-  "license": "Apache-2.0",
-  "workspaces": ["client", "sdk/web", "examples/*/view"]
+  "workspaces": ["client", "sdk/web", "examples/*/view"],
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.14.1",
+    "@widgetd/sdk": "workspace:*"
+  }
 }

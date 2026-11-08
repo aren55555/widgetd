@@ -14,7 +14,9 @@ import (
 	"log/slog"
 	"mime"
 	"net/http"
+	"net/netip"
 	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -49,7 +51,17 @@ type Options struct {
 	// Instances to run.
 	Instances []Instance
 
+	// Policies grants each widget, by name, its network access. A widget
+	// with no entry is granted exactly what its NetworkRequest asks for;
+	// an entry can only narrow that.
+	Policies map[string]NetworkPolicy
+
 	Logger *slog.Logger
+
+	// allowAddr lets tests reach loopback servers through the guarded dialer.
+	allowAddr func(netip.Addr) bool
+	// wasmCacheDir overrides where compiled modules are cached (tests share one).
+	wasmCacheDir string
 }
 
 // Instance is a configured copy of a widget.
@@ -63,14 +75,15 @@ type Instance struct {
 
 // Server is a running widget host.
 type Server struct {
-	base       string
-	log        *slog.Logger
-	db         *sql.DB
-	auth       *auth
-	board      *board
-	widgets    map[string]*loadedWidget
-	instances  []*instance
-	httpClient *http.Client
+	base      string
+	log       *slog.Logger
+	db        *sql.DB
+	auth      *auth
+	board     *board
+	widgets   map[string]*loadedWidget
+	instances []*instance
+	transport http.RoundTripper
+	wasm      *wasmHost // nil unless a widget is sandboxed
 
 	stop context.CancelFunc
 	wg   sync.WaitGroup
@@ -91,21 +104,31 @@ func New(opts Options) (*Server, error) {
 		log = slog.Default()
 	}
 	s := &Server{
-		base:       base,
-		log:        log.With("component", "widgetd"),
-		board:      newBoard(),
-		widgets:    map[string]*loadedWidget{},
-		httpClient: &http.Client{Timeout: fetchTimeout},
+		base:      base,
+		log:       log.With("component", "widgetd"),
+		board:     newBoard(),
+		widgets:   map[string]*loadedWidget{},
+		transport: newGuardedTransport(opts.allowAddr),
 	}
 	for _, spec := range opts.Widgets {
 		w, err := loadWidget(spec)
 		if err != nil {
 			return nil, err
 		}
+		if w.policy, err = newEffectivePolicy(spec.Network, opts.Policies[spec.Name]); err != nil {
+			return nil, fmt.Errorf("widget %s: %w", spec.Name, err)
+		}
 		if _, dup := s.widgets[spec.Name]; dup {
 			return nil, fmt.Errorf("widget %s registered twice", spec.Name)
 		}
 		s.widgets[spec.Name] = w
+	}
+	cacheDir := opts.wasmCacheDir
+	if cacheDir == "" {
+		cacheDir = filepath.Join(opts.StateDir, "wasm-cache")
+	}
+	if err := s.compileWasm(cacheDir); err != nil {
+		return nil, err
 	}
 	seen := map[string]bool{}
 	for _, in := range opts.Instances {
@@ -163,7 +186,11 @@ func (s *Server) newInstance(in Instance) (*instance, error) {
 	} else if in.Config != nil {
 		return nil, fmt.Errorf("instance %s: widget %s takes no config", in.ID, in.Widget)
 	}
-	return &instance{id: in.ID, w: w, config: cfg, srv: s, log: s.log.With("instance", in.ID)}, nil
+	return &instance{
+		id: in.ID, w: w, config: cfg, srv: s,
+		log:     s.log.With("instance", in.ID),
+		fetcher: newFetcher(w.policy, s.transport),
+	}, nil
 }
 
 // Start runs every instance in the background. If no admin has enrolled yet,
@@ -198,6 +225,9 @@ func (s *Server) Close(ctx context.Context) error {
 	case <-time.After(10 * time.Second):
 		s.log.Warn("instances did not stop within 10s")
 	}
+	if s.wasm != nil {
+		s.wasm.rt.Close(context.Background())
+	}
 	return s.db.Close()
 }
 
@@ -225,4 +255,21 @@ func (s *Server) serveClient(w http.ResponseWriter, r *http.Request, name string
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Write(b)
+}
+
+// compileWasm sets up the sandbox runtime if any widget needs it. Modules
+// themselves are compiled when their first instance starts (compiled), not
+// here: compiling a Go module takes seconds on a small board, and an
+// embedding server shouldn't wait for it before serving.
+func (s *Server) compileWasm(cacheDir string) error {
+	for _, w := range s.widgets {
+		if w.spec.Wasm != nil && s.wasm == nil {
+			wh, err := newWasmHost(context.Background(), cacheDir)
+			if err != nil {
+				return fmt.Errorf("wasm runtime: %w", err)
+			}
+			s.wasm = wh
+		}
+	}
+	return nil
 }

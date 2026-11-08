@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"runtime/debug"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -33,11 +34,13 @@ var cardIDRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
 
 // instance is a configured copy of a widget.
 type instance struct {
-	id     string
-	w      *loadedWidget
-	config []byte // validated
-	srv    *Server
-	log    *slog.Logger
+	id       string
+	w        *loadedWidget
+	config   []byte // validated
+	srv      *Server
+	log      *slog.Logger
+	fetcher  *fetcher
+	restartN atomic.Int64
 }
 
 // run keeps the instance's Run going until ctx is done, restarting it with
@@ -61,6 +64,7 @@ func (in *instance) run(ctx context.Context) {
 			backoff = restartMin
 		}
 		in.log.Warn("widget instance stopped; restarting", "err", err, "in", backoff)
+		in.restartN.Add(1)
 		select {
 		case <-ctx.Done():
 			return
@@ -70,12 +74,19 @@ func (in *instance) run(ctx context.Context) {
 	}
 }
 
-func (in *instance) safeRun(ctx context.Context, h widget.Host) (err error) {
+func (in *instance) safeRun(ctx context.Context, h *runHost) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("panic: %v\n%s", r, debug.Stack())
 		}
 	}()
+	if in.w.spec.Wasm != nil {
+		cm, err := in.w.compiled(in.srv.wasm)
+		if err != nil {
+			return fmt.Errorf("compile: %w", err)
+		}
+		return in.srv.wasm.run(ctx, cm, in.w.spec.Name, h)
+	}
 	err = in.w.spec.Run(ctx, h)
 	if err == nil {
 		err = errors.New("Run returned")
@@ -85,8 +96,8 @@ func (in *instance) safeRun(ctx context.Context, h widget.Host) (err error) {
 
 // runHost is the widget.Host for one run of one instance.
 type runHost struct {
-	in    *instance
-	epoch uint64
+	in     *instance
+	epoch  uint64
 	ctx    context.Context
 	cancel context.CancelFunc
 
@@ -116,7 +127,7 @@ func (h *runHost) Fetch(req *http.Request) (*http.Response, error) {
 	if err := h.ctx.Err(); err != nil {
 		return nil, err
 	}
-	return h.in.srv.fetch(h.ctx, h.in, req)
+	return h.in.fetcher.do(h.ctx, req)
 }
 
 func (h *runHost) KV() widget.KV { return instanceKV{db: h.in.srv.db, instance: h.in.id} }
@@ -258,3 +269,38 @@ func (r *rawCard) Delta(delta []byte, current func() ([]byte, error)) error {
 	}
 	return nil
 }
+
+// deltaDeferred sends a delta and reports whether a checkpoint should follow.
+func (r *rawCard) deltaDeferred(delta []byte) (bool, error) {
+	if err := r.live(); err != nil {
+		return false, err
+	}
+	if r.opts.DeltaType == "" {
+		return false, errors.New("card was mounted without a Delta type")
+	}
+	if _, err := r.h.in.w.schema.check(r.opts.DeltaType, delta); err != nil {
+		return false, r.refuse(err)
+	}
+	want, ok, err := r.h.in.srv.board.deltaDeferred(r.c, delta)
+	if !ok {
+		return false, errGone
+	}
+	return want, err
+}
+
+// checkpoint stores the full current state, after a delta asked for it.
+func (r *rawCard) checkpoint(state []byte) error {
+	if err := r.live(); err != nil {
+		return err
+	}
+	if _, err := r.h.in.w.schema.check(r.opts.StateType, state); err != nil {
+		return r.refuse(err)
+	}
+	if !r.h.in.srv.board.checkpoint(r.c, state) {
+		return errGone
+	}
+	return nil
+}
+
+// restarts is how many times the instance has stopped and been restarted.
+func (in *instance) restarts() int64 { return in.restartN.Load() }

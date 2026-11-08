@@ -39,8 +39,27 @@ type Spec struct {
 	// an error, after which the host restarts it with backoff.
 	Run func(ctx context.Context, h Host) error
 
+	// Wasm is the server half as a WASI module instead, run in a sandbox.
+	// Exactly one of Run and Wasm is set.
+	Wasm []byte
+
 	// View is the built view: view.js (and view.css, if any) at its root.
 	View fs.FS
+
+	// Network is what the widget asks to reach. The host grants at most
+	// this, and may grant less.
+	Network NetworkRequest
+}
+
+// NetworkRequest is a widget's declared need for the network.
+type NetworkRequest struct {
+	// Hosts it fetches from: "api.example.com", "*.example.com" (exactly
+	// one extra label), optionally with ":port".
+	Hosts []string
+	// Methods it uses; empty means GET only.
+	Methods []string
+	// Why, in a sentence, shown to whoever grants it.
+	Why string
 }
 
 // Host is everything a widget's server half can reach.

@@ -1,6 +1,7 @@
 package host
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -8,8 +9,10 @@ import (
 	"io/fs"
 	"regexp"
 	"sort"
+	"sync"
 
 	"buf.build/go/protovalidate"
+	"github.com/tetratelabs/wazero"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -122,14 +125,19 @@ type loadedWidget struct {
 	spec   widget.Spec
 	schema *schema
 	digest string
+	policy *effectivePolicy
+	// For sandboxed widgets: the module, compiled once on first use.
+	compileOnce sync.Once
+	wasm        wazero.CompiledModule
+	compileErr  error
 }
 
 func loadWidget(spec widget.Spec) (*loadedWidget, error) {
 	if !nameRE.MatchString(spec.Name) {
 		return nil, fmt.Errorf("widget name %q: want lowercase letters, digits and dashes", spec.Name)
 	}
-	if spec.Run == nil {
-		return nil, fmt.Errorf("widget %s: no Run", spec.Name)
+	if (spec.Run == nil) == (spec.Wasm == nil) {
+		return nil, fmt.Errorf("widget %s: set exactly one of Run and Wasm", spec.Name)
 	}
 	if spec.View == nil {
 		return nil, fmt.Errorf("widget %s: no View", spec.Name)
@@ -159,6 +167,7 @@ func loadWidget(spec widget.Spec) (*loadedWidget, error) {
 func widgetDigest(spec widget.Spec) (string, error) {
 	h := sha256.New()
 	fmt.Fprintf(h, "%s\x00%s\x00", spec.Name, spec.Version)
+	h.Write(spec.Wasm)
 	for _, fd := range spec.Files {
 		b, err := proto.MarshalOptions{Deterministic: true}.Marshal(protodesc.ToFileDescriptorProto(fd))
 		if err != nil {
@@ -189,3 +198,11 @@ func widgetDigest(spec widget.Spec) (string, error) {
 }
 
 var errStopped = errors.New("instance is not running")
+
+// compiled returns the widget's compiled module, compiling it the first time.
+func (w *loadedWidget) compiled(wh *wasmHost) (wazero.CompiledModule, error) {
+	w.compileOnce.Do(func() {
+		w.wasm, w.compileErr = wh.compile(context.Background(), w.spec.Wasm)
+	})
+	return w.wasm, w.compileErr
+}

@@ -129,3 +129,35 @@ func equal(a, b []uint64) bool {
 	}
 	return true
 }
+
+func TestDeferredCompaction(t *testing.T) {
+	l := newCardLog(1, 3)
+	// A delta before any snapshot asks for a checkpoint straight away.
+	if _, want, _ := l.putDeltaDeferred("D", nil); !want {
+		t.Fatal("first delta should ask for a checkpoint")
+	}
+	l.checkpoint("S", []byte("s1"))
+	if snap, _ := l.resume(nil); snap == nil || snap.GetCursor().GetSeq() != 1 {
+		t.Fatal("checkpoint should stand for the delta it followed")
+	}
+	_, want1, _ := l.putDeltaDeferred("D", nil)
+	_, want2, _ := l.putDeltaDeferred("D", nil)
+	_, want3, _ := l.putDeltaDeferred("D", nil)
+	if want1 || want2 || !want3 {
+		t.Fatalf("wants = %v %v %v, want only the third", want1, want2, want3)
+	}
+	// Ignoring the request is tolerated up to twice the length (six)...
+	for range 3 {
+		if _, _, err := l.putDeltaDeferred("D", nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// ...then refused.
+	if _, _, err := l.putDeltaDeferred("D", nil); !errors.Is(err, errCheckpointOverdue) {
+		t.Fatalf("err = %v, want overdue", err)
+	}
+	l.checkpoint("S", []byte("s2"))
+	if _, _, err := l.putDeltaDeferred("D", nil); err != nil {
+		t.Fatal("a checkpoint should clear the backlog")
+	}
+}

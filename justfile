@@ -22,9 +22,9 @@ client-build:
     cp client/src/admin.css client/dist/admin.css
     touch client/dist/.gitkeep
 
-# Build the example widgets (schema codegen + view bundle + widget_gen.go)
+# Build the example widgets into .wpkg packages (both authoring forms)
 examples:
-    {{mise}} go run ./cmd/widgetc build examples/bitcoin-spiral
+    {{mise}} go run ./cmd/widgetc build examples/bitcoin-spiral examples/clock.widget
 
 # The full check suite
 test: generate client-build examples
@@ -32,6 +32,7 @@ test: generate client-build examples
     cd sdk/web && {{mise}} bun test
     cd examples/bitcoin-spiral/view && {{mise}} bun test
     {{mise}} go vet ./...
+    GOOS=wasip1 GOARCH=wasm {{mise}} go vet ./sdk/go/widget ./internal/testwidget/wasm
     {{mise}} go test -race ./...
 
 # Run the standalone server on :8080

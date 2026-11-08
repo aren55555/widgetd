@@ -3,53 +3,17 @@
 package bitcoinspiral
 
 import (
-	"embed"
-	"io/fs"
+	_ "embed"
 
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
-
-	_ "github.com/aren55555/widgetd/examples/bitcoin-spiral/gen/bitcoinspiral/v1"
-	"github.com/aren55555/widgetd/examples/bitcoin-spiral/server"
+	"github.com/aren55555/widgetd/host"
 	"github.com/aren55555/widgetd/sdk/go/widget"
 )
 
-//go:embed all:dist
-var dist embed.FS
+// Package is the bitcoin-spiral widget, packaged: its schema, its sandboxed
+// server half, and its view.
+//
+//go:embed bitcoin-spiral.wpkg
+var Package []byte
 
-// Widget is the bitcoin-spiral widget, ready to hand to a widgetd host.
-func Widget() widget.Spec {
-	view, err := fs.Sub(dist, "dist")
-	if err != nil {
-		panic(err)
-	}
-	return widget.Spec{
-		Name:    "bitcoin-spiral",
-		Version: "0.1.0",
-		Files:   files("bitcoinspiral/v1/bitcoinspiral.proto"),
-		Config:  message("bitcoinspiral.v1.Config"),
-		Run:     server.Run,
-		View:    view,
-	}
-}
-
-func files(paths ...string) []protoreflect.FileDescriptor {
-	out := make([]protoreflect.FileDescriptor, len(paths))
-	for i, p := range paths {
-		fd, err := protoregistry.GlobalFiles.FindFileByPath(p)
-		if err != nil {
-			panic(err)
-		}
-		out[i] = fd
-	}
-	return out
-}
-
-func message(name protoreflect.FullName) proto.Message {
-	mt, err := protoregistry.GlobalTypes.FindMessageByName(name)
-	if err != nil {
-		panic(err)
-	}
-	return mt.New().Interface()
-}
+// Widget loads Package, ready to hand to a widgetd host.
+func Widget() (widget.Spec, error) { return host.LoadPackage(Package) }

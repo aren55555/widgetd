@@ -51,9 +51,7 @@ func (s *Server) serveFrame(w http.ResponseWriter, r *http.Request, name, digest
 	_, cssErr := fs.Stat(lw.spec.View, "view.css")
 	h := w.Header()
 	h.Set("Content-Type", "text/html; charset=utf-8")
-	h.Set("Content-Security-Policy", fmt.Sprintf(
-		"default-src 'none'; script-src %[1]s; style-src %[1]s 'unsafe-inline'; img-src %[1]s data:; font-src %[1]s; connect-src 'none'; form-action 'none'; base-uri 'none'",
-		assets))
+	h.Set("Content-Security-Policy", frameCSP(assets, lw.policy.imageSources()))
 	h.Set("Cache-Control", "public, max-age=31536000, immutable")
 	h.Set("X-Content-Type-Options", "nosniff")
 	frameTmpl.Execute(w, struct {
@@ -123,4 +121,11 @@ func (s *Server) routes(w http.ResponseWriter, r *http.Request) {
 	default:
 		s.serveClient(w, r, rest)
 	}
+}
+
+// frameCSP is a card frame's whole policy: its own bundle, images from the
+// hosts its widget was granted, and no connections of any kind.
+func frameCSP(assets string, imageHosts []string) string {
+	img := strings.Join(append([]string{assets, "data:"}, imageHosts...), " ")
+	return fmt.Sprintf("default-src 'none'; script-src %[1]s; style-src %[1]s 'unsafe-inline'; img-src %[2]s; font-src %[1]s; connect-src 'none'; form-action 'none'; base-uri 'none'", assets, img)
 }

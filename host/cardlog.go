@@ -1,6 +1,8 @@
 package host
 
 import (
+	"errors"
+
 	widgetdv1 "github.com/aren55555/widgetd/gen/widgetd/v1"
 )
 
@@ -60,6 +62,31 @@ func (l *cardLog) putDelta(typeURL string, value []byte, stateTypeURL string, cu
 	l.deltas = append(l.deltas, p)
 	return p, nil
 }
+
+// putDeltaDeferred records a change from a widget the host can't call back
+// into (a sandboxed one): instead of asking for the current state inline, it
+// reports whether a checkpoint is wanted, and the widget sends one next.
+// Past twice the usual length, with no checkpoint, it refuses: a log that
+// only grows is a widget ignoring the protocol.
+func (l *cardLog) putDeltaDeferred(typeURL string, value []byte) (p *widgetdv1.Payload, wantCheckpoint bool, err error) {
+	if len(l.deltas) >= 2*l.maxDeltas {
+		return nil, true, errCheckpointOverdue
+	}
+	prev := l.cursor()
+	l.seq++
+	p = &widgetdv1.Payload{TypeUrl: typeURL, Value: value, Cursor: l.cursor(), Prev: prev}
+	l.deltas = append(l.deltas, p)
+	return p, l.snapshot == nil || len(l.deltas) >= l.maxDeltas, nil
+}
+
+// checkpoint records the state as of the latest update, without a new seq:
+// it is that same state, which every listener already has.
+func (l *cardLog) checkpoint(typeURL string, value []byte) {
+	l.snapshot = &widgetdv1.Payload{TypeUrl: typeURL, Value: value, Cursor: l.cursor()}
+	l.deltas = nil
+}
+
+var errCheckpointOverdue = errors.New("too many deltas without a checkpoint")
 
 // resume returns what a client holding cursor `have` (nil: nothing) needs to
 // be current: nothing, the deltas after its cursor, or the snapshot and every

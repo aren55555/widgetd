@@ -1,0 +1,108 @@
+<manifest>
+name    = "clock"
+version = "0.1.0"
+title   = "Clock"
+config  = "clock.v1.Config"
+# No [network]: this widget never leaves the sandbox.
+</manifest>
+
+<schema>
+syntax = "proto3";
+
+package clock.v1;
+
+import "buf/validate/validate.proto";
+
+message Config {
+  // An IANA time zone, e.g. "Europe/Lisbon". Empty means the viewer's own.
+  string time_zone = 1 [(buf.validate.field).string = {
+    max_len: 64
+    pattern: "^([A-Za-z_]+(/[A-Za-z0-9_+-]+)*)?$"
+  }];
+  // A label for the card; defaults to the zone.
+  string label = 2 [(buf.validate.field).string.max_len = 32];
+}
+
+// State is the server's clock, so every screen agrees on the time even if
+// its own clock is off.
+message State {
+  int64 unix_ms = 1 [(buf.validate.field).int64.gt = 0];
+  string time_zone = 2 [(buf.validate.field).string.max_len = 64];
+}
+</schema>
+
+<server lang="go">
+package server
+
+import (
+	"context"
+	"time"
+
+	pb "widget/schema"
+
+	"github.com/aren55555/widgetd/sdk/go/widget"
+)
+
+// Run sends the time once a second: a state-only card, no deltas.
+func Run(ctx context.Context, h widget.Host) error {
+	var cfg pb.Config
+	if err := h.Config(&cfg); err != nil {
+		return err
+	}
+	title := cfg.GetLabel()
+	if title == "" {
+		title = cfg.GetTimeZone()
+	}
+	card, err := widget.MountState[*pb.State](h, "clock", widget.MountOptions{Title: title})
+	if err != nil {
+		return err
+	}
+	for {
+		if err := card.Snapshot(&pb.State{UnixMs: time.Now().UnixMilli(), TimeZone: cfg.GetTimeZone()}); err != nil {
+			return err
+		}
+		time.Sleep(time.Second - time.Duration(time.Now().Nanosecond()))
+	}
+}
+</server>
+
+<view lang="ts">
+import { defineWidget } from "@widgetd/sdk";
+import { StateSchema } from "widget/schema";
+
+defineWidget({
+  state: StateSchema,
+  mount({ root }) {
+    root.innerHTML = `<div class="clock"><div class="time"></div><div class="zone"></div></div>`;
+    const time = root.querySelector<HTMLElement>(".time")!;
+    const zone = root.querySelector<HTMLElement>(".zone")!;
+    return {
+      update(s) {
+        const tz = s.timeZone || undefined;
+        let fmt: Intl.DateTimeFormat;
+        try {
+          fmt = new Intl.DateTimeFormat(undefined, { timeStyle: "medium", timeZone: tz });
+        } catch {
+          fmt = new Intl.DateTimeFormat(undefined, { timeStyle: "medium" });
+        }
+        time.textContent = fmt.format(new Date(Number(s.unixMs)));
+        zone.textContent = fmt.resolvedOptions().timeZone;
+      },
+    };
+  },
+});
+</view>
+
+<style>
+.clock {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  font-family: var(--wd-font-mono, ui-monospace, monospace);
+  color: var(--wd-ink, #e5e7eb);
+}
+.time { font-size: 32px; font-weight: 600; }
+.zone { font-size: 12px; color: var(--wd-ink-faint, #71717a); }
+</style>
