@@ -116,7 +116,7 @@ func (s *Server) routes(w http.ResponseWriter, r *http.Request) {
 		s.serveFrame(w, r, parts[1], parts[2])
 	case len(parts) == 4 && parts[0] == "v":
 		s.serveAsset(w, r, parts[1], parts[2], parts[3])
-	case parts[0] == "enroll" || parts[0] == "pair" || parts[0] == "admin":
+	case phonePages[parts[0]]:
 		s.servePage(w, r)
 	default:
 		s.serveClient(w, r, rest)
@@ -129,3 +129,9 @@ func frameCSP(assets string, imageHosts []string) string {
 	img := strings.Join(append([]string{assets, "data:"}, imageHosts...), " ")
 	return fmt.Sprintf("default-src 'none'; script-src %[1]s; style-src %[1]s 'unsafe-inline'; img-src %[2]s; font-src %[1]s; connect-src 'none'; form-action 'none'; base-uri 'none'", assets, img)
 }
+
+// phonePages are the routes of the admin app (client/src/admin.ts) that a
+// phone opens, usually from a QR code. Each serves the same shell; the app
+// reads its route from the URL. A route the app knows but this map doesn't
+// is a 404 before the app can load, so keep the two in step.
+var phonePages = map[string]bool{"enroll": true, "pair": true, "configure": true, "admin": true}

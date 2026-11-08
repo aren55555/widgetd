@@ -3,6 +3,8 @@ package host
 import (
 	"context"
 	"net/http"
+	"os"
+	"regexp"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -323,6 +325,32 @@ func TestSendAction(t *testing.T) {
 	} {
 		if err := h.sendAction(tc.cookie, tc.card, tc.url, tc.b); connect.CodeOf(err) != tc.want {
 			t.Errorf("%s: %v, want %v", tc.name, err, tc.want)
+		}
+	}
+}
+
+// Every route the phone app handles must reach it. (The configure page once
+// 404ed: the app knew the route and the server didn't.)
+func TestPhonePagesAreServed(t *testing.T) {
+	h := newHarness(t)
+	for _, p := range []string{"enroll/tok", "pair/id", "configure/ticket", "admin"} {
+		resp, err := http.Get(h.http.URL + "/widgetd/" + p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK || !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
+			t.Errorf("/widgetd/%s: %d %s", p, resp.StatusCode, resp.Header.Get("Content-Type"))
+		}
+	}
+	// And every route the app's router names is one of them.
+	src, err := os.ReadFile("../client/src/admin.ts")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, m := range regexp.MustCompile(`section === "([a-z]+)"`).FindAllStringSubmatch(string(src), -1) {
+		if !phonePages[m[1]] {
+			t.Errorf("admin.ts routes %q, which the server doesn't serve", m[1])
 		}
 	}
 }
