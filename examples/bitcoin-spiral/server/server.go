@@ -21,7 +21,11 @@ import (
 )
 
 const (
-	api       = "https://api.exchange.coinbase.com"
+	api = "https://api.exchange.coinbase.com"
+	// pagePause spaces out history pages: a little over a second, so a first
+	// backfill (dozens of pages) stays inside the host's default allowance of
+	// 60 requests a minute and leaves room for the live price.
+	pagePause = 1100 * time.Millisecond
 	userAgent = "widgetd-bitcoin-spiral"
 	// pollEvery is how often the live price is read. Coinbase allows far
 	// more; a few seconds is "live" for a chart drawn on a log scale.
@@ -60,15 +64,19 @@ func Run(ctx context.Context, h widget.Host) error {
 	if cur == pb.Currency_CURRENCY_UNSPECIFIED {
 		cur = pb.Currency_CURRENCY_USD
 	}
-	w := &spiral{h: h, cur: cur, state: &pb.State{Currency: cur}}
+	w := &spiral{h: h, cur: cur, older: cfg.GetOlderHistory(), state: &pb.State{Currency: cur}}
 	return w.run(ctx)
 }
 
 type spiral struct {
 	h     widget.Host
 	cur   pb.Currency
+	older pb.OlderHistory
 	state *pb.State
 	card  *widget.Card[*pb.State, *pb.Delta]
+	// olderN is how many of state.Daily came from the older source: they
+	// lead the slice, and are stored apart from the Coinbase days.
+	olderN int
 }
 
 func (w *spiral) historyKey() string { return "history:" + symbol[w.cur] }
@@ -94,6 +102,13 @@ func (w *spiral) run(ctx context.Context) error {
 	if added, err := w.backfill(ctx); err != nil {
 		log.Warn("bitcoin-spiral: backfill incomplete; will retry", "err", err)
 	} else if len(added) > 0 {
+		if err := card.Snapshot(w.state); err != nil {
+			return err
+		}
+	}
+	if n, err := w.loadOlder(ctx); err != nil {
+		log.Warn("bitcoin-spiral: older history unavailable", "source", w.older, "err", err)
+	} else if n > 0 {
 		if err := card.Snapshot(w.state); err != nil {
 			return err
 		}
@@ -145,7 +160,7 @@ func (w *spiral) loadHistory() error {
 }
 
 func (w *spiral) saveHistory() error {
-	b, err := proto.Marshal(&pb.History{Daily: w.state.GetDaily()})
+	b, err := proto.Marshal(&pb.History{Daily: w.state.GetDaily()[w.olderN:]})
 	if err != nil {
 		return err
 	}
@@ -191,7 +206,7 @@ func (w *spiral) backfill(ctx context.Context) ([]*pb.DailyClose, error) {
 			select {
 			case <-ctx.Done():
 				return added, ctx.Err()
-			case <-time.After(300 * time.Millisecond): // be polite between pages
+			case <-time.After(pagePause):
 			}
 		}
 	}
@@ -249,8 +264,14 @@ func (w *spiral) poll(ctx context.Context) error {
 	return w.card.Delta(&pb.Delta{Change: &pb.Delta_Quote{Quote: q}}, w.current)
 }
 
+// get reads a Coinbase API path as JSON.
 func (w *spiral) get(ctx context.Context, path string, into any) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, api+path, nil)
+	return w.getJSON(ctx, api+path, into)
+}
+
+// getJSON reads a URL as JSON, through the host's policed fetch.
+func (w *spiral) getJSON(ctx context.Context, rawURL string, into any) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return err
 	}
@@ -262,7 +283,7 @@ func (w *spiral) get(ctx context.Context, path string, into any) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%s: %s", path, resp.Status)
+		return fmt.Errorf("%s: %s", req.URL.Host+req.URL.Path, resp.Status)
 	}
 	return json.NewDecoder(resp.Body).Decode(into)
 }

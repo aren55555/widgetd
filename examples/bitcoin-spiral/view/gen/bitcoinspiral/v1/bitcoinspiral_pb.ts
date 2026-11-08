@@ -11,7 +11,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file bitcoinspiral/v1/bitcoinspiral.proto.
  */
 export const file_bitcoinspiral_v1_bitcoinspiral: GenFile = /*@__PURE__*/
-  fileDesc("CiRiaXRjb2luc3BpcmFsL3YxL2JpdGNvaW5zcGlyYWwucHJvdG8SEGJpdGNvaW5zcGlyYWwudjEiQAoGQ29uZmlnEjYKCGN1cnJlbmN5GAEgASgOMhouYml0Y29pbnNwaXJhbC52MS5DdXJyZW5jeUIIukgFggECEAEiowEKBVN0YXRlEjgKCGN1cnJlbmN5GAEgASgOMhouYml0Y29pbnNwaXJhbC52MS5DdXJyZW5jeUIKukgHggEEEAEgABI3CgVkYWlseRgCIAMoCzIcLmJpdGNvaW5zcGlyYWwudjEuRGFpbHlDbG9zZUIKukgHkgEEEKCcARInCgZsYXRlc3QYAyABKAsyFy5iaXRjb2luc3BpcmFsLnYxLlF1b3RlIkMKCkRhaWx5Q2xvc2USFAoDZGF5GAEgASgFQge6SAQaAigAEh8KBWNsb3NlGAIgASgBQhC6SA0SC0ABIQAAAAAAAAAAIkIKBVF1b3RlEhgKB3VuaXhfbXMYASABKANCB7pIBCICIAASHwoFcHJpY2UYAiABKAFCELpIDRILQAEhAAAAAAAAAAAicQoFRGVsdGESKAoFcXVvdGUYASABKAsyFy5iaXRjb2luc3BpcmFsLnYxLlF1b3RlSAASLQoFY2xvc2UYAiABKAsyHC5iaXRjb2luc3BpcmFsLnYxLkRhaWx5Q2xvc2VIAEIPCgZjaGFuZ2USBbpIAggBIjYKB0hpc3RvcnkSKwoFZGFpbHkYASADKAsyHC5iaXRjb2luc3BpcmFsLnYxLkRhaWx5Q2xvc2UqWgoIQ3VycmVuY3kSGAoUQ1VSUkVOQ1lfVU5TUEVDSUZJRUQQABIQCgxDVVJSRU5DWV9VU0QQARIQCgxDVVJSRU5DWV9FVVIQAhIQCgxDVVJSRU5DWV9HQlAQA0LmAQoUY29tLmJpdGNvaW5zcGlyYWwudjFCEkJpdGNvaW5zcGlyYWxQcm90b1ABWllnaXRodWIuY29tL2FyZW41NTU1NS93aWRnZXRkL2V4YW1wbGVzL2JpdGNvaW4tc3BpcmFsL2dlbi9iaXRjb2luc3BpcmFsL3YxO2JpdGNvaW5zcGlyYWx2MaICA0JYWKoCEEJpdGNvaW5zcGlyYWwuVjHKAhBCaXRjb2luc3BpcmFsXFYx4gIcQml0Y29pbnNwaXJhbFxWMVxHUEJNZXRhZGF0YeoCEUJpdGNvaW5zcGlyYWw6OlYxYgZwcm90bzM", [file_buf_validate_validate]);
+  fileDesc("CiRiaXRjb2luc3BpcmFsL3YxL2JpdGNvaW5zcGlyYWwucHJvdG8SEGJpdGNvaW5zcGlyYWwudjEikAIKBkNvbmZpZxI2CghjdXJyZW5jeRgBIAEoDjIaLmJpdGNvaW5zcGlyYWwudjEuQ3VycmVuY3lCCLpIBYIBAhABEj8KDW9sZGVyX2hpc3RvcnkYAiABKA4yHi5iaXRjb2luc3BpcmFsLnYxLk9sZGVySGlzdG9yeUIIukgFggECEAE6jAG6SIgBGoUBChZvbGRlcl9oaXN0b3J5X3VzZF9vbmx5EiZvbGRlciBoaXN0b3J5IGlzIG9ubHkgYXZhaWxhYmxlIGluIFVTRBpDdGhpcy5vbGRlcl9oaXN0b3J5ID09IDAgfHwgdGhpcy5jdXJyZW5jeSA9PSAwIHx8IHRoaXMuY3VycmVuY3kgPT0gMSKjAQoFU3RhdGUSOAoIY3VycmVuY3kYASABKA4yGi5iaXRjb2luc3BpcmFsLnYxLkN1cnJlbmN5Qgq6SAeCAQQQASAAEjcKBWRhaWx5GAIgAygLMhwuYml0Y29pbnNwaXJhbC52MS5EYWlseUNsb3NlQgq6SAeSAQQQoJwBEicKBmxhdGVzdBgDIAEoCzIXLmJpdGNvaW5zcGlyYWwudjEuUXVvdGUiQwoKRGFpbHlDbG9zZRIUCgNkYXkYASABKAVCB7pIBBoCKAASHwoFY2xvc2UYAiABKAFCELpIDRILQAEhAAAAAAAAAAAiQgoFUXVvdGUSGAoHdW5peF9tcxgBIAEoA0IHukgEIgIgABIfCgVwcmljZRgCIAEoAUIQukgNEgtAASEAAAAAAAAAACJxCgVEZWx0YRIoCgVxdW90ZRgBIAEoCzIXLmJpdGNvaW5zcGlyYWwudjEuUXVvdGVIABItCgVjbG9zZRgCIAEoCzIcLmJpdGNvaW5zcGlyYWwudjEuRGFpbHlDbG9zZUgAQg8KBmNoYW5nZRIFukgCCAEiNgoHSGlzdG9yeRIrCgVkYWlseRgBIAMoCzIcLmJpdGNvaW5zcGlyYWwudjEuRGFpbHlDbG9zZSpaCghDdXJyZW5jeRIYChRDVVJSRU5DWV9VTlNQRUNJRklFRBAAEhAKDENVUlJFTkNZX1VTRBABEhAKDENVUlJFTkNZX0VVUhACEhAKDENVUlJFTkNZX0dCUBADKmwKDE9sZGVySGlzdG9yeRIdChlPTERFUl9ISVNUT1JZX1VOU1BFQ0lGSUVEEAASGgoWT0xERVJfSElTVE9SWV9CSVRTVEFNUBABEiEKHU9MREVSX0hJU1RPUllfQkxPQ0tDSEFJTl9JTkZPEAJC5gEKFGNvbS5iaXRjb2luc3BpcmFsLnYxQhJCaXRjb2luc3BpcmFsUHJvdG9QAVpZZ2l0aHViLmNvbS9hcmVuNTU1NTUvd2lkZ2V0ZC9leGFtcGxlcy9iaXRjb2luLXNwaXJhbC9nZW4vYml0Y29pbnNwaXJhbC92MTtiaXRjb2luc3BpcmFsdjGiAgNCWFiqAhBCaXRjb2luc3BpcmFsLlYxygIQQml0Y29pbnNwaXJhbFxWMeICHEJpdGNvaW5zcGlyYWxcVjFcR1BCTWV0YWRhdGHqAhFCaXRjb2luc3BpcmFsOjpWMWIGcHJvdG8z", [file_buf_validate_validate]);
 
 /**
  * Config is one instance's settings.
@@ -25,6 +25,13 @@ export type Config = Message<"bitcoinspiral.v1.Config"> & {
    * @generated from field: bitcoinspiral.v1.Currency currency = 1;
    */
   currency: Currency;
+
+  /**
+   * Extends the history back past mid 2015 (USD only).
+   *
+   * @generated from field: bitcoinspiral.v1.OlderHistory older_history = 2;
+   */
+  olderHistory: OlderHistory;
 };
 
 /**
@@ -197,4 +204,38 @@ export enum Currency {
  */
 export const CurrencySchema: GenEnum<Currency> = /*@__PURE__*/
   enumDesc(file_bitcoinspiral_v1_bitcoinspiral, 0);
+
+/**
+ * OlderHistory is where history from before Coinbase's (mid 2015) comes from.
+ *
+ * @generated from enum bitcoinspiral.v1.OlderHistory
+ */
+export enum OlderHistory {
+  /**
+   * None: the spiral starts where Coinbase's daily history does.
+   *
+   * @generated from enum value: OLDER_HISTORY_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Bitstamp's daily closes, from September 2011.
+   *
+   * @generated from enum value: OLDER_HISTORY_BITSTAMP = 1;
+   */
+  BITSTAMP = 1,
+
+  /**
+   * blockchain.info's daily average across exchanges, from August 2010.
+   *
+   * @generated from enum value: OLDER_HISTORY_BLOCKCHAIN_INFO = 2;
+   */
+  BLOCKCHAIN_INFO = 2,
+}
+
+/**
+ * Describes the enum bitcoinspiral.v1.OlderHistory.
+ */
+export const OlderHistorySchema: GenEnum<OlderHistory> = /*@__PURE__*/
+  enumDesc(file_bitcoinspiral_v1_bitcoinspiral, 1);
 

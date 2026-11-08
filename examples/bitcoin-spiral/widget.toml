@@ -6,8 +6,9 @@ title   = "Bitcoin price spiral"
 # The instance configuration message, fully qualified.
 config  = "bitcoinspiral.v1.Config"
 
-# The hosts the server half asks to reach. Enforced from M1b.
+# The hosts the server half asks to reach. The host allows nothing else, and
+# whoever runs it can narrow this further.
 [network]
-hosts   = ["api.exchange.coinbase.com"]
+hosts   = ["api.exchange.coinbase.com", "www.bitstamp.net", "api.blockchain.info"]
 methods = ["GET"]
-why     = "Daily closing prices and the live BTC price"
+why     = "Daily closing prices and the live BTC price (Coinbase); optional older history (Bitstamp or blockchain.info)"

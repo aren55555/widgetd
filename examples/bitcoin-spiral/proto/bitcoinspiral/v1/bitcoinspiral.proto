@@ -11,10 +11,28 @@ enum Currency {
   CURRENCY_GBP = 3;
 }
 
+// OlderHistory is where history from before Coinbase's (mid 2015) comes from.
+enum OlderHistory {
+  // None: the spiral starts where Coinbase's daily history does.
+  OLDER_HISTORY_UNSPECIFIED = 0;
+  // Bitstamp's daily closes, from September 2011.
+  OLDER_HISTORY_BITSTAMP = 1;
+  // blockchain.info's daily average across exchanges, from August 2010.
+  OLDER_HISTORY_BLOCKCHAIN_INFO = 2;
+}
+
 // Config is one instance's settings.
 message Config {
+  option (buf.validate.message).cel = {
+    id: "older_history_usd_only"
+    message: "older history is only available in USD"
+    expression: "this.older_history == 0 || this.currency == 0 || this.currency == 1"
+  };
+
   // Unspecified means USD.
   Currency currency = 1 [(buf.validate.field).enum.defined_only = true];
+  // Extends the history back past mid 2015 (USD only).
+  OlderHistory older_history = 2 [(buf.validate.field).enum.defined_only = true];
 }
 
 // State is everything the spiral draws.

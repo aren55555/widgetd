@@ -74,11 +74,66 @@ func (Currency) EnumDescriptor() ([]byte, []int) {
 	return file_bitcoinspiral_v1_bitcoinspiral_proto_rawDescGZIP(), []int{0}
 }
 
+// OlderHistory is where history from before Coinbase's (mid 2015) comes from.
+type OlderHistory int32
+
+const (
+	// None: the spiral starts where Coinbase's daily history does.
+	OlderHistory_OLDER_HISTORY_UNSPECIFIED OlderHistory = 0
+	// Bitstamp's daily closes, from September 2011.
+	OlderHistory_OLDER_HISTORY_BITSTAMP OlderHistory = 1
+	// blockchain.info's daily average across exchanges, from August 2010.
+	OlderHistory_OLDER_HISTORY_BLOCKCHAIN_INFO OlderHistory = 2
+)
+
+// Enum value maps for OlderHistory.
+var (
+	OlderHistory_name = map[int32]string{
+		0: "OLDER_HISTORY_UNSPECIFIED",
+		1: "OLDER_HISTORY_BITSTAMP",
+		2: "OLDER_HISTORY_BLOCKCHAIN_INFO",
+	}
+	OlderHistory_value = map[string]int32{
+		"OLDER_HISTORY_UNSPECIFIED":     0,
+		"OLDER_HISTORY_BITSTAMP":        1,
+		"OLDER_HISTORY_BLOCKCHAIN_INFO": 2,
+	}
+)
+
+func (x OlderHistory) Enum() *OlderHistory {
+	p := new(OlderHistory)
+	*p = x
+	return p
+}
+
+func (x OlderHistory) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (OlderHistory) Descriptor() protoreflect.EnumDescriptor {
+	return file_bitcoinspiral_v1_bitcoinspiral_proto_enumTypes[1].Descriptor()
+}
+
+func (OlderHistory) Type() protoreflect.EnumType {
+	return &file_bitcoinspiral_v1_bitcoinspiral_proto_enumTypes[1]
+}
+
+func (x OlderHistory) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use OlderHistory.Descriptor instead.
+func (OlderHistory) EnumDescriptor() ([]byte, []int) {
+	return file_bitcoinspiral_v1_bitcoinspiral_proto_rawDescGZIP(), []int{1}
+}
+
 // Config is one instance's settings.
 type Config struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Unspecified means USD.
-	Currency      Currency `protobuf:"varint,1,opt,name=currency,proto3,enum=bitcoinspiral.v1.Currency" json:"currency,omitempty"`
+	Currency Currency `protobuf:"varint,1,opt,name=currency,proto3,enum=bitcoinspiral.v1.Currency" json:"currency,omitempty"`
+	// Extends the history back past mid 2015 (USD only).
+	OlderHistory  OlderHistory `protobuf:"varint,2,opt,name=older_history,json=olderHistory,proto3,enum=bitcoinspiral.v1.OlderHistory" json:"older_history,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -118,6 +173,13 @@ func (x *Config) GetCurrency() Currency {
 		return x.Currency
 	}
 	return Currency_CURRENCY_UNSPECIFIED
+}
+
+func (x *Config) GetOlderHistory() OlderHistory {
+	if x != nil {
+		return x.OlderHistory
+	}
+	return OlderHistory_OLDER_HISTORY_UNSPECIFIED
 }
 
 // State is everything the spiral draws.
@@ -422,9 +484,11 @@ var File_bitcoinspiral_v1_bitcoinspiral_proto protoreflect.FileDescriptor
 
 const file_bitcoinspiral_v1_bitcoinspiral_proto_rawDesc = "" +
 	"\n" +
-	"$bitcoinspiral/v1/bitcoinspiral.proto\x12\x10bitcoinspiral.v1\x1a\x1bbuf/validate/validate.proto\"J\n" +
+	"$bitcoinspiral/v1/bitcoinspiral.proto\x12\x10bitcoinspiral.v1\x1a\x1bbuf/validate/validate.proto\"\xa8\x02\n" +
 	"\x06Config\x12@\n" +
-	"\bcurrency\x18\x01 \x01(\x0e2\x1a.bitcoinspiral.v1.CurrencyB\b\xbaH\x05\x82\x01\x02\x10\x01R\bcurrency\"\xbc\x01\n" +
+	"\bcurrency\x18\x01 \x01(\x0e2\x1a.bitcoinspiral.v1.CurrencyB\b\xbaH\x05\x82\x01\x02\x10\x01R\bcurrency\x12M\n" +
+	"\rolder_history\x18\x02 \x01(\x0e2\x1e.bitcoinspiral.v1.OlderHistoryB\b\xbaH\x05\x82\x01\x02\x10\x01R\folderHistory:\x8c\x01\xbaH\x88\x01\x1a\x85\x01\n" +
+	"\x16older_history_usd_only\x12&older history is only available in USD\x1aCthis.older_history == 0 || this.currency == 0 || this.currency == 1\"\xbc\x01\n" +
 	"\x05State\x12B\n" +
 	"\bcurrency\x18\x01 \x01(\x0e2\x1a.bitcoinspiral.v1.CurrencyB\n" +
 	"\xbaH\a\x82\x01\x04\x10\x01 \x00R\bcurrency\x12>\n" +
@@ -448,7 +512,11 @@ const file_bitcoinspiral_v1_bitcoinspiral_proto_rawDesc = "" +
 	"\x14CURRENCY_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fCURRENCY_USD\x10\x01\x12\x10\n" +
 	"\fCURRENCY_EUR\x10\x02\x12\x10\n" +
-	"\fCURRENCY_GBP\x10\x03B\xe6\x01\n" +
+	"\fCURRENCY_GBP\x10\x03*l\n" +
+	"\fOlderHistory\x12\x1d\n" +
+	"\x19OLDER_HISTORY_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16OLDER_HISTORY_BITSTAMP\x10\x01\x12!\n" +
+	"\x1dOLDER_HISTORY_BLOCKCHAIN_INFO\x10\x02B\xe6\x01\n" +
 	"\x14com.bitcoinspiral.v1B\x12BitcoinspiralProtoP\x01ZYgithub.com/aren55555/widgetd/examples/bitcoin-spiral/gen/bitcoinspiral/v1;bitcoinspiralv1\xa2\x02\x03BXX\xaa\x02\x10Bitcoinspiral.V1\xca\x02\x10Bitcoinspiral\\V1\xe2\x02\x1cBitcoinspiral\\V1\\GPBMetadata\xea\x02\x11Bitcoinspiral::V1b\x06proto3"
 
 var (
@@ -463,30 +531,32 @@ func file_bitcoinspiral_v1_bitcoinspiral_proto_rawDescGZIP() []byte {
 	return file_bitcoinspiral_v1_bitcoinspiral_proto_rawDescData
 }
 
-var file_bitcoinspiral_v1_bitcoinspiral_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_bitcoinspiral_v1_bitcoinspiral_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_bitcoinspiral_v1_bitcoinspiral_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_bitcoinspiral_v1_bitcoinspiral_proto_goTypes = []any{
 	(Currency)(0),      // 0: bitcoinspiral.v1.Currency
-	(*Config)(nil),     // 1: bitcoinspiral.v1.Config
-	(*State)(nil),      // 2: bitcoinspiral.v1.State
-	(*DailyClose)(nil), // 3: bitcoinspiral.v1.DailyClose
-	(*Quote)(nil),      // 4: bitcoinspiral.v1.Quote
-	(*Delta)(nil),      // 5: bitcoinspiral.v1.Delta
-	(*History)(nil),    // 6: bitcoinspiral.v1.History
+	(OlderHistory)(0),  // 1: bitcoinspiral.v1.OlderHistory
+	(*Config)(nil),     // 2: bitcoinspiral.v1.Config
+	(*State)(nil),      // 3: bitcoinspiral.v1.State
+	(*DailyClose)(nil), // 4: bitcoinspiral.v1.DailyClose
+	(*Quote)(nil),      // 5: bitcoinspiral.v1.Quote
+	(*Delta)(nil),      // 6: bitcoinspiral.v1.Delta
+	(*History)(nil),    // 7: bitcoinspiral.v1.History
 }
 var file_bitcoinspiral_v1_bitcoinspiral_proto_depIdxs = []int32{
 	0, // 0: bitcoinspiral.v1.Config.currency:type_name -> bitcoinspiral.v1.Currency
-	0, // 1: bitcoinspiral.v1.State.currency:type_name -> bitcoinspiral.v1.Currency
-	3, // 2: bitcoinspiral.v1.State.daily:type_name -> bitcoinspiral.v1.DailyClose
-	4, // 3: bitcoinspiral.v1.State.latest:type_name -> bitcoinspiral.v1.Quote
-	4, // 4: bitcoinspiral.v1.Delta.quote:type_name -> bitcoinspiral.v1.Quote
-	3, // 5: bitcoinspiral.v1.Delta.close:type_name -> bitcoinspiral.v1.DailyClose
-	3, // 6: bitcoinspiral.v1.History.daily:type_name -> bitcoinspiral.v1.DailyClose
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	1, // 1: bitcoinspiral.v1.Config.older_history:type_name -> bitcoinspiral.v1.OlderHistory
+	0, // 2: bitcoinspiral.v1.State.currency:type_name -> bitcoinspiral.v1.Currency
+	4, // 3: bitcoinspiral.v1.State.daily:type_name -> bitcoinspiral.v1.DailyClose
+	5, // 4: bitcoinspiral.v1.State.latest:type_name -> bitcoinspiral.v1.Quote
+	5, // 5: bitcoinspiral.v1.Delta.quote:type_name -> bitcoinspiral.v1.Quote
+	4, // 6: bitcoinspiral.v1.Delta.close:type_name -> bitcoinspiral.v1.DailyClose
+	4, // 7: bitcoinspiral.v1.History.daily:type_name -> bitcoinspiral.v1.DailyClose
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_bitcoinspiral_v1_bitcoinspiral_proto_init() }
@@ -503,7 +573,7 @@ func file_bitcoinspiral_v1_bitcoinspiral_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_bitcoinspiral_v1_bitcoinspiral_proto_rawDesc), len(file_bitcoinspiral_v1_bitcoinspiral_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
