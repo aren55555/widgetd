@@ -101,6 +101,10 @@ func (a *adminService) widgetInfo(w *loadedWidget) *widgetdv1.WidgetInfo {
 		RequestedHosts: w.spec.Network.Hosts, RequestedMethods: w.spec.Network.Methods,
 		NetworkWhy: w.spec.Network.Why, Configurable: w.spec.Config != nil,
 	}
+	if si := w.spec.SignIn; si != nil {
+		info.SignInProvider = si.Provider
+		_, info.SignInClientSet, _ = a.srv.loadClient(w.spec.Name)
+	}
 	if g, ok, _ := a.srv.loadGrant(w.spec.Name); ok {
 		info.GrantSet, info.NetworkDisabled, info.GrantedHosts = true, g.disabled, g.hosts
 	}
@@ -186,6 +190,8 @@ func (a *adminService) GetConfigForm(ctx context.Context, req *connect.Request[w
 		out.ConfigType = string(c.ProtoReflect().Descriptor().FullName())
 	}
 	out.Status = in.status()
+	out.SecretFields = in.w.spec.Secrets
+	out.SecretsSet = a.srv.secretsSet(in)
 	return connect.NewResponse(out), nil
 }
 
@@ -199,7 +205,14 @@ func (a *adminService) SaveConfig(ctx context.Context, req *connect.Request[widg
 		return nil, err
 	}
 	cfg := req.Msg.GetConfig()
+	if err := validClear(in.w, req.Msg.GetClearSecrets()); err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
 	if c := in.w.spec.Config; c != nil {
+		// Secrets left blank keep what's stored; the checks see them all.
+		if cfg, err = a.srv.withStoredSecrets(in, cfg, req.Msg.GetClearSecrets()); err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
 		if v := in.w.schema.violations(c.ProtoReflect().Descriptor().FullName(), cfg); len(v) > 0 {
 			return connect.NewResponse(&widgetdv1.SaveConfigResponse{Violations: v}), nil
 		}

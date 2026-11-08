@@ -31,6 +31,7 @@ Raspberry Pi, or embed it in an existing Go server.
 | `client/` | `<widget-board>` and the admin pages (built output committed in `client/dist`) |
 | `examples/bitcoin-spiral/` | Example widget, as a folder |
 | `examples/sports-game/` | Game cards for a followed team: cards that come and go with each game |
+| `examples/github-notifications/` | Your GitHub notifications: signs in with GitHub (device flow, run by the host) |
 | `examples/clock.widget` | Example widget, as a single file |
 | `docs/abi.md` | The sandbox ABI, for writing a widget in another language |
 

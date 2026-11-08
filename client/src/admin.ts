@@ -19,7 +19,7 @@ import { FileDescriptorSetSchema } from "@bufbuild/protobuf/wkt";
 import { AuthService, Role } from "./gen/widgetd/v1/auth_pb.ts";
 import { WidgetAdminService, type WidgetInfo } from "./gen/widgetd/v1/admin_pb.ts";
 import { InstanceStatus_State } from "./gen/widgetd/v1/stream_pb.ts";
-import { buildForm, sameChoices, type Choices } from "./lib/form.ts";
+import { buildForm, sameChoices, type Choices, type Secrets } from "./lib/form.ts";
 
 const base = new URL(".", import.meta.url).pathname; // the bundle sits at <base>admin.js
 const transport = createConnectTransport({ baseUrl: location.origin, useBinaryFormat: true });
@@ -173,6 +173,7 @@ async function configure(target: ConfigTarget) {
     let validate: (server?: { field: string; message: string }[]) => boolean = () => true;
     let msg: Message | undefined;
     let desc: DescMessage | undefined;
+    let clearSecrets = new Set<string>();
     if (form.configType) {
       const registry = createFileRegistry(fromBinary(FileDescriptorSetSchema, form.schema));
       desc = registry.getMessage(form.configType);
@@ -186,7 +187,9 @@ async function configure(target: ConfigTarget) {
       let choices: Choices = new Map();
       let asked = 0;
       let timer: ReturnType<typeof setTimeout> | undefined;
-      const draw = () => ({ validate } = buildForm(fields, d, m, edited, choices));
+      const secrets: Secrets = { fields: new Set(form.secretFields), set: new Set(form.secretsSet), clear: new Set() };
+      clearSecrets = secrets.clear;
+      const draw = () => ({ validate } = buildForm(fields, d, m, edited, choices, secrets));
       const refreshChoices = async () => {
         const mine = ++asked;
         try {
@@ -216,7 +219,12 @@ async function configure(target: ConfigTarget) {
         st.textContent = "Fix the highlighted fields first.";
         return;
       }
-      const res = await admin.saveConfig({ ...target, label: label.value.trim(), config: desc && msg ? toBinary(desc, msg) : new Uint8Array() });
+      const res = await admin.saveConfig({
+        ...target,
+        label: label.value.trim(),
+        config: desc && msg ? toBinary(desc, msg) : new Uint8Array(),
+        clearSecrets: [...clearSecrets],
+      });
       if (res.violations.length) {
         validate(res.violations.map((v) => ({ field: v.field, message: v.message })));
         st.textContent = "The widget didn't accept that; see the fields above.";
@@ -281,7 +289,41 @@ async function adminHome() {
       });
       del.className = "danger";
       actions.append(settings, rename, activity, del);
-      widgetList.append(h("li", {}, h("strong", {}, title), h("span", { class: "muted" }, ` ${inst.widget} · ${state}`), actions, rs, as, ds));
+      // Widgets that use an account: sign in (from this phone: open the
+      // provider's page with the code) or out.
+      const provider = widgets.find((w) => w.name === inst.widget)?.signInProvider;
+      const extra: Node[] = [];
+      if (provider) {
+        const needs = inst.status?.state === InstanceStatus_State.NEEDS_SIGN_IN;
+        const [sign, ss] = button(needs ? `Sign in to ${provider}` : "Sign out", async (st) => {
+          if (!needs) {
+            if (!confirm(`Sign ${title} out of ${provider}?`)) return;
+            await admin.signOut({ instanceId: inst.id });
+            await adminHome();
+            return;
+          }
+          const s = await admin.beginSignIn({ instanceId: inst.id });
+          const link = s.verificationUriComplete || s.verificationUri;
+          st.replaceChildren(
+            "Enter ",
+            h("strong", { class: "code" }, s.userCode),
+            " at ",
+            h("a", { href: link, target: "_blank", rel: "noopener" }, s.verificationUri.replace(/^https:\/\//, "")),
+            ". This page updates once you've approved it.",
+          );
+          const until = Date.now() + 10 * 60_000;
+          const check = async () => {
+            const { instances: now } = await admin.listInstances({});
+            const me = now.find((i) => i.id === inst.id);
+            if (me && me.status?.state !== InstanceStatus_State.NEEDS_SIGN_IN) return adminHome();
+            if (Date.now() < until) setTimeout(check, 3000);
+          };
+          setTimeout(check, 3000);
+        });
+        actions.append(sign);
+        extra.push(ss);
+      }
+      widgetList.append(h("li", {}, h("strong", {}, title), h("span", { class: "muted" }, ` ${inst.widget} · ${state}`), actions, ...extra, rs, as, ds));
     }
     if (!instances.length) widgetList.append(h("li", { class: "muted" }, "No widgets yet. Add one from a screen."));
 
@@ -327,7 +369,21 @@ async function adminHome() {
       await createPasskey("", deviceGuess(navigator.userAgent));
       st.textContent = "Passkey added.";
     });
-    page("Widgets", widgetList, h("h2", {}, "Network access"), grants, h("h2", {}, "Screens"), screens, h("h2", {}, "Passkeys"), add, status);
+    // The OAuth apps widgets sign in with: registered once per widget, by
+    // whoever runs this, with the provider.
+    const apps = h("ul", { class: "devices" });
+    for (const w of widgets.filter((w) => w.signInProvider)) {
+      const id = h("input", { placeholder: w.signInClientSet ? "Registered. Enter a new one to replace it." : "Client ID", autocomplete: "off", "aria-label": `${w.signInProvider} client ID` }) as HTMLInputElement;
+      const [save, st] = button("Save", async (s) => {
+        await admin.setSignInClient({ widget: w.name, clientId: id.value });
+        id.value = "";
+        s.textContent = "Saved.";
+      });
+      apps.append(h("li", {}, h("strong", {}, w.title), h("p", { class: "muted" }, `Signs in to ${w.signInProvider}. Register an OAuth app there (with device flow enabled) and enter its client ID.`), id, save, st));
+    }
+    const appsSection = widgets.some((w) => w.signInProvider) ? [h("h2", {}, "Sign-in apps"), apps] : [];
+
+    page("Widgets", widgetList, ...appsSection, h("h2", {}, "Network access"), grants, h("h2", {}, "Screens"), screens, h("h2", {}, "Passkeys"), add, status);
   });
 }
 
@@ -341,6 +397,8 @@ function stateText(s: InstanceStatus_State | undefined, message?: string): strin
       return `stopped: ${message ?? "error"}`;
     case InstanceStatus_State.RUNNING:
       return "running";
+    case InstanceStatus_State.NEEDS_SIGN_IN:
+      return message ? `needs sign-in: ${message}` : "needs sign-in";
     default:
       return "unknown";
   }

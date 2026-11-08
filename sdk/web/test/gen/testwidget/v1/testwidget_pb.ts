@@ -11,7 +11,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file testwidget/v1/testwidget.proto.
  */
 export const file_testwidget_v1_testwidget: GenFile = /*@__PURE__*/
-  fileDesc("Ch50ZXN0d2lkZ2V0L3YxL3Rlc3R3aWRnZXQucHJvdG8SDXRlc3R3aWRnZXQudjEiLwoFU3RhdGUSDgoGdmFsdWVzGAEgAygDEhYKBWxhYmVsGAIgASgJQge6SARyAhgIIh8KBURlbHRhEhYKBXZhbHVlGAEgASgDQge6SAQiAigAIiAKBkNvbmZpZxIWCgVsYWJlbBgBIAEoCUIHukgEcgIYCCIeCgZBY3Rpb24SFAoDdGFwGAEgASgDQge6SAQiAigAQsoBChFjb20udGVzdHdpZGdldC52MUIPVGVzdHdpZGdldFByb3RvUAFaT2dpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvaW50ZXJuYWwvdGVzdHdpZGdldC9nZW4vdGVzdHdpZGdldC92MTt0ZXN0d2lkZ2V0djGiAgNUWFiqAg1UZXN0d2lkZ2V0LlYxygINVGVzdHdpZGdldFxWMeICGVRlc3R3aWRnZXRcVjFcR1BCTWV0YWRhdGHqAg5UZXN0d2lkZ2V0OjpWMWIGcHJvdG8z", [file_buf_validate_validate]);
+  fileDesc("Ch50ZXN0d2lkZ2V0L3YxL3Rlc3R3aWRnZXQucHJvdG8SDXRlc3R3aWRnZXQudjEiLwoFU3RhdGUSDgoGdmFsdWVzGAEgAygDEhYKBWxhYmVsGAIgASgJQge6SARyAhgIIh8KBURlbHRhEhYKBXZhbHVlGAEgASgDQge6SAQiAigAIjgKBkNvbmZpZxIWCgVsYWJlbBgBIAEoCUIHukgEcgIYCBIWCgV0b2tlbhgCIAEoCUIHukgEcgIYQCIeCgZBY3Rpb24SFAoDdGFwGAEgASgDQge6SAQiAigAQsoBChFjb20udGVzdHdpZGdldC52MUIPVGVzdHdpZGdldFByb3RvUAFaT2dpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvaW50ZXJuYWwvdGVzdHdpZGdldC9nZW4vdGVzdHdpZGdldC92MTt0ZXN0d2lkZ2V0djGiAgNUWFiqAg1UZXN0d2lkZ2V0LlYxygINVGVzdHdpZGdldFxWMeICGVRlc3R3aWRnZXRcVjFcR1BCTWV0YWRhdGHqAg5UZXN0d2lkZ2V0OjpWMWIGcHJvdG8z", [file_buf_validate_validate]);
 
 /**
  * @generated from message testwidget.v1.State
@@ -60,6 +60,13 @@ export type Config = Message<"testwidget.v1.Config"> & {
    * @generated from field: string label = 1;
    */
   label: string;
+
+  /**
+   * Secret in the tests that declare it so.
+   *
+   * @generated from field: string token = 2;
+   */
+  token: string;
 };
 
 /**

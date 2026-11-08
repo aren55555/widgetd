@@ -46,6 +46,17 @@ service WidgetAdminService {
   // A widget's network grant, and an instance's recent fetches. Admin.
   rpc SetNetworkGrant(SetNetworkGrantRequest) returns (SetNetworkGrantResponse);
   rpc GetInstanceActivity(GetInstanceActivityRequest) returns (GetInstanceActivityResponse);
+
+  // Sign-in, for widgets that use an account (device flow: a code shown
+  // on the screen, approved on the provider's site from a phone).
+  // BeginSignIn: screen or admin, but a screen only for an instance that
+  // isn't signed in yet; replacing a sign-in needs an admin. The rest:
+  // admin.
+  rpc BeginSignIn(BeginSignInRequest) returns (BeginSignInResponse);
+  rpc SignOut(SignOutRequest) returns (SignOutResponse);
+  // The OAuth app a widget signs in with, registered by whoever runs the
+  // host with the provider.
+  rpc SetSignInClient(SetSignInClientRequest) returns (SetSignInClientResponse);
 }
 
 message WidgetInfo {
@@ -63,6 +74,10 @@ message WidgetInfo {
   bool network_disabled = 9;
   // Whether it takes a configuration at all.
   bool configurable = 10;
+  // Set if it signs in to an account: the provider's name, and whether a
+  // client (OAuth app) has been registered for it yet.
+  string sign_in_provider = 11;
+  bool sign_in_client_set = 12;
 }
 
 message ListWidgetsRequest {}
@@ -105,8 +120,13 @@ message GetConfigFormResponse {
   // google.protobuf.FileDescriptorSet: the widget's protos and imports.
   bytes schema = 5;
   // The current configuration, encoded as config_type. Empty for a new one.
+  // Secret fields are always empty here: they are write-only.
   bytes config = 6;
   InstanceStatus status = 7;
+  // The widget's secret fields (top-level strings), and which of them have
+  // a value stored. The form shows them as write-only.
+  repeated string secret_fields = 8;
+  repeated string secrets_set = 9;
 }
 
 message SaveConfigRequest {
@@ -114,8 +134,11 @@ message SaveConfigRequest {
   string ticket = 1;
   string instance_id = 4;
   string label = 2;
-  // Encoded as the widget's Config message.
+  // Encoded as the widget's Config message. A secret field left empty
+  // keeps its stored value.
   bytes config = 3;
+  // Secret fields to remove instead.
+  repeated string clear_secrets = 5;
 }
 
 message FieldViolation {
@@ -208,3 +231,33 @@ message ConfigFieldChoices {
 message GetConfigChoicesResponse {
   repeated ConfigFieldChoices fields = 1;
 }
+
+message BeginSignInRequest {
+  string instance_id = 1;
+}
+
+message BeginSignInResponse {
+  // Show this, and where to enter it.
+  string user_code = 1;
+  string verification_uri = 2;
+  // The same page with the code filled in, if the provider offers one:
+  // what a QR code should open.
+  string verification_uri_complete = 3;
+  google.protobuf.Timestamp expires_at = 4;
+  string provider = 5;
+}
+
+message SignOutRequest {
+  string instance_id = 1;
+}
+
+message SignOutResponse {}
+
+message SetSignInClientRequest {
+  string widget = 1;
+  string client_id = 2;
+  // Optional: device flow with most providers needs none. Write-only.
+  string client_secret = 3;
+}
+
+message SetSignInClientResponse {}

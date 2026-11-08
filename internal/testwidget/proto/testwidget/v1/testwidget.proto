@@ -17,6 +17,8 @@ message Delta {
 
 message Config {
   string label = 1 [(buf.validate.field).string.max_len = 8];
+  // Secret in the tests that declare it so.
+  string token = 2 [(buf.validate.field).string.max_len = 64];
 }
 
 message Action {

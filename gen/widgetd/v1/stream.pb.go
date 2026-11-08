@@ -35,6 +35,9 @@ const (
 	// Its stored configuration no longer passes the widget's schema (after
 	// an upgrade, say). It waits to be configured again.
 	InstanceStatus_STATE_INVALID_CONFIG InstanceStatus_State = 4
+	// The widget needs an account signed in (or signed in again: the
+	// provider stopped accepting its token). Screens offer a sign-in code.
+	InstanceStatus_STATE_NEEDS_SIGN_IN InstanceStatus_State = 5
 )
 
 // Enum value maps for InstanceStatus_State.
@@ -45,6 +48,7 @@ var (
 		2: "STATE_RUNNING",
 		3: "STATE_FAULTED",
 		4: "STATE_INVALID_CONFIG",
+		5: "STATE_NEEDS_SIGN_IN",
 	}
 	InstanceStatus_State_value = map[string]int32{
 		"STATE_UNSPECIFIED":    0,
@@ -52,6 +56,7 @@ var (
 		"STATE_RUNNING":        2,
 		"STATE_FAULTED":        3,
 		"STATE_INVALID_CONFIG": 4,
+		"STATE_NEEDS_SIGN_IN":  5,
 	}
 )
 
@@ -1047,19 +1052,20 @@ const file_widgetd_v1_stream_proto_rawDesc = "" +
 	"\tunmounted\x18\x06 \x01(\v2\x15.widgetd.v1.UnmountedH\x00R\tunmounted\x12)\n" +
 	"\x05fault\x18\a \x01(\v2\x11.widgetd.v1.FaultH\x00R\x05fault\x128\n" +
 	"\binstance\x18\b \x01(\v2\x1a.widgetd.v1.InstanceStatusH\x00R\binstanceB\x06\n" +
-	"\x04body\"\xa2\x02\n" +
+	"\x04body\"\xbc\x02\n" +
 	"\x0eInstanceStatus\x126\n" +
 	"\x05state\x18\x01 \x01(\x0e2 .widgetd.v1.InstanceStatus.StateR\x05state\x12\x16\n" +
 	"\x06widget\x18\x02 \x01(\tR\x06widget\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x18\n" +
 	"\amessage\x18\x04 \x01(\tR\amessage\x12\x18\n" +
-	"\aremoved\x18\x05 \x01(\bR\aremoved\"v\n" +
+	"\aremoved\x18\x05 \x01(\bR\aremoved\"\x8f\x01\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12STATE_NEEDS_CONFIG\x10\x01\x12\x11\n" +
 	"\rSTATE_RUNNING\x10\x02\x12\x11\n" +
 	"\rSTATE_FAULTED\x10\x03\x12\x18\n" +
-	"\x14STATE_INVALID_CONFIG\x10\x04\"Q\n" +
+	"\x14STATE_INVALID_CONFIG\x10\x04\x12\x17\n" +
+	"\x13STATE_NEEDS_SIGN_IN\x10\x05\"Q\n" +
 	"\tWidgetRef\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x16\n" +

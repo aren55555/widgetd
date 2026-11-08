@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file widgetd/v1/admin.proto.
  */
 export const file_widgetd_v1_admin: GenFile = /*@__PURE__*/
-  fileDesc("ChZ3aWRnZXRkL3YxL2FkbWluLnByb3RvEgp3aWRnZXRkLnYxIt0BCgpXaWRnZXRJbmZvEgwKBG5hbWUYASABKAkSDwoHdmVyc2lvbhgCIAEoCRINCgV0aXRsZRgDIAEoCRIXCg9yZXF1ZXN0ZWRfaG9zdHMYBCADKAkSGQoRcmVxdWVzdGVkX21ldGhvZHMYBSADKAkSEwoLbmV0d29ya193aHkYBiABKAkSEQoJZ3JhbnRfc2V0GAcgASgIEhUKDWdyYW50ZWRfaG9zdHMYCCADKAkSGAoQbmV0d29ya19kaXNhYmxlZBgJIAEoCBIUCgxjb25maWd1cmFibGUYCiABKAgiFAoSTGlzdFdpZGdldHNSZXF1ZXN0Ij4KE0xpc3RXaWRnZXRzUmVzcG9uc2USJwoHd2lkZ2V0cxgBIAMoCzIWLndpZGdldGQudjEuV2lkZ2V0SW5mbyIkChJBZGRJbnN0YW5jZVJlcXVlc3QSDgoGd2lkZ2V0GAEgASgJIioKE0FkZEluc3RhbmNlUmVzcG9uc2USEwoLaW5zdGFuY2VfaWQYASABKAkiMQoaUmVxdWVzdENvbmZpZ1RpY2tldFJlcXVlc3QSEwoLaW5zdGFuY2VfaWQYASABKAkiWgobUmVxdWVzdENvbmZpZ1RpY2tldFJlc3BvbnNlEgsKA3VybBgBIAEoCRIuCgpleHBpcmVzX2F0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCI7ChRHZXRDb25maWdGb3JtUmVxdWVzdBIOCgZ0aWNrZXQYASABKAkSEwoLaW5zdGFuY2VfaWQYAiABKAkixAEKFUdldENvbmZpZ0Zvcm1SZXNwb25zZRITCgtpbnN0YW5jZV9pZBgBIAEoCRImCgZ3aWRnZXQYAiABKAsyFi53aWRnZXRkLnYxLldpZGdldEluZm8SDQoFbGFiZWwYAyABKAkSEwoLY29uZmlnX3R5cGUYBCABKAkSDgoGc2NoZW1hGAUgASgMEg4KBmNvbmZpZxgGIAEoDBIqCgZzdGF0dXMYByABKAsyGi53aWRnZXRkLnYxLkluc3RhbmNlU3RhdHVzIlcKEVNhdmVDb25maWdSZXF1ZXN0Eg4KBnRpY2tldBgBIAEoCRITCgtpbnN0YW5jZV9pZBgEIAEoCRINCgVsYWJlbBgCIAEoCRIOCgZjb25maWcYAyABKAwiMAoORmllbGRWaW9sYXRpb24SDQoFZmllbGQYASABKAkSDwoHbWVzc2FnZRgCIAEoCSJEChJTYXZlQ29uZmlnUmVzcG9uc2USLgoKdmlvbGF0aW9ucxgBIAMoCzIaLndpZGdldGQudjEuRmllbGRWaW9sYXRpb24iFgoUTGlzdEluc3RhbmNlc1JlcXVlc3QiRAoVTGlzdEluc3RhbmNlc1Jlc3BvbnNlEisKCWluc3RhbmNlcxgBIAMoCzIYLndpZGdldGQudjEuSW5zdGFuY2VJbmZvIpUBCgxJbnN0YW5jZUluZm8SCgoCaWQYASABKAkSDgoGd2lkZ2V0GAIgASgJEg0KBWxhYmVsGAMgASgJEioKBnN0YXR1cxgEIAEoCzIaLndpZGdldGQudjEuSW5zdGFuY2VTdGF0dXMSLgoKY3JlYXRlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiOwoVUmVuYW1lSW5zdGFuY2VSZXF1ZXN0EhMKC2luc3RhbmNlX2lkGAEgASgJEg0KBWxhYmVsGAIgASgJIhgKFlJlbmFtZUluc3RhbmNlUmVzcG9uc2UiLAoVRGVsZXRlSW5zdGFuY2VSZXF1ZXN0EhMKC2luc3RhbmNlX2lkGAEgASgJIhgKFkRlbGV0ZUluc3RhbmNlUmVzcG9uc2UiXgoWU2V0TmV0d29ya0dyYW50UmVxdWVzdBIOCgZ3aWRnZXQYASABKAkSDQoFaG9zdHMYAiADKAkSEAoIZGlzYWJsZWQYAyABKAgSEwoLdXNlX2RlZmF1bHQYBCABKAgiGQoXU2V0TmV0d29ya0dyYW50UmVzcG9uc2UiMQoaR2V0SW5zdGFuY2VBY3Rpdml0eVJlcXVlc3QSEwoLaW5zdGFuY2VfaWQYASABKAkirgEKBUZldGNoEiYKAmF0GAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIOCgZtZXRob2QYAiABKAkSDAoEaG9zdBgDIAEoCRIMCgRwYXRoGAQgASgJEg4KBnN0YXR1cxgFIAEoBRINCgVieXRlcxgGIAEoAxIOCgZkZW5pZWQYByABKAkSDQoFZXJyb3IYCCABKAkSEwoLZHVyYXRpb25fbXMYCSABKAMiQQobR2V0SW5zdGFuY2VBY3Rpdml0eVJlc3BvbnNlEiIKB2ZldGNoZXMYASADKAsyES53aWRnZXRkLnYxLkZldGNoIk4KF0dldENvbmZpZ0Nob2ljZXNSZXF1ZXN0Eg4KBnRpY2tldBgBIAEoCRIOCgZjb25maWcYAiABKAwSEwoLaW5zdGFuY2VfaWQYAyABKAkiLAoMQ29uZmlnQ2hvaWNlEg0KBXZhbHVlGAEgASgJEg0KBWxhYmVsGAIgASgJIk4KEkNvbmZpZ0ZpZWxkQ2hvaWNlcxINCgVmaWVsZBgBIAEoCRIpCgdjaG9pY2VzGAIgAygLMhgud2lkZ2V0ZC52MS5Db25maWdDaG9pY2UiSgoYR2V0Q29uZmlnQ2hvaWNlc1Jlc3BvbnNlEi4KBmZpZWxkcxgBIAMoCzIeLndpZGdldGQudjEuQ29uZmlnRmllbGRDaG9pY2VzMuoHChJXaWRnZXRBZG1pblNlcnZpY2USTgoLTGlzdFdpZGdldHMSHi53aWRnZXRkLnYxLkxpc3RXaWRnZXRzUmVxdWVzdBofLndpZGdldGQudjEuTGlzdFdpZGdldHNSZXNwb25zZRJOCgtBZGRJbnN0YW5jZRIeLndpZGdldGQudjEuQWRkSW5zdGFuY2VSZXF1ZXN0Gh8ud2lkZ2V0ZC52MS5BZGRJbnN0YW5jZVJlc3BvbnNlEmYKE1JlcXVlc3RDb25maWdUaWNrZXQSJi53aWRnZXRkLnYxLlJlcXVlc3RDb25maWdUaWNrZXRSZXF1ZXN0Gicud2lkZ2V0ZC52MS5SZXF1ZXN0Q29uZmlnVGlja2V0UmVzcG9uc2USVAoNR2V0Q29uZmlnRm9ybRIgLndpZGdldGQudjEuR2V0Q29uZmlnRm9ybVJlcXVlc3QaIS53aWRnZXRkLnYxLkdldENvbmZpZ0Zvcm1SZXNwb25zZRJdChBHZXRDb25maWdDaG9pY2VzEiMud2lkZ2V0ZC52MS5HZXRDb25maWdDaG9pY2VzUmVxdWVzdBokLndpZGdldGQudjEuR2V0Q29uZmlnQ2hvaWNlc1Jlc3BvbnNlEksKClNhdmVDb25maWcSHS53aWRnZXRkLnYxLlNhdmVDb25maWdSZXF1ZXN0Gh4ud2lkZ2V0ZC52MS5TYXZlQ29uZmlnUmVzcG9uc2USVAoNTGlzdEluc3RhbmNlcxIgLndpZGdldGQudjEuTGlzdEluc3RhbmNlc1JlcXVlc3QaIS53aWRnZXRkLnYxLkxpc3RJbnN0YW5jZXNSZXNwb25zZRJXCg5SZW5hbWVJbnN0YW5jZRIhLndpZGdldGQudjEuUmVuYW1lSW5zdGFuY2VSZXF1ZXN0GiIud2lkZ2V0ZC52MS5SZW5hbWVJbnN0YW5jZVJlc3BvbnNlElcKDkRlbGV0ZUluc3RhbmNlEiEud2lkZ2V0ZC52MS5EZWxldGVJbnN0YW5jZVJlcXVlc3QaIi53aWRnZXRkLnYxLkRlbGV0ZUluc3RhbmNlUmVzcG9uc2USWgoPU2V0TmV0d29ya0dyYW50EiIud2lkZ2V0ZC52MS5TZXROZXR3b3JrR3JhbnRSZXF1ZXN0GiMud2lkZ2V0ZC52MS5TZXROZXR3b3JrR3JhbnRSZXNwb25zZRJmChNHZXRJbnN0YW5jZUFjdGl2aXR5EiYud2lkZ2V0ZC52MS5HZXRJbnN0YW5jZUFjdGl2aXR5UmVxdWVzdBonLndpZGdldGQudjEuR2V0SW5zdGFuY2VBY3Rpdml0eVJlc3BvbnNlQjdaNWdpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvZ2VuL3dpZGdldGQvdjE7d2lkZ2V0ZHYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_widgetd_v1_stream]);
+  fileDesc("ChZ3aWRnZXRkL3YxL2FkbWluLnByb3RvEgp3aWRnZXRkLnYxIpMCCgpXaWRnZXRJbmZvEgwKBG5hbWUYASABKAkSDwoHdmVyc2lvbhgCIAEoCRINCgV0aXRsZRgDIAEoCRIXCg9yZXF1ZXN0ZWRfaG9zdHMYBCADKAkSGQoRcmVxdWVzdGVkX21ldGhvZHMYBSADKAkSEwoLbmV0d29ya193aHkYBiABKAkSEQoJZ3JhbnRfc2V0GAcgASgIEhUKDWdyYW50ZWRfaG9zdHMYCCADKAkSGAoQbmV0d29ya19kaXNhYmxlZBgJIAEoCBIUCgxjb25maWd1cmFibGUYCiABKAgSGAoQc2lnbl9pbl9wcm92aWRlchgLIAEoCRIaChJzaWduX2luX2NsaWVudF9zZXQYDCABKAgiFAoSTGlzdFdpZGdldHNSZXF1ZXN0Ij4KE0xpc3RXaWRnZXRzUmVzcG9uc2USJwoHd2lkZ2V0cxgBIAMoCzIWLndpZGdldGQudjEuV2lkZ2V0SW5mbyIkChJBZGRJbnN0YW5jZVJlcXVlc3QSDgoGd2lkZ2V0GAEgASgJIioKE0FkZEluc3RhbmNlUmVzcG9uc2USEwoLaW5zdGFuY2VfaWQYASABKAkiMQoaUmVxdWVzdENvbmZpZ1RpY2tldFJlcXVlc3QSEwoLaW5zdGFuY2VfaWQYASABKAkiWgobUmVxdWVzdENvbmZpZ1RpY2tldFJlc3BvbnNlEgsKA3VybBgBIAEoCRIuCgpleHBpcmVzX2F0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCI7ChRHZXRDb25maWdGb3JtUmVxdWVzdBIOCgZ0aWNrZXQYASABKAkSEwoLaW5zdGFuY2VfaWQYAiABKAki8AEKFUdldENvbmZpZ0Zvcm1SZXNwb25zZRITCgtpbnN0YW5jZV9pZBgBIAEoCRImCgZ3aWRnZXQYAiABKAsyFi53aWRnZXRkLnYxLldpZGdldEluZm8SDQoFbGFiZWwYAyABKAkSEwoLY29uZmlnX3R5cGUYBCABKAkSDgoGc2NoZW1hGAUgASgMEg4KBmNvbmZpZxgGIAEoDBIqCgZzdGF0dXMYByABKAsyGi53aWRnZXRkLnYxLkluc3RhbmNlU3RhdHVzEhUKDXNlY3JldF9maWVsZHMYCCADKAkSEwoLc2VjcmV0c19zZXQYCSADKAkibgoRU2F2ZUNvbmZpZ1JlcXVlc3QSDgoGdGlja2V0GAEgASgJEhMKC2luc3RhbmNlX2lkGAQgASgJEg0KBWxhYmVsGAIgASgJEg4KBmNvbmZpZxgDIAEoDBIVCg1jbGVhcl9zZWNyZXRzGAUgAygJIjAKDkZpZWxkVmlvbGF0aW9uEg0KBWZpZWxkGAEgASgJEg8KB21lc3NhZ2UYAiABKAkiRAoSU2F2ZUNvbmZpZ1Jlc3BvbnNlEi4KCnZpb2xhdGlvbnMYASADKAsyGi53aWRnZXRkLnYxLkZpZWxkVmlvbGF0aW9uIhYKFExpc3RJbnN0YW5jZXNSZXF1ZXN0IkQKFUxpc3RJbnN0YW5jZXNSZXNwb25zZRIrCglpbnN0YW5jZXMYASADKAsyGC53aWRnZXRkLnYxLkluc3RhbmNlSW5mbyKVAQoMSW5zdGFuY2VJbmZvEgoKAmlkGAEgASgJEg4KBndpZGdldBgCIAEoCRINCgVsYWJlbBgDIAEoCRIqCgZzdGF0dXMYBCABKAsyGi53aWRnZXRkLnYxLkluc3RhbmNlU3RhdHVzEi4KCmNyZWF0ZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIjsKFVJlbmFtZUluc3RhbmNlUmVxdWVzdBITCgtpbnN0YW5jZV9pZBgBIAEoCRINCgVsYWJlbBgCIAEoCSIYChZSZW5hbWVJbnN0YW5jZVJlc3BvbnNlIiwKFURlbGV0ZUluc3RhbmNlUmVxdWVzdBITCgtpbnN0YW5jZV9pZBgBIAEoCSIYChZEZWxldGVJbnN0YW5jZVJlc3BvbnNlIl4KFlNldE5ldHdvcmtHcmFudFJlcXVlc3QSDgoGd2lkZ2V0GAEgASgJEg0KBWhvc3RzGAIgAygJEhAKCGRpc2FibGVkGAMgASgIEhMKC3VzZV9kZWZhdWx0GAQgASgIIhkKF1NldE5ldHdvcmtHcmFudFJlc3BvbnNlIjEKGkdldEluc3RhbmNlQWN0aXZpdHlSZXF1ZXN0EhMKC2luc3RhbmNlX2lkGAEgASgJIq4BCgVGZXRjaBImCgJhdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDgoGbWV0aG9kGAIgASgJEgwKBGhvc3QYAyABKAkSDAoEcGF0aBgEIAEoCRIOCgZzdGF0dXMYBSABKAUSDQoFYnl0ZXMYBiABKAMSDgoGZGVuaWVkGAcgASgJEg0KBWVycm9yGAggASgJEhMKC2R1cmF0aW9uX21zGAkgASgDIkEKG0dldEluc3RhbmNlQWN0aXZpdHlSZXNwb25zZRIiCgdmZXRjaGVzGAEgAygLMhEud2lkZ2V0ZC52MS5GZXRjaCJOChdHZXRDb25maWdDaG9pY2VzUmVxdWVzdBIOCgZ0aWNrZXQYASABKAkSDgoGY29uZmlnGAIgASgMEhMKC2luc3RhbmNlX2lkGAMgASgJIiwKDENvbmZpZ0Nob2ljZRINCgV2YWx1ZRgBIAEoCRINCgVsYWJlbBgCIAEoCSJOChJDb25maWdGaWVsZENob2ljZXMSDQoFZmllbGQYASABKAkSKQoHY2hvaWNlcxgCIAMoCzIYLndpZGdldGQudjEuQ29uZmlnQ2hvaWNlIkoKGEdldENvbmZpZ0Nob2ljZXNSZXNwb25zZRIuCgZmaWVsZHMYASADKAsyHi53aWRnZXRkLnYxLkNvbmZpZ0ZpZWxkQ2hvaWNlcyIpChJCZWdpblNpZ25JblJlcXVlc3QSEwoLaW5zdGFuY2VfaWQYASABKAkipwEKE0JlZ2luU2lnbkluUmVzcG9uc2USEQoJdXNlcl9jb2RlGAEgASgJEhgKEHZlcmlmaWNhdGlvbl91cmkYAiABKAkSIQoZdmVyaWZpY2F0aW9uX3VyaV9jb21wbGV0ZRgDIAEoCRIuCgpleHBpcmVzX2F0GAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIQCghwcm92aWRlchgFIAEoCSIlCg5TaWduT3V0UmVxdWVzdBITCgtpbnN0YW5jZV9pZBgBIAEoCSIRCg9TaWduT3V0UmVzcG9uc2UiUgoWU2V0U2lnbkluQ2xpZW50UmVxdWVzdBIOCgZ3aWRnZXQYASABKAkSEQoJY2xpZW50X2lkGAIgASgJEhUKDWNsaWVudF9zZWNyZXQYAyABKAkiGQoXU2V0U2lnbkluQ2xpZW50UmVzcG9uc2Uy2gkKEldpZGdldEFkbWluU2VydmljZRJOCgtMaXN0V2lkZ2V0cxIeLndpZGdldGQudjEuTGlzdFdpZGdldHNSZXF1ZXN0Gh8ud2lkZ2V0ZC52MS5MaXN0V2lkZ2V0c1Jlc3BvbnNlEk4KC0FkZEluc3RhbmNlEh4ud2lkZ2V0ZC52MS5BZGRJbnN0YW5jZVJlcXVlc3QaHy53aWRnZXRkLnYxLkFkZEluc3RhbmNlUmVzcG9uc2USZgoTUmVxdWVzdENvbmZpZ1RpY2tldBImLndpZGdldGQudjEuUmVxdWVzdENvbmZpZ1RpY2tldFJlcXVlc3QaJy53aWRnZXRkLnYxLlJlcXVlc3RDb25maWdUaWNrZXRSZXNwb25zZRJUCg1HZXRDb25maWdGb3JtEiAud2lkZ2V0ZC52MS5HZXRDb25maWdGb3JtUmVxdWVzdBohLndpZGdldGQudjEuR2V0Q29uZmlnRm9ybVJlc3BvbnNlEl0KEEdldENvbmZpZ0Nob2ljZXMSIy53aWRnZXRkLnYxLkdldENvbmZpZ0Nob2ljZXNSZXF1ZXN0GiQud2lkZ2V0ZC52MS5HZXRDb25maWdDaG9pY2VzUmVzcG9uc2USSwoKU2F2ZUNvbmZpZxIdLndpZGdldGQudjEuU2F2ZUNvbmZpZ1JlcXVlc3QaHi53aWRnZXRkLnYxLlNhdmVDb25maWdSZXNwb25zZRJUCg1MaXN0SW5zdGFuY2VzEiAud2lkZ2V0ZC52MS5MaXN0SW5zdGFuY2VzUmVxdWVzdBohLndpZGdldGQudjEuTGlzdEluc3RhbmNlc1Jlc3BvbnNlElcKDlJlbmFtZUluc3RhbmNlEiEud2lkZ2V0ZC52MS5SZW5hbWVJbnN0YW5jZVJlcXVlc3QaIi53aWRnZXRkLnYxLlJlbmFtZUluc3RhbmNlUmVzcG9uc2USVwoORGVsZXRlSW5zdGFuY2USIS53aWRnZXRkLnYxLkRlbGV0ZUluc3RhbmNlUmVxdWVzdBoiLndpZGdldGQudjEuRGVsZXRlSW5zdGFuY2VSZXNwb25zZRJaCg9TZXROZXR3b3JrR3JhbnQSIi53aWRnZXRkLnYxLlNldE5ldHdvcmtHcmFudFJlcXVlc3QaIy53aWRnZXRkLnYxLlNldE5ldHdvcmtHcmFudFJlc3BvbnNlEmYKE0dldEluc3RhbmNlQWN0aXZpdHkSJi53aWRnZXRkLnYxLkdldEluc3RhbmNlQWN0aXZpdHlSZXF1ZXN0Gicud2lkZ2V0ZC52MS5HZXRJbnN0YW5jZUFjdGl2aXR5UmVzcG9uc2USTgoLQmVnaW5TaWduSW4SHi53aWRnZXRkLnYxLkJlZ2luU2lnbkluUmVxdWVzdBofLndpZGdldGQudjEuQmVnaW5TaWduSW5SZXNwb25zZRJCCgdTaWduT3V0Ehoud2lkZ2V0ZC52MS5TaWduT3V0UmVxdWVzdBobLndpZGdldGQudjEuU2lnbk91dFJlc3BvbnNlEloKD1NldFNpZ25JbkNsaWVudBIiLndpZGdldGQudjEuU2V0U2lnbkluQ2xpZW50UmVxdWVzdBojLndpZGdldGQudjEuU2V0U2lnbkluQ2xpZW50UmVzcG9uc2VCN1o1Z2l0aHViLmNvbS9hcmVuNTU1NTUvd2lkZ2V0ZC9nZW4vd2lkZ2V0ZC92MTt3aWRnZXRkdjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_widgetd_v1_stream]);
 
 /**
  * @generated from message widgetd.v1.WidgetInfo
@@ -76,6 +76,19 @@ export type WidgetInfo = Message<"widgetd.v1.WidgetInfo"> & {
    * @generated from field: bool configurable = 10;
    */
   configurable: boolean;
+
+  /**
+   * Set if it signs in to an account: the provider's name, and whether a
+   * client (OAuth app) has been registered for it yet.
+   *
+   * @generated from field: string sign_in_provider = 11;
+   */
+  signInProvider: string;
+
+  /**
+   * @generated from field: bool sign_in_client_set = 12;
+   */
+  signInClientSet: boolean;
 };
 
 /**
@@ -250,6 +263,7 @@ export type GetConfigFormResponse = Message<"widgetd.v1.GetConfigFormResponse"> 
 
   /**
    * The current configuration, encoded as config_type. Empty for a new one.
+   * Secret fields are always empty here: they are write-only.
    *
    * @generated from field: bytes config = 6;
    */
@@ -259,6 +273,19 @@ export type GetConfigFormResponse = Message<"widgetd.v1.GetConfigFormResponse"> 
    * @generated from field: widgetd.v1.InstanceStatus status = 7;
    */
   status?: InstanceStatus | undefined;
+
+  /**
+   * The widget's secret fields (top-level strings), and which of them have
+   * a value stored. The form shows them as write-only.
+   *
+   * @generated from field: repeated string secret_fields = 8;
+   */
+  secretFields: string[];
+
+  /**
+   * @generated from field: repeated string secrets_set = 9;
+   */
+  secretsSet: string[];
 };
 
 /**
@@ -290,11 +317,19 @@ export type SaveConfigRequest = Message<"widgetd.v1.SaveConfigRequest"> & {
   label: string;
 
   /**
-   * Encoded as the widget's Config message.
+   * Encoded as the widget's Config message. A secret field left empty
+   * keeps its stored value.
    *
    * @generated from field: bytes config = 3;
    */
   config: Uint8Array;
+
+  /**
+   * Secret fields to remove instead.
+   *
+   * @generated from field: repeated string clear_secrets = 5;
+   */
+  clearSecrets: string[];
 };
 
 /**
@@ -712,6 +747,137 @@ export const GetConfigChoicesResponseSchema: GenMessage<GetConfigChoicesResponse
   messageDesc(file_widgetd_v1_admin, 27);
 
 /**
+ * @generated from message widgetd.v1.BeginSignInRequest
+ */
+export type BeginSignInRequest = Message<"widgetd.v1.BeginSignInRequest"> & {
+  /**
+   * @generated from field: string instance_id = 1;
+   */
+  instanceId: string;
+};
+
+/**
+ * Describes the message widgetd.v1.BeginSignInRequest.
+ * Use `create(BeginSignInRequestSchema)` to create a new message.
+ */
+export const BeginSignInRequestSchema: GenMessage<BeginSignInRequest> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 28);
+
+/**
+ * @generated from message widgetd.v1.BeginSignInResponse
+ */
+export type BeginSignInResponse = Message<"widgetd.v1.BeginSignInResponse"> & {
+  /**
+   * Show this, and where to enter it.
+   *
+   * @generated from field: string user_code = 1;
+   */
+  userCode: string;
+
+  /**
+   * @generated from field: string verification_uri = 2;
+   */
+  verificationUri: string;
+
+  /**
+   * The same page with the code filled in, if the provider offers one:
+   * what a QR code should open.
+   *
+   * @generated from field: string verification_uri_complete = 3;
+   */
+  verificationUriComplete: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp expires_at = 4;
+   */
+  expiresAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: string provider = 5;
+   */
+  provider: string;
+};
+
+/**
+ * Describes the message widgetd.v1.BeginSignInResponse.
+ * Use `create(BeginSignInResponseSchema)` to create a new message.
+ */
+export const BeginSignInResponseSchema: GenMessage<BeginSignInResponse> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 29);
+
+/**
+ * @generated from message widgetd.v1.SignOutRequest
+ */
+export type SignOutRequest = Message<"widgetd.v1.SignOutRequest"> & {
+  /**
+   * @generated from field: string instance_id = 1;
+   */
+  instanceId: string;
+};
+
+/**
+ * Describes the message widgetd.v1.SignOutRequest.
+ * Use `create(SignOutRequestSchema)` to create a new message.
+ */
+export const SignOutRequestSchema: GenMessage<SignOutRequest> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 30);
+
+/**
+ * @generated from message widgetd.v1.SignOutResponse
+ */
+export type SignOutResponse = Message<"widgetd.v1.SignOutResponse"> & {
+};
+
+/**
+ * Describes the message widgetd.v1.SignOutResponse.
+ * Use `create(SignOutResponseSchema)` to create a new message.
+ */
+export const SignOutResponseSchema: GenMessage<SignOutResponse> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 31);
+
+/**
+ * @generated from message widgetd.v1.SetSignInClientRequest
+ */
+export type SetSignInClientRequest = Message<"widgetd.v1.SetSignInClientRequest"> & {
+  /**
+   * @generated from field: string widget = 1;
+   */
+  widget: string;
+
+  /**
+   * @generated from field: string client_id = 2;
+   */
+  clientId: string;
+
+  /**
+   * Optional: device flow with most providers needs none. Write-only.
+   *
+   * @generated from field: string client_secret = 3;
+   */
+  clientSecret: string;
+};
+
+/**
+ * Describes the message widgetd.v1.SetSignInClientRequest.
+ * Use `create(SetSignInClientRequestSchema)` to create a new message.
+ */
+export const SetSignInClientRequestSchema: GenMessage<SetSignInClientRequest> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 32);
+
+/**
+ * @generated from message widgetd.v1.SetSignInClientResponse
+ */
+export type SetSignInClientResponse = Message<"widgetd.v1.SetSignInClientResponse"> & {
+};
+
+/**
+ * Describes the message widgetd.v1.SetSignInClientResponse.
+ * Use `create(SetSignInClientResponseSchema)` to create a new message.
+ */
+export const SetSignInClientResponseSchema: GenMessage<SetSignInClientResponse> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 33);
+
+/**
  * WidgetAdminService manages what runs. Screens (paired devices) may add a
  * placeholder and ask for a configuration QR code; everything that changes
  * a running instance's configuration, its network access, or which
@@ -831,6 +997,39 @@ export const WidgetAdminService: GenService<{
     methodKind: "unary";
     input: typeof GetInstanceActivityRequestSchema;
     output: typeof GetInstanceActivityResponseSchema;
+  },
+  /**
+   * Sign-in, for widgets that use an account (device flow: a code shown
+   * on the screen, approved on the provider's site from a phone).
+   * BeginSignIn: screen or admin, but a screen only for an instance that
+   * isn't signed in yet; replacing a sign-in needs an admin. The rest:
+   * admin.
+   *
+   * @generated from rpc widgetd.v1.WidgetAdminService.BeginSignIn
+   */
+  beginSignIn: {
+    methodKind: "unary";
+    input: typeof BeginSignInRequestSchema;
+    output: typeof BeginSignInResponseSchema;
+  },
+  /**
+   * @generated from rpc widgetd.v1.WidgetAdminService.SignOut
+   */
+  signOut: {
+    methodKind: "unary";
+    input: typeof SignOutRequestSchema;
+    output: typeof SignOutResponseSchema;
+  },
+  /**
+   * The OAuth app a widget signs in with, registered by whoever runs the
+   * host with the provider.
+   *
+   * @generated from rpc widgetd.v1.WidgetAdminService.SetSignInClient
+   */
+  setSignInClient: {
+    methodKind: "unary";
+    input: typeof SetSignInClientRequestSchema;
+    output: typeof SetSignInClientResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_widgetd_v1_admin, 0);

@@ -24,7 +24,7 @@ client-build:
 
 # Build the example widgets into .wpkg packages (both authoring forms)
 examples:
-    {{mise}} go run ./cmd/widgetc build examples/bitcoin-spiral examples/sports-game examples/clock.widget
+    {{mise}} go run ./cmd/widgetc build examples/bitcoin-spiral examples/sports-game examples/github-notifications examples/clock.widget
 
 # The full check suite
 test: generate client-build examples

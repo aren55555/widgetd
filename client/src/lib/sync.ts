@@ -43,7 +43,9 @@ export const staleCards = (cached: Iterable<string>, mounted: ReadonlySet<string
  * placeholder tile saying why, with a way to set it up where that's what
  * it needs.
  */
-export function placeholderFor(state: InstanceStatus_State, message: string): { show: false } | { show: true; text: string; setUp: boolean } {
+export type Placeholder = { show: false } | { show: true; text: string; setUp: boolean; signIn?: boolean };
+
+export function placeholderFor(state: InstanceStatus_State, message: string): Placeholder {
   switch (state) {
     case InstanceStatus_State.RUNNING:
       return { show: false };
@@ -53,6 +55,8 @@ export function placeholderFor(state: InstanceStatus_State, message: string): { 
       return { show: true, text: "Its settings need updating.", setUp: true };
     case InstanceStatus_State.FAULTED:
       return { show: true, text: message ? `Stopped: ${message}. Retrying…` : "Stopped. Retrying…", setUp: false };
+    case InstanceStatus_State.NEEDS_SIGN_IN:
+      return { show: true, text: message || "Needs an account signed in.", setUp: false, signIn: true };
     default:
       return { show: false };
   }

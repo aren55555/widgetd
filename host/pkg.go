@@ -41,6 +41,10 @@ type Manifest struct {
 	Network widget.NetworkRequest `json:"network"`
 	// Modes are the helper modes server.wasm implements ("choices", "verify").
 	Modes []string `json:"modes,omitempty"`
+	// Secrets are the Config fields that are write-only.
+	Secrets []string `json:"secrets,omitempty"`
+	// SignIn, if the widget uses an account.
+	SignIn *widget.SignIn `json:"sign_in,omitempty"`
 	// Protos are the widget's own files within the descriptor set (the rest
 	// are their imports).
 	Protos []string `json:"protos"`
@@ -136,6 +140,8 @@ func LoadPackage(b []byte) (widget.Spec, error) {
 		Version: m.Version,
 		Title:   m.Title,
 		Modes:   m.Modes,
+		Secrets: m.Secrets,
+		SignIn:  m.SignIn,
 		Files:   own,
 		Config:  cfg,
 		Wasm:    wasm,

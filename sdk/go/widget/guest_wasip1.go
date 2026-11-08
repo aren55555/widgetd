@@ -113,7 +113,7 @@ func (g *guestHost) Config(dst proto.Message) error {
 }
 
 func (g *guestHost) Fetch(req *http.Request) (*http.Response, error) {
-	f := &abiv1.Fetch{Method: req.Method, Url: req.URL.String()}
+	f := &abiv1.Fetch{Method: req.Method, Url: req.URL.String(), Authorize: IsAuthorized(req)}
 	for name, vs := range req.Header {
 		for _, v := range vs {
 			f.Headers = append(f.Headers, &abiv1.Header{Name: name, Value: v})

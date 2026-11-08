@@ -116,3 +116,18 @@ A module only gets asked for the modes its package declares (`modes` in
 `Choices` or `Verify`): a module that doesn't know a mode would just start
 its main loop. If verify can't reach a verdict (exits non-zero, or times
 out), the save is refused with that reason, so it can be retried.
+
+## Secrets and sign-in
+
+- **Secret fields.** `secrets = ["api_key"]` in `widget.toml` names Config
+  fields (top-level strings) that are write-only. They're stored sealed, apart
+  from the rest of the config, and never sent back to a settings form. The
+  module sees them in `ConfigGet` like any other field.
+- **Sign-in.** A `[sign_in]` block (provider, `device_url`, `token_url`,
+  `scopes`, `api_hosts`) makes the host run an OAuth 2.0 device flow for each
+  instance and keep the token. The module never gets the token. It sets
+  `authorize` on a `Fetch` to one of the `api_hosts`, which must also be in its
+  network request, and the host adds `Authorization` to that request. A 401
+  reply puts the instance back to "needs sign-in". Whoever runs the host
+  registers an OAuth app with the provider and enters its client ID on the
+  admin page.

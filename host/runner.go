@@ -47,7 +47,8 @@ type instance struct {
 
 	mu         sync.Mutex
 	label      string
-	config     []byte // validated, when configured
+	config     []byte // as stored: validated, secrets removed
+	runConfig  []byte // what the widget sees: config with its secrets back
 	configured bool
 	state      widgetdv1.InstanceStatus_State
 	message    string
@@ -174,7 +175,7 @@ func (h *runHost) Config(dst proto.Message) error {
 		return fmt.Errorf("config is %s, not %s", cfg.ProtoReflect().Descriptor().FullName(), dst.ProtoReflect().Descriptor().FullName())
 	}
 	h.in.mu.Lock()
-	b := h.in.config
+	b := h.in.runConfig
 	h.in.mu.Unlock()
 	return proto.Unmarshal(b, dst)
 }
@@ -183,7 +184,21 @@ func (h *runHost) Fetch(req *http.Request) (*http.Response, error) {
 	if err := h.ctx.Err(); err != nil {
 		return nil, err
 	}
-	return h.in.fetcher.do(h.ctx, req)
+	var auth string
+	if widget.IsAuthorized(req) {
+		a, err := h.in.srv.authorization(h.ctx, h.in, req.URL)
+		if err != nil {
+			return nil, err
+		}
+		auth = a
+	}
+	resp, err := h.in.fetcher.do(h.ctx, req, auth)
+	if err == nil && auth != "" && resp.StatusCode == http.StatusUnauthorized && !h.helper {
+		// The provider stopped accepting the token. Stop and ask for a new
+		// sign-in; from another goroutine, since stopping waits for this run.
+		go h.in.srv.signOut(h.in.id, "The sign-in lapsed. Sign in again.")
+	}
+	return resp, err
 }
 
 func (h *runHost) KV() widget.KV { return instanceKV{db: h.in.srv.db, instance: h.in.id} }

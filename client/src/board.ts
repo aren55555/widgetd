@@ -328,6 +328,13 @@ class WidgetBoard extends HTMLElement {
       btn.addEventListener("click", () => void this.showSetUp(tile, id));
       tile.append(btn);
     }
+    if (p.signIn) {
+      const btn = document.createElement("button");
+      btn.className = "action";
+      btn.textContent = "Sign in";
+      btn.addEventListener("click", () => void this.showSignIn(tile, id));
+      tile.append(btn);
+    }
     if (!entry.tile) {
       entry.tile = tile;
       this.grid.append(tile);
@@ -366,6 +373,42 @@ class WidgetBoard extends HTMLElement {
       setTimeout(() => overlay.remove(), Math.max(1000, ttl));
     } catch (e) {
       overlay.replaceChildren(close, `Couldn't get a code: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  /**
+   * Cover `within` with a device-flow sign-in: the code to enter, where, and
+   * a QR code that opens that page on a phone (with the code filled in, if
+   * the provider supports it). The host waits for the approval; the tile
+   * turns into the widget when it comes.
+   */
+  private async showSignIn(within: HTMLElement, instanceId: string) {
+    within.querySelector(".overlay")?.remove();
+    const overlay = document.createElement("div");
+    overlay.className = "overlay";
+    const close = document.createElement("button");
+    close.className = "close";
+    close.setAttribute("aria-label", "Close");
+    close.textContent = "\u00d7";
+    close.addEventListener("click", () => overlay.remove());
+    overlay.append(close, "Getting a code…");
+    within.append(overlay);
+    try {
+      const admin = createClient(WidgetAdminService, this.transport());
+      const s = await admin.beginSignIn({ instanceId });
+      const qr = document.createElement("div");
+      qr.className = "qr small";
+      qr.innerHTML = renderSVG(s.verificationUriComplete || s.verificationUri, { border: 1 });
+      const code = document.createElement("div");
+      code.className = "code";
+      code.textContent = s.userCode;
+      const where = document.createElement("div");
+      where.textContent = `Sign in to ${s.provider} at ${s.verificationUri.replace(/^https:\/\//, "")} with:`;
+      overlay.replaceChildren(close, qr, where, code);
+      const ttl = s.expiresAt ? Number(s.expiresAt.seconds) * 1000 - Date.now() : 600_000;
+      setTimeout(() => overlay.remove(), Math.max(1000, ttl));
+    } catch (e) {
+      overlay.replaceChildren(close, `Couldn't start sign-in: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 

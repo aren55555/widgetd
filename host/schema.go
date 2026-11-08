@@ -155,6 +155,16 @@ func loadWidget(spec widget.Spec) (*loadedWidget, error) {
 			return nil, fmt.Errorf("widget %s config: %w", spec.Name, err)
 		}
 	}
+	var cfgDesc protoreflect.MessageDescriptor
+	if spec.Config != nil {
+		cfgDesc = spec.Config.ProtoReflect().Descriptor()
+	}
+	if err := checkSecretFields(cfgDesc, spec.Secrets); err != nil {
+		return nil, fmt.Errorf("widget %s: %w", spec.Name, err)
+	}
+	if err := checkSignIn(spec); err != nil {
+		return nil, fmt.Errorf("widget %s: %w", spec.Name, err)
+	}
 	digest, err := widgetDigest(spec)
 	if err != nil {
 		return nil, fmt.Errorf("widget %s: %w", spec.Name, err)

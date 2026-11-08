@@ -231,7 +231,7 @@ func (g *guest) dispatch(ctx context.Context, call *abiv1.Call) *abiv1.Result {
 	switch op := call.GetOp().(type) {
 	case *abiv1.Call_ConfigGet:
 		h.in.mu.Lock()
-		cfg := h.in.config
+		cfg := h.in.runConfig
 		h.in.mu.Unlock()
 		if h.helper {
 			cfg = h.helperConfig // the settings being edited, not the saved ones

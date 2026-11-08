@@ -119,8 +119,10 @@ func (x *Delta) GetValue() int64 {
 }
 
 type Config struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Label         string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Label string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	// Secret in the tests that declare it so.
+	Token         string `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -158,6 +160,13 @@ func (*Config) Descriptor() ([]byte, []int) {
 func (x *Config) GetLabel() string {
 	if x != nil {
 		return x.Label
+	}
+	return ""
+}
+
+func (x *Config) GetToken() string {
+	if x != nil {
+		return x.Token
 	}
 	return ""
 }
@@ -215,9 +224,10 @@ const file_testwidget_v1_testwidget_proto_rawDesc = "" +
 	"\x06values\x18\x01 \x03(\x03R\x06values\x12\x1d\n" +
 	"\x05label\x18\x02 \x01(\tB\a\xbaH\x04r\x02\x18\bR\x05label\"&\n" +
 	"\x05Delta\x12\x1d\n" +
-	"\x05value\x18\x01 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\x05value\"'\n" +
+	"\x05value\x18\x01 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\x05value\"F\n" +
 	"\x06Config\x12\x1d\n" +
-	"\x05label\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x18\bR\x05label\"#\n" +
+	"\x05label\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x18\bR\x05label\x12\x1d\n" +
+	"\x05token\x18\x02 \x01(\tB\a\xbaH\x04r\x02\x18@R\x05token\"#\n" +
 	"\x06Action\x12\x19\n" +
 	"\x03tap\x18\x01 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\x03tapB\xca\x01\n" +
 	"\x11com.testwidget.v1B\x0fTestwidgetProtoP\x01ZOgithub.com/aren55555/widgetd/internal/testwidget/gen/testwidget/v1;testwidgetv1\xa2\x02\x03TXX\xaa\x02\rTestwidget.V1\xca\x02\rTestwidget\\V1\xe2\x02\x19Testwidget\\V1\\GPBMetadata\xea\x02\x0eTestwidget::V1b\x06proto3"

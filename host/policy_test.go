@@ -140,7 +140,7 @@ func get(t *testing.T, f *fetcher, url string, hdr ...string) (*http.Response, e
 	for i := 0; i+1 < len(hdr); i += 2 {
 		req.Header.Set(hdr[i], hdr[i+1])
 	}
-	return f.do(context.Background(), req)
+	return f.do(context.Background(), req, "")
 }
 
 func denied(err error) string {

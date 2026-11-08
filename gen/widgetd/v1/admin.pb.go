@@ -37,9 +37,13 @@ type WidgetInfo struct {
 	GrantedHosts    []string `protobuf:"bytes,8,rep,name=granted_hosts,json=grantedHosts,proto3" json:"granted_hosts,omitempty"`
 	NetworkDisabled bool     `protobuf:"varint,9,opt,name=network_disabled,json=networkDisabled,proto3" json:"network_disabled,omitempty"`
 	// Whether it takes a configuration at all.
-	Configurable  bool `protobuf:"varint,10,opt,name=configurable,proto3" json:"configurable,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Configurable bool `protobuf:"varint,10,opt,name=configurable,proto3" json:"configurable,omitempty"`
+	// Set if it signs in to an account: the provider's name, and whether a
+	// client (OAuth app) has been registered for it yet.
+	SignInProvider  string `protobuf:"bytes,11,opt,name=sign_in_provider,json=signInProvider,proto3" json:"sign_in_provider,omitempty"`
+	SignInClientSet bool   `protobuf:"varint,12,opt,name=sign_in_client_set,json=signInClientSet,proto3" json:"sign_in_client_set,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *WidgetInfo) Reset() {
@@ -138,6 +142,20 @@ func (x *WidgetInfo) GetNetworkDisabled() bool {
 func (x *WidgetInfo) GetConfigurable() bool {
 	if x != nil {
 		return x.Configurable
+	}
+	return false
+}
+
+func (x *WidgetInfo) GetSignInProvider() string {
+	if x != nil {
+		return x.SignInProvider
+	}
+	return ""
+}
+
+func (x *WidgetInfo) GetSignInClientSet() bool {
+	if x != nil {
+		return x.SignInClientSet
 	}
 	return false
 }
@@ -471,8 +489,13 @@ type GetConfigFormResponse struct {
 	// google.protobuf.FileDescriptorSet: the widget's protos and imports.
 	Schema []byte `protobuf:"bytes,5,opt,name=schema,proto3" json:"schema,omitempty"`
 	// The current configuration, encoded as config_type. Empty for a new one.
-	Config        []byte          `protobuf:"bytes,6,opt,name=config,proto3" json:"config,omitempty"`
-	Status        *InstanceStatus `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
+	// Secret fields are always empty here: they are write-only.
+	Config []byte          `protobuf:"bytes,6,opt,name=config,proto3" json:"config,omitempty"`
+	Status *InstanceStatus `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
+	// The widget's secret fields (top-level strings), and which of them have
+	// a value stored. The form shows them as write-only.
+	SecretFields  []string `protobuf:"bytes,8,rep,name=secret_fields,json=secretFields,proto3" json:"secret_fields,omitempty"`
+	SecretsSet    []string `protobuf:"bytes,9,rep,name=secrets_set,json=secretsSet,proto3" json:"secrets_set,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -556,14 +579,31 @@ func (x *GetConfigFormResponse) GetStatus() *InstanceStatus {
 	return nil
 }
 
+func (x *GetConfigFormResponse) GetSecretFields() []string {
+	if x != nil {
+		return x.SecretFields
+	}
+	return nil
+}
+
+func (x *GetConfigFormResponse) GetSecretsSet() []string {
+	if x != nil {
+		return x.SecretsSet
+	}
+	return nil
+}
+
 type SaveConfigRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// One of these, as in GetConfigFormRequest. Saving consumes a ticket.
 	Ticket     string `protobuf:"bytes,1,opt,name=ticket,proto3" json:"ticket,omitempty"`
 	InstanceId string `protobuf:"bytes,4,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
 	Label      string `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`
-	// Encoded as the widget's Config message.
-	Config        []byte `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
+	// Encoded as the widget's Config message. A secret field left empty
+	// keeps its stored value.
+	Config []byte `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
+	// Secret fields to remove instead.
+	ClearSecrets  []string `protobuf:"bytes,5,rep,name=clear_secrets,json=clearSecrets,proto3" json:"clear_secrets,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -622,6 +662,13 @@ func (x *SaveConfigRequest) GetLabel() string {
 func (x *SaveConfigRequest) GetConfig() []byte {
 	if x != nil {
 		return x.Config
+	}
+	return nil
+}
+
+func (x *SaveConfigRequest) GetClearSecrets() []string {
+	if x != nil {
+		return x.ClearSecrets
 	}
 	return nil
 }
@@ -1560,12 +1607,312 @@ func (x *GetConfigChoicesResponse) GetFields() []*ConfigFieldChoices {
 	return nil
 }
 
+type BeginSignInRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	InstanceId    string                 `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BeginSignInRequest) Reset() {
+	*x = BeginSignInRequest{}
+	mi := &file_widgetd_v1_admin_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BeginSignInRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BeginSignInRequest) ProtoMessage() {}
+
+func (x *BeginSignInRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_admin_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BeginSignInRequest.ProtoReflect.Descriptor instead.
+func (*BeginSignInRequest) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *BeginSignInRequest) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
+	}
+	return ""
+}
+
+type BeginSignInResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Show this, and where to enter it.
+	UserCode        string `protobuf:"bytes,1,opt,name=user_code,json=userCode,proto3" json:"user_code,omitempty"`
+	VerificationUri string `protobuf:"bytes,2,opt,name=verification_uri,json=verificationUri,proto3" json:"verification_uri,omitempty"`
+	// The same page with the code filled in, if the provider offers one:
+	// what a QR code should open.
+	VerificationUriComplete string                 `protobuf:"bytes,3,opt,name=verification_uri_complete,json=verificationUriComplete,proto3" json:"verification_uri_complete,omitempty"`
+	ExpiresAt               *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	Provider                string                 `protobuf:"bytes,5,opt,name=provider,proto3" json:"provider,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *BeginSignInResponse) Reset() {
+	*x = BeginSignInResponse{}
+	mi := &file_widgetd_v1_admin_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BeginSignInResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BeginSignInResponse) ProtoMessage() {}
+
+func (x *BeginSignInResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_admin_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BeginSignInResponse.ProtoReflect.Descriptor instead.
+func (*BeginSignInResponse) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *BeginSignInResponse) GetUserCode() string {
+	if x != nil {
+		return x.UserCode
+	}
+	return ""
+}
+
+func (x *BeginSignInResponse) GetVerificationUri() string {
+	if x != nil {
+		return x.VerificationUri
+	}
+	return ""
+}
+
+func (x *BeginSignInResponse) GetVerificationUriComplete() string {
+	if x != nil {
+		return x.VerificationUriComplete
+	}
+	return ""
+}
+
+func (x *BeginSignInResponse) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *BeginSignInResponse) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
+}
+
+type SignOutRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	InstanceId    string                 `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignOutRequest) Reset() {
+	*x = SignOutRequest{}
+	mi := &file_widgetd_v1_admin_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignOutRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignOutRequest) ProtoMessage() {}
+
+func (x *SignOutRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_admin_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignOutRequest.ProtoReflect.Descriptor instead.
+func (*SignOutRequest) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *SignOutRequest) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
+	}
+	return ""
+}
+
+type SignOutResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignOutResponse) Reset() {
+	*x = SignOutResponse{}
+	mi := &file_widgetd_v1_admin_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignOutResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignOutResponse) ProtoMessage() {}
+
+func (x *SignOutResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_admin_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignOutResponse.ProtoReflect.Descriptor instead.
+func (*SignOutResponse) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{31}
+}
+
+type SetSignInClientRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Widget   string                 `protobuf:"bytes,1,opt,name=widget,proto3" json:"widget,omitempty"`
+	ClientId string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	// Optional: device flow with most providers needs none. Write-only.
+	ClientSecret  string `protobuf:"bytes,3,opt,name=client_secret,json=clientSecret,proto3" json:"client_secret,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetSignInClientRequest) Reset() {
+	*x = SetSignInClientRequest{}
+	mi := &file_widgetd_v1_admin_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetSignInClientRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetSignInClientRequest) ProtoMessage() {}
+
+func (x *SetSignInClientRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_admin_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetSignInClientRequest.ProtoReflect.Descriptor instead.
+func (*SetSignInClientRequest) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *SetSignInClientRequest) GetWidget() string {
+	if x != nil {
+		return x.Widget
+	}
+	return ""
+}
+
+func (x *SetSignInClientRequest) GetClientId() string {
+	if x != nil {
+		return x.ClientId
+	}
+	return ""
+}
+
+func (x *SetSignInClientRequest) GetClientSecret() string {
+	if x != nil {
+		return x.ClientSecret
+	}
+	return ""
+}
+
+type SetSignInClientResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetSignInClientResponse) Reset() {
+	*x = SetSignInClientResponse{}
+	mi := &file_widgetd_v1_admin_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetSignInClientResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetSignInClientResponse) ProtoMessage() {}
+
+func (x *SetSignInClientResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_admin_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetSignInClientResponse.ProtoReflect.Descriptor instead.
+func (*SetSignInClientResponse) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{33}
+}
+
 var File_widgetd_v1_admin_proto protoreflect.FileDescriptor
 
 const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\n" +
 	"\x16widgetd/v1/admin.proto\x12\n" +
-	"widgetd.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17widgetd/v1/stream.proto\"\xd8\x02\n" +
+	"widgetd.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17widgetd/v1/stream.proto\"\xaf\x03\n" +
 	"\n" +
 	"WidgetInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
@@ -1579,7 +1926,9 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\rgranted_hosts\x18\b \x03(\tR\fgrantedHosts\x12)\n" +
 	"\x10network_disabled\x18\t \x01(\bR\x0fnetworkDisabled\x12\"\n" +
 	"\fconfigurable\x18\n" +
-	" \x01(\bR\fconfigurable\"\x14\n" +
+	" \x01(\bR\fconfigurable\x12(\n" +
+	"\x10sign_in_provider\x18\v \x01(\tR\x0esignInProvider\x12+\n" +
+	"\x12sign_in_client_set\x18\f \x01(\bR\x0fsignInClientSet\"\x14\n" +
 	"\x12ListWidgetsRequest\"G\n" +
 	"\x13ListWidgetsResponse\x120\n" +
 	"\awidgets\x18\x01 \x03(\v2\x16.widgetd.v1.WidgetInfoR\awidgets\",\n" +
@@ -1598,7 +1947,7 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\x14GetConfigFormRequest\x12\x16\n" +
 	"\x06ticket\x18\x01 \x01(\tR\x06ticket\x12\x1f\n" +
 	"\vinstance_id\x18\x02 \x01(\tR\n" +
-	"instanceId\"\x83\x02\n" +
+	"instanceId\"\xc9\x02\n" +
 	"\x15GetConfigFormResponse\x12\x1f\n" +
 	"\vinstance_id\x18\x01 \x01(\tR\n" +
 	"instanceId\x12.\n" +
@@ -1608,13 +1957,17 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"configType\x12\x16\n" +
 	"\x06schema\x18\x05 \x01(\fR\x06schema\x12\x16\n" +
 	"\x06config\x18\x06 \x01(\fR\x06config\x122\n" +
-	"\x06status\x18\a \x01(\v2\x1a.widgetd.v1.InstanceStatusR\x06status\"z\n" +
+	"\x06status\x18\a \x01(\v2\x1a.widgetd.v1.InstanceStatusR\x06status\x12#\n" +
+	"\rsecret_fields\x18\b \x03(\tR\fsecretFields\x12\x1f\n" +
+	"\vsecrets_set\x18\t \x03(\tR\n" +
+	"secretsSet\"\x9f\x01\n" +
 	"\x11SaveConfigRequest\x12\x16\n" +
 	"\x06ticket\x18\x01 \x01(\tR\x06ticket\x12\x1f\n" +
 	"\vinstance_id\x18\x04 \x01(\tR\n" +
 	"instanceId\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12\x16\n" +
-	"\x06config\x18\x03 \x01(\fR\x06config\"@\n" +
+	"\x06config\x18\x03 \x01(\fR\x06config\x12#\n" +
+	"\rclear_secrets\x18\x05 \x03(\tR\fclearSecrets\"@\n" +
 	"\x0eFieldViolation\x12\x14\n" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"P\n" +
@@ -1676,7 +2029,26 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x122\n" +
 	"\achoices\x18\x02 \x03(\v2\x18.widgetd.v1.ConfigChoiceR\achoices\"R\n" +
 	"\x18GetConfigChoicesResponse\x126\n" +
-	"\x06fields\x18\x01 \x03(\v2\x1e.widgetd.v1.ConfigFieldChoicesR\x06fields2\xea\a\n" +
+	"\x06fields\x18\x01 \x03(\v2\x1e.widgetd.v1.ConfigFieldChoicesR\x06fields\"5\n" +
+	"\x12BeginSignInRequest\x12\x1f\n" +
+	"\vinstance_id\x18\x01 \x01(\tR\n" +
+	"instanceId\"\xf0\x01\n" +
+	"\x13BeginSignInResponse\x12\x1b\n" +
+	"\tuser_code\x18\x01 \x01(\tR\buserCode\x12)\n" +
+	"\x10verification_uri\x18\x02 \x01(\tR\x0fverificationUri\x12:\n" +
+	"\x19verification_uri_complete\x18\x03 \x01(\tR\x17verificationUriComplete\x129\n" +
+	"\n" +
+	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12\x1a\n" +
+	"\bprovider\x18\x05 \x01(\tR\bprovider\"1\n" +
+	"\x0eSignOutRequest\x12\x1f\n" +
+	"\vinstance_id\x18\x01 \x01(\tR\n" +
+	"instanceId\"\x11\n" +
+	"\x0fSignOutResponse\"r\n" +
+	"\x16SetSignInClientRequest\x12\x16\n" +
+	"\x06widget\x18\x01 \x01(\tR\x06widget\x12\x1b\n" +
+	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12#\n" +
+	"\rclient_secret\x18\x03 \x01(\tR\fclientSecret\"\x19\n" +
+	"\x17SetSignInClientResponse2\xda\t\n" +
 	"\x12WidgetAdminService\x12N\n" +
 	"\vListWidgets\x12\x1e.widgetd.v1.ListWidgetsRequest\x1a\x1f.widgetd.v1.ListWidgetsResponse\x12N\n" +
 	"\vAddInstance\x12\x1e.widgetd.v1.AddInstanceRequest\x1a\x1f.widgetd.v1.AddInstanceResponse\x12f\n" +
@@ -1689,7 +2061,10 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\x0eRenameInstance\x12!.widgetd.v1.RenameInstanceRequest\x1a\".widgetd.v1.RenameInstanceResponse\x12W\n" +
 	"\x0eDeleteInstance\x12!.widgetd.v1.DeleteInstanceRequest\x1a\".widgetd.v1.DeleteInstanceResponse\x12Z\n" +
 	"\x0fSetNetworkGrant\x12\".widgetd.v1.SetNetworkGrantRequest\x1a#.widgetd.v1.SetNetworkGrantResponse\x12f\n" +
-	"\x13GetInstanceActivity\x12&.widgetd.v1.GetInstanceActivityRequest\x1a'.widgetd.v1.GetInstanceActivityResponseB7Z5github.com/aren55555/widgetd/gen/widgetd/v1;widgetdv1b\x06proto3"
+	"\x13GetInstanceActivity\x12&.widgetd.v1.GetInstanceActivityRequest\x1a'.widgetd.v1.GetInstanceActivityResponse\x12N\n" +
+	"\vBeginSignIn\x12\x1e.widgetd.v1.BeginSignInRequest\x1a\x1f.widgetd.v1.BeginSignInResponse\x12B\n" +
+	"\aSignOut\x12\x1a.widgetd.v1.SignOutRequest\x1a\x1b.widgetd.v1.SignOutResponse\x12Z\n" +
+	"\x0fSetSignInClient\x12\".widgetd.v1.SetSignInClientRequest\x1a#.widgetd.v1.SetSignInClientResponseB7Z5github.com/aren55555/widgetd/gen/widgetd/v1;widgetdv1b\x06proto3"
 
 var (
 	file_widgetd_v1_admin_proto_rawDescOnce sync.Once
@@ -1703,7 +2078,7 @@ func file_widgetd_v1_admin_proto_rawDescGZIP() []byte {
 	return file_widgetd_v1_admin_proto_rawDescData
 }
 
-var file_widgetd_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_widgetd_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_widgetd_v1_admin_proto_goTypes = []any{
 	(*WidgetInfo)(nil),                  // 0: widgetd.v1.WidgetInfo
 	(*ListWidgetsRequest)(nil),          // 1: widgetd.v1.ListWidgetsRequest
@@ -1733,49 +2108,62 @@ var file_widgetd_v1_admin_proto_goTypes = []any{
 	(*ConfigChoice)(nil),                // 25: widgetd.v1.ConfigChoice
 	(*ConfigFieldChoices)(nil),          // 26: widgetd.v1.ConfigFieldChoices
 	(*GetConfigChoicesResponse)(nil),    // 27: widgetd.v1.GetConfigChoicesResponse
-	(*timestamppb.Timestamp)(nil),       // 28: google.protobuf.Timestamp
-	(*InstanceStatus)(nil),              // 29: widgetd.v1.InstanceStatus
+	(*BeginSignInRequest)(nil),          // 28: widgetd.v1.BeginSignInRequest
+	(*BeginSignInResponse)(nil),         // 29: widgetd.v1.BeginSignInResponse
+	(*SignOutRequest)(nil),              // 30: widgetd.v1.SignOutRequest
+	(*SignOutResponse)(nil),             // 31: widgetd.v1.SignOutResponse
+	(*SetSignInClientRequest)(nil),      // 32: widgetd.v1.SetSignInClientRequest
+	(*SetSignInClientResponse)(nil),     // 33: widgetd.v1.SetSignInClientResponse
+	(*timestamppb.Timestamp)(nil),       // 34: google.protobuf.Timestamp
+	(*InstanceStatus)(nil),              // 35: widgetd.v1.InstanceStatus
 }
 var file_widgetd_v1_admin_proto_depIdxs = []int32{
 	0,  // 0: widgetd.v1.ListWidgetsResponse.widgets:type_name -> widgetd.v1.WidgetInfo
-	28, // 1: widgetd.v1.RequestConfigTicketResponse.expires_at:type_name -> google.protobuf.Timestamp
+	34, // 1: widgetd.v1.RequestConfigTicketResponse.expires_at:type_name -> google.protobuf.Timestamp
 	0,  // 2: widgetd.v1.GetConfigFormResponse.widget:type_name -> widgetd.v1.WidgetInfo
-	29, // 3: widgetd.v1.GetConfigFormResponse.status:type_name -> widgetd.v1.InstanceStatus
+	35, // 3: widgetd.v1.GetConfigFormResponse.status:type_name -> widgetd.v1.InstanceStatus
 	10, // 4: widgetd.v1.SaveConfigResponse.violations:type_name -> widgetd.v1.FieldViolation
 	14, // 5: widgetd.v1.ListInstancesResponse.instances:type_name -> widgetd.v1.InstanceInfo
-	29, // 6: widgetd.v1.InstanceInfo.status:type_name -> widgetd.v1.InstanceStatus
-	28, // 7: widgetd.v1.InstanceInfo.created_at:type_name -> google.protobuf.Timestamp
-	28, // 8: widgetd.v1.Fetch.at:type_name -> google.protobuf.Timestamp
+	35, // 6: widgetd.v1.InstanceInfo.status:type_name -> widgetd.v1.InstanceStatus
+	34, // 7: widgetd.v1.InstanceInfo.created_at:type_name -> google.protobuf.Timestamp
+	34, // 8: widgetd.v1.Fetch.at:type_name -> google.protobuf.Timestamp
 	22, // 9: widgetd.v1.GetInstanceActivityResponse.fetches:type_name -> widgetd.v1.Fetch
 	25, // 10: widgetd.v1.ConfigFieldChoices.choices:type_name -> widgetd.v1.ConfigChoice
 	26, // 11: widgetd.v1.GetConfigChoicesResponse.fields:type_name -> widgetd.v1.ConfigFieldChoices
-	1,  // 12: widgetd.v1.WidgetAdminService.ListWidgets:input_type -> widgetd.v1.ListWidgetsRequest
-	3,  // 13: widgetd.v1.WidgetAdminService.AddInstance:input_type -> widgetd.v1.AddInstanceRequest
-	5,  // 14: widgetd.v1.WidgetAdminService.RequestConfigTicket:input_type -> widgetd.v1.RequestConfigTicketRequest
-	7,  // 15: widgetd.v1.WidgetAdminService.GetConfigForm:input_type -> widgetd.v1.GetConfigFormRequest
-	24, // 16: widgetd.v1.WidgetAdminService.GetConfigChoices:input_type -> widgetd.v1.GetConfigChoicesRequest
-	9,  // 17: widgetd.v1.WidgetAdminService.SaveConfig:input_type -> widgetd.v1.SaveConfigRequest
-	12, // 18: widgetd.v1.WidgetAdminService.ListInstances:input_type -> widgetd.v1.ListInstancesRequest
-	15, // 19: widgetd.v1.WidgetAdminService.RenameInstance:input_type -> widgetd.v1.RenameInstanceRequest
-	17, // 20: widgetd.v1.WidgetAdminService.DeleteInstance:input_type -> widgetd.v1.DeleteInstanceRequest
-	19, // 21: widgetd.v1.WidgetAdminService.SetNetworkGrant:input_type -> widgetd.v1.SetNetworkGrantRequest
-	21, // 22: widgetd.v1.WidgetAdminService.GetInstanceActivity:input_type -> widgetd.v1.GetInstanceActivityRequest
-	2,  // 23: widgetd.v1.WidgetAdminService.ListWidgets:output_type -> widgetd.v1.ListWidgetsResponse
-	4,  // 24: widgetd.v1.WidgetAdminService.AddInstance:output_type -> widgetd.v1.AddInstanceResponse
-	6,  // 25: widgetd.v1.WidgetAdminService.RequestConfigTicket:output_type -> widgetd.v1.RequestConfigTicketResponse
-	8,  // 26: widgetd.v1.WidgetAdminService.GetConfigForm:output_type -> widgetd.v1.GetConfigFormResponse
-	27, // 27: widgetd.v1.WidgetAdminService.GetConfigChoices:output_type -> widgetd.v1.GetConfigChoicesResponse
-	11, // 28: widgetd.v1.WidgetAdminService.SaveConfig:output_type -> widgetd.v1.SaveConfigResponse
-	13, // 29: widgetd.v1.WidgetAdminService.ListInstances:output_type -> widgetd.v1.ListInstancesResponse
-	16, // 30: widgetd.v1.WidgetAdminService.RenameInstance:output_type -> widgetd.v1.RenameInstanceResponse
-	18, // 31: widgetd.v1.WidgetAdminService.DeleteInstance:output_type -> widgetd.v1.DeleteInstanceResponse
-	20, // 32: widgetd.v1.WidgetAdminService.SetNetworkGrant:output_type -> widgetd.v1.SetNetworkGrantResponse
-	23, // 33: widgetd.v1.WidgetAdminService.GetInstanceActivity:output_type -> widgetd.v1.GetInstanceActivityResponse
-	23, // [23:34] is the sub-list for method output_type
-	12, // [12:23] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	34, // 12: widgetd.v1.BeginSignInResponse.expires_at:type_name -> google.protobuf.Timestamp
+	1,  // 13: widgetd.v1.WidgetAdminService.ListWidgets:input_type -> widgetd.v1.ListWidgetsRequest
+	3,  // 14: widgetd.v1.WidgetAdminService.AddInstance:input_type -> widgetd.v1.AddInstanceRequest
+	5,  // 15: widgetd.v1.WidgetAdminService.RequestConfigTicket:input_type -> widgetd.v1.RequestConfigTicketRequest
+	7,  // 16: widgetd.v1.WidgetAdminService.GetConfigForm:input_type -> widgetd.v1.GetConfigFormRequest
+	24, // 17: widgetd.v1.WidgetAdminService.GetConfigChoices:input_type -> widgetd.v1.GetConfigChoicesRequest
+	9,  // 18: widgetd.v1.WidgetAdminService.SaveConfig:input_type -> widgetd.v1.SaveConfigRequest
+	12, // 19: widgetd.v1.WidgetAdminService.ListInstances:input_type -> widgetd.v1.ListInstancesRequest
+	15, // 20: widgetd.v1.WidgetAdminService.RenameInstance:input_type -> widgetd.v1.RenameInstanceRequest
+	17, // 21: widgetd.v1.WidgetAdminService.DeleteInstance:input_type -> widgetd.v1.DeleteInstanceRequest
+	19, // 22: widgetd.v1.WidgetAdminService.SetNetworkGrant:input_type -> widgetd.v1.SetNetworkGrantRequest
+	21, // 23: widgetd.v1.WidgetAdminService.GetInstanceActivity:input_type -> widgetd.v1.GetInstanceActivityRequest
+	28, // 24: widgetd.v1.WidgetAdminService.BeginSignIn:input_type -> widgetd.v1.BeginSignInRequest
+	30, // 25: widgetd.v1.WidgetAdminService.SignOut:input_type -> widgetd.v1.SignOutRequest
+	32, // 26: widgetd.v1.WidgetAdminService.SetSignInClient:input_type -> widgetd.v1.SetSignInClientRequest
+	2,  // 27: widgetd.v1.WidgetAdminService.ListWidgets:output_type -> widgetd.v1.ListWidgetsResponse
+	4,  // 28: widgetd.v1.WidgetAdminService.AddInstance:output_type -> widgetd.v1.AddInstanceResponse
+	6,  // 29: widgetd.v1.WidgetAdminService.RequestConfigTicket:output_type -> widgetd.v1.RequestConfigTicketResponse
+	8,  // 30: widgetd.v1.WidgetAdminService.GetConfigForm:output_type -> widgetd.v1.GetConfigFormResponse
+	27, // 31: widgetd.v1.WidgetAdminService.GetConfigChoices:output_type -> widgetd.v1.GetConfigChoicesResponse
+	11, // 32: widgetd.v1.WidgetAdminService.SaveConfig:output_type -> widgetd.v1.SaveConfigResponse
+	13, // 33: widgetd.v1.WidgetAdminService.ListInstances:output_type -> widgetd.v1.ListInstancesResponse
+	16, // 34: widgetd.v1.WidgetAdminService.RenameInstance:output_type -> widgetd.v1.RenameInstanceResponse
+	18, // 35: widgetd.v1.WidgetAdminService.DeleteInstance:output_type -> widgetd.v1.DeleteInstanceResponse
+	20, // 36: widgetd.v1.WidgetAdminService.SetNetworkGrant:output_type -> widgetd.v1.SetNetworkGrantResponse
+	23, // 37: widgetd.v1.WidgetAdminService.GetInstanceActivity:output_type -> widgetd.v1.GetInstanceActivityResponse
+	29, // 38: widgetd.v1.WidgetAdminService.BeginSignIn:output_type -> widgetd.v1.BeginSignInResponse
+	31, // 39: widgetd.v1.WidgetAdminService.SignOut:output_type -> widgetd.v1.SignOutResponse
+	33, // 40: widgetd.v1.WidgetAdminService.SetSignInClient:output_type -> widgetd.v1.SetSignInClientResponse
+	27, // [27:41] is the sub-list for method output_type
+	13, // [13:27] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_widgetd_v1_admin_proto_init() }
@@ -1790,7 +2178,7 @@ func file_widgetd_v1_admin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_widgetd_v1_admin_proto_rawDesc), len(file_widgetd_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   28,
+			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

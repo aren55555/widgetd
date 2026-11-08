@@ -44,8 +44,25 @@ func (s *Server) seed(seeds []Instance) error {
 		if err != nil {
 			return err
 		}
-		_, err = s.db.Exec(`INSERT INTO instances (id, widget, config, configured, created_at) VALUES (?, ?, ?, 1, ?)
-			ON CONFLICT (id) DO NOTHING`, in.ID, in.Widget, cfg, time.Now().UnixNano())
+		stored, secrets, err := w.splitSecrets(cfg)
+		if err != nil {
+			return err
+		}
+		tx, err := s.db.Begin()
+		if err != nil {
+			return err
+		}
+		res, err := tx.Exec(`INSERT INTO instances (id, widget, config, configured, created_at) VALUES (?, ?, ?, 1, ?)
+			ON CONFLICT (id) DO NOTHING`, in.ID, in.Widget, stored, time.Now().UnixNano())
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 1 {
+				err = s.storeSecrets(tx, in.ID, secrets, nil)
+			}
+		}
+		if err == nil {
+			err = tx.Commit()
+		}
+		tx.Rollback()
 		if err != nil {
 			return err
 		}
@@ -83,21 +100,33 @@ func seedConfig(w *loadedWidget, in Instance) ([]byte, error) {
 // instance of a widget that isn't (any more) stays in the table, untouched,
 // in case the widget comes back.
 func (s *Server) loadInstances() error {
+	type row struct {
+		id, widget, label string
+		cfg               []byte
+		configured        bool
+		created           int64
+	}
+	// Read every row before loading any secrets: the pool has one
+	// connection, and these rows hold it until they're closed.
+	var all []row
 	rows, err := s.db.Query(`SELECT id, widget, label, config, configured, created_at FROM instances ORDER BY created_at, id`)
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
 	for rows.Next() {
-		var (
-			id, widget, label string
-			cfg               []byte
-			configured        bool
-			created           int64
-		)
-		if err := rows.Scan(&id, &widget, &label, &cfg, &configured, &created); err != nil {
+		var r row
+		if err := rows.Scan(&r.id, &r.widget, &r.label, &r.cfg, &r.configured, &r.created); err != nil {
+			rows.Close()
 			return err
 		}
+		all = append(all, r)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, r := range all {
+		id, widget, label, cfg, configured, created := r.id, r.widget, r.label, r.cfg, r.configured, r.created
 		w, ok := s.widgets[widget]
 		if !ok {
 			s.log.Warn("instance of a widget that isn't installed; skipping", "instance", id, "widget", widget)
@@ -107,7 +136,14 @@ func (s *Server) loadInstances() error {
 		in.config, in.configured = cfg, configured
 		in.state = widgetdv1.InstanceStatus_STATE_NEEDS_CONFIG
 		if configured {
-			if err := in.checkConfig(cfg); err != nil {
+			secrets, err := s.loadSecrets(id)
+			if err == nil {
+				in.runConfig, err = w.mergeSecrets(cfg, secrets)
+			}
+			if err == nil {
+				err = in.checkConfig(in.runConfig)
+			}
+			if err != nil {
 				in.state, in.message = widgetdv1.InstanceStatus_STATE_INVALID_CONFIG, err.Error()
 				s.log.Warn("stored configuration no longer valid; instance waits to be reconfigured", "instance", id, "err", err)
 			}
@@ -115,7 +151,7 @@ func (s *Server) loadInstances() error {
 		s.instances[id] = in
 		s.instanceOrder = append(s.instanceOrder, id)
 	}
-	return rows.Err()
+	return nil
 }
 
 func (s *Server) newInstance(id string, w *loadedWidget, label string, created time.Time) *instance {
@@ -224,15 +260,35 @@ func (s *Server) configure(id, label string, cfg []byte) error {
 	if err := in.checkConfig(cfg); err != nil {
 		return err
 	}
-	if _, err := s.db.Exec(`UPDATE instances SET label = ?, config = ?, configured = 1 WHERE id = ?`, label, cfg, id); err != nil {
+	// cfg is whole, secrets and all: store it without them, and them sealed
+	// apart. Every secret not in cfg is gone.
+	stored, secrets, err := in.w.splitSecrets(cfg)
+	if err != nil {
+		return err
+	}
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`UPDATE instances SET label = ?, config = ?, configured = 1 WHERE id = ?`, label, stored, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM secrets WHERE instance = ?`, id); err != nil {
+		return err
+	}
+	if err := s.storeSecrets(tx, id, secrets, nil); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
 		return err
 	}
 	s.stopLocked(in)
 	in.mu.Lock()
-	in.label, in.config, in.configured = label, cfg, true
+	in.label, in.config, in.runConfig, in.configured = label, stored, cfg, true
+	in.state, in.message = widgetdv1.InstanceStatus_STATE_UNSPECIFIED, ""
 	in.mu.Unlock()
-	in.setState(widgetdv1.InstanceStatus_STATE_RUNNING, "")
-	s.startLocked(in)
+	s.startIfReadyLocked(in) // or wait to be signed in
 	return nil
 }
 
@@ -271,6 +327,12 @@ func (s *Server) deleteInstance(id string) error {
 	}
 	defer tx.Rollback()
 	if _, err := tx.Exec(`DELETE FROM kv WHERE instance = ?`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM secrets WHERE instance = ?`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM tokens WHERE instance = ?`, id); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM instances WHERE id = ?`, id); err != nil {

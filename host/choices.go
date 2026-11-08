@@ -85,6 +85,11 @@ func (s *Server) configChoices(ctx context.Context, in *instance, cfg []byte) ([
 	if err := proto.Unmarshal(cfg, dynamicpb.NewMessage(spec.ProtoReflect().Descriptor())); err != nil {
 		return nil, fmt.Errorf("settings don't decode: %w", err)
 	}
+	// Secret fields aren't in a form's config; the widget may need them.
+	cfg, err := s.withStoredSecrets(in, cfg, nil)
+	if err != nil {
+		return nil, err
+	}
 	sum := sha256.Sum256(cfg)
 	key := in.w.digest + ":" + hex.EncodeToString(sum[:])
 	if fields, ok := s.choices.get(key); ok {
@@ -104,7 +109,6 @@ func (s *Server) configChoices(ctx context.Context, in *instance, cfg []byte) ([
 	defer cancel()
 	h := &runHost{in: in, ctx: ctx, cancel: cancel, cards: map[string]*card{}, helper: true, helperConfig: cfg}
 	var m map[string][]widget.Choice
-	var err error
 	if cm != nil {
 		m, err = s.wasm.choices(ctx, cm, in.w.spec.Name, h)
 	} else {

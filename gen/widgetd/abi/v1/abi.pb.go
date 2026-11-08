@@ -650,11 +650,15 @@ func (x *Header) GetValue() string {
 }
 
 type Fetch struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Method        string                 `protobuf:"bytes,1,opt,name=method,proto3" json:"method,omitempty"`
-	Url           string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
-	Headers       []*Header              `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty"`
-	Body          []byte                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Method  string                 `protobuf:"bytes,1,opt,name=method,proto3" json:"method,omitempty"`
+	Url     string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
+	Headers []*Header              `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty"`
+	Body    []byte                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+	// Sign the request in: the host adds the account's token, if the URL is
+	// one of the hosts the widget's sign-in declares. The module never sees
+	// the token.
+	Authorize     bool `protobuf:"varint,5,opt,name=authorize,proto3" json:"authorize,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -715,6 +719,13 @@ func (x *Fetch) GetBody() []byte {
 		return x.Body
 	}
 	return nil
+}
+
+func (x *Fetch) GetAuthorize() bool {
+	if x != nil {
+		return x.Authorize
+	}
+	return false
 }
 
 // FetchResponse carries the whole body; the policy caps its size.
@@ -1772,12 +1783,13 @@ const file_widgetd_abi_v1_abi_proto_rawDesc = "" +
 	"\tConfigGet\"2\n" +
 	"\x06Header\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value\"w\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"\x95\x01\n" +
 	"\x05Fetch\x12\x16\n" +
 	"\x06method\x18\x01 \x01(\tR\x06method\x12\x10\n" +
 	"\x03url\x18\x02 \x01(\tR\x03url\x120\n" +
 	"\aheaders\x18\x03 \x03(\v2\x16.widgetd.abi.v1.HeaderR\aheaders\x12\x12\n" +
-	"\x04body\x18\x04 \x01(\fR\x04body\"m\n" +
+	"\x04body\x18\x04 \x01(\fR\x04body\x12\x1c\n" +
+	"\tauthorize\x18\x05 \x01(\bR\tauthorize\"m\n" +
 	"\rFetchResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\x05R\x06status\x120\n" +
 	"\aheaders\x18\x02 \x03(\v2\x16.widgetd.abi.v1.HeaderR\aheaders\x12\x12\n" +

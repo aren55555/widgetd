@@ -24,7 +24,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/aren55555/widgetd/client"
-	widgetdv1 "github.com/aren55555/widgetd/gen/widgetd/v1"
 	"github.com/aren55555/widgetd/gen/widgetd/v1/widgetdv1connect"
 	"github.com/aren55555/widgetd/sdk/go/widget"
 )
@@ -65,6 +64,8 @@ type Options struct {
 	allowAddr func(netip.Addr) bool
 	// wasmCacheDir overrides where compiled modules are cached (tests share one).
 	wasmCacheDir string
+	// transport replaces the guarded transport (tests: fake providers over TLS).
+	transport http.RoundTripper
 }
 
 // Instance seeds a configured copy of a widget: created on first start if
@@ -88,8 +89,10 @@ type Server struct {
 	widgets   map[string]*loadedWidget
 	policies  map[string]NetworkPolicy
 	transport http.RoundTripper
+	sealer    *sealer
 	wasm      *wasmHost // nil unless a widget is sandboxed
 	tickets   *tickets
+	signIns   signIns
 	choices   choiceCache
 
 	mu            sync.Mutex // guards instances, instanceOrder, runCtx and each instance's run
@@ -121,7 +124,7 @@ func New(opts Options) (*Server, error) {
 		board:     newBoard(),
 		widgets:   map[string]*loadedWidget{},
 		policies:  opts.Policies,
-		transport: newGuardedTransport(opts.allowAddr),
+		transport: cmpOr[http.RoundTripper](opts.transport, newGuardedTransport(opts.allowAddr)),
 		tickets:   newTickets(),
 		instances: map[string]*instance{},
 	}
@@ -152,6 +155,9 @@ func New(opts Options) (*Server, error) {
 		db.Close()
 		return nil, err
 	}
+	if s.sealer, err = openSealer(opts.StateDir); err != nil {
+		return fail(fmt.Errorf("secrets key: %w", err))
+	}
 	for _, w := range s.widgets {
 		if err := s.applyGrant(w); err != nil {
 			return fail(fmt.Errorf("widget %s: %w", w.spec.Name, err))
@@ -180,11 +186,7 @@ func (s *Server) Start() {
 	s.runCtx = ctx
 	for _, id := range s.instanceOrder {
 		in := s.instances[id]
-		if in.configured && in.state != widgetdv1.InstanceStatus_STATE_INVALID_CONFIG {
-			in.state = widgetdv1.InstanceStatus_STATE_RUNNING
-			s.startLocked(in)
-		}
-		s.board.setInstance(id, in.status())
+		s.startIfReadyLocked(in)
 	}
 	s.mu.Unlock()
 	if u := s.auth.setupURL(); u != "" {

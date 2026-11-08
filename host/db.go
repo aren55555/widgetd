@@ -48,6 +48,21 @@ CREATE TABLE IF NOT EXISTS instances (
 	configured INTEGER NOT NULL DEFAULT 0,
 	created_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS secrets (
+	instance TEXT NOT NULL,
+	field    TEXT NOT NULL,
+	value    BLOB NOT NULL,     -- sealed: see secrets.go
+	PRIMARY KEY (instance, field)
+);
+CREATE TABLE IF NOT EXISTS sign_in_clients (
+	widget        TEXT PRIMARY KEY,
+	client_id     TEXT NOT NULL,
+	client_secret BLOB              -- sealed; NULL if none
+);
+CREATE TABLE IF NOT EXISTS tokens (
+	instance TEXT PRIMARY KEY,
+	value    BLOB NOT NULL          -- sealed JSON: see signin.go
+);
 CREATE TABLE IF NOT EXISTS grants (
 	widget   TEXT PRIMARY KEY,
 	disabled INTEGER NOT NULL DEFAULT 0,

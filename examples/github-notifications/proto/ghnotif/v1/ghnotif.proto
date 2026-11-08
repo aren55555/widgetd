@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package ghnotif.v1;
+
+import "buf/validate/validate.proto";
+
+message Config {
+  // Only notifications you're directly involved in (mentioned, assigned,
+  // asked to review), not everything on repos you watch.
+  bool participating = 1;
+}
+
+message Item {
+  string repo = 1 [(buf.validate.field).string.max_len = 140];
+  string title = 2 [(buf.validate.field).string.max_len = 300];
+  // "PullRequest", "Issue", "Release", "Discussion", ...
+  string kind = 3 [(buf.validate.field).string.max_len = 40];
+  // Why you got it: "review_requested", "mention", "subscribed", ...
+  string reason = 4 [(buf.validate.field).string.max_len = 40];
+  int64 updated_unix_ms = 5;
+}
+
+message State {
+  // The signed-in account's login.
+  string login = 1 [(buf.validate.field).string.max_len = 64];
+  int32 unread = 2 [(buf.validate.field).int32.gte = 0];
+  // The most recent, newest first.
+  repeated Item items = 3 [(buf.validate.field).repeated.max_items = 10];
+}

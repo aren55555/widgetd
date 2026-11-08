@@ -333,7 +333,7 @@ func (f *fetcher) setPolicy(p *effectivePolicy) {
 }
 
 // headers a widget may not set: the host owns them.
-var hostOwnedHeaders = []string{"Host", "Cookie", "Authorization", "Proxy-Authorization", "Proxy-Connection", "Connection", "Upgrade", "Te", "Trailer", "Transfer-Encoding", "Forwarded", "X-Forwarded-For", "X-Forwarded-Host", "X-Forwarded-Proto", "X-Real-Ip"}
+var hostOwnedHeaders = []string{"Host", "Cookie", "Authorization", "Proxy-Authorization", "Proxy-Connection", "Connection", "Upgrade", "Te", "Trailer", "Transfer-Encoding", "Forwarded", "Widgetd-Authorize", "X-Forwarded-For", "X-Forwarded-Host", "X-Forwarded-Proto", "X-Real-Ip"}
 
 func (f *fetcher) record(a Activity) {
 	f.mu.Lock()
@@ -351,7 +351,10 @@ func (f *fetcher) Activity() []Activity {
 	return slices.Clone(f.activity)
 }
 
-func (f *fetcher) do(ctx context.Context, req *http.Request) (*http.Response, error) {
+// do performs a widget's request. auth, if set, is the Authorization the
+// host adds for a signed-in widget: after the widget's own headers are
+// stripped, so a widget can never set one itself.
+func (f *fetcher) do(ctx context.Context, req *http.Request, auth string) (*http.Response, error) {
 	start := time.Now()
 	act := Activity{At: start, Method: req.Method, Host: req.URL.Host, Path: req.URL.Path}
 	fail := func(err error) (*http.Response, error) {
@@ -378,6 +381,9 @@ func (f *fetcher) do(ctx context.Context, req *http.Request) (*http.Response, er
 	out.RequestURI = ""
 	for _, h := range hostOwnedHeaders {
 		out.Header.Del(h)
+	}
+	if auth != "" {
+		out.Header.Set("Authorization", auth)
 	}
 	ctx, cancel := context.WithTimeout(ctx, p.timeout)
 	client := &http.Client{

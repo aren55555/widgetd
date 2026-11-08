@@ -87,6 +87,9 @@ message InstanceStatus {
     // Its stored configuration no longer passes the widget's schema (after
     // an upgrade, say). It waits to be configured again.
     STATE_INVALID_CONFIG = 4;
+    // The widget needs an account signed in (or signed in again: the
+    // provider stopped accepting its token). Screens offer a sign-in code.
+    STATE_NEEDS_SIGN_IN = 5;
   }
   State state = 1;
   string widget = 2;

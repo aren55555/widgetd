@@ -40,6 +40,16 @@
         "@bufbuild/protoc-gen-es": "^2.14.1",
       },
     },
+    "examples/github-notifications/view": {
+      "name": "@widgetd-example/github-notifications",
+      "dependencies": {
+        "@bufbuild/protobuf": "^2.14.1",
+        "@widgetd/sdk": "workspace:*",
+      },
+      "devDependencies": {
+        "@bufbuild/protoc-gen-es": "^2.14.1",
+      },
+    },
     "examples/sports-game/view": {
       "name": "@widgetd-example/sports-game",
       "dependencies": {
@@ -85,6 +95,8 @@
     "@typescript/vfs": ["@typescript/vfs@1.6.6", "", { "dependencies": { "debug": "^4.4.3" }, "peerDependencies": { "typescript": "*" } }, "sha512-gXw0+tpchiQUjTcbnNIPnyLFIhbwJ7M1VaxLQ1vXhjQxtTBK3sdDLY1ih0jxCu1I5K3V0dDxq8CkVZtIMspC3A=="],
 
     "@widgetd-example/bitcoin-spiral": ["@widgetd-example/bitcoin-spiral@workspace:examples/bitcoin-spiral/view"],
+
+    "@widgetd-example/github-notifications": ["@widgetd-example/github-notifications@workspace:examples/github-notifications/view"],
 
     "@widgetd-example/sports-game": ["@widgetd-example/sports-game@workspace:examples/sports-game/view"],
 

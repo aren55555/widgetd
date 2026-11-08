@@ -85,10 +85,14 @@ export type FieldChoice = { value: string; label: string };
 /** Pick-lists by field path ("team", "location.city"), as the widget offered them. */
 export type Choices = ReadonlyMap<string, readonly FieldChoice[]>;
 
+/** Write-only fields: which they are, which have a stored value, and which the user asked to remove. */
+export type Secrets = { fields: ReadonlySet<string>; set: ReadonlySet<string>; clear: Set<string> };
+
 type Ctx = {
   /** Called after any edit. */
   changed: () => void;
   choices: Choices;
+  secrets: Secrets;
   /** Where to show an error for a field path. */
   errorSlots: Map<string, El>;
 };
@@ -98,10 +102,17 @@ type Ctx = {
  * validate(), which checks the message as it now stands and shows each
  * violation beside its field, returning whether it's valid.
  */
-export function buildForm(root: El, desc: DescMessage, msg: Message, onChange: () => void, choices: Choices = new Map()) {
+export function buildForm(
+  root: El,
+  desc: DescMessage,
+  msg: Message,
+  onChange: () => void,
+  choices: Choices = new Map(),
+  secrets: Secrets = { fields: new Set(), set: new Set(), clear: new Set() },
+) {
   const errorSlots = new Map<string, El>();
   const parseErrors = new Set<string>();
-  const ctx: Ctx = { changed: () => onChange(), errorSlots, choices };
+  const ctx: Ctx = { changed: () => onChange(), errorSlots, choices, secrets };
   root.replaceChildren(messageFields(desc, msg as unknown as Record<string, unknown>, "", ctx, parseErrors));
   const validator = createValidator();
 
@@ -249,6 +260,7 @@ function itemEditor(
   if (t === ScalarType.BYTES) {
     return wrap(el("p", { class: "muted" }, "Can't be edited here."));
   }
+  if (t === ScalarType.STRING && ctx.secrets.fields.has(path)) return wrap(secretInput(path, holder, key, commit, ctx));
   const picks = t === ScalarType.STRING ? ctx.choices.get(path) : undefined;
   if (picks) return wrap(choiceSelect(picks, holder, key, commit, ctx));
   const numeric = t !== ScalarType.STRING;
@@ -345,4 +357,32 @@ export function sameChoices(a: Choices, b: Choices): boolean {
     if (!w || w.length !== v.length || v.some((c, i) => c.value !== w[i]!.value || c.label !== w[i]!.label)) return false;
   }
   return true;
+}
+
+/**
+ * A write-only field. It starts blank (the stored value is never sent to
+ * the phone); blank keeps what's stored, typing replaces it, and "Remove"
+ * deletes it.
+ */
+function secretInput(path: string, holder: Record<string, unknown>, key: string, commit: () => void, ctx: Ctx): El {
+  const stored = ctx.secrets.set.has(path);
+  const input = el("input", { type: "password", autocomplete: "new-password", placeholder: stored ? "Stored. Leave blank to keep it." : "Not set" }) as HTMLInputElement;
+  input.addEventListener("input", () => {
+    holder[key] = input.value;
+    if (input.value) ctx.secrets.clear.delete(path);
+    commit();
+    ctx.changed();
+  });
+  if (!stored) return input;
+  const box = el("input", { type: "checkbox" }) as HTMLInputElement;
+  box.addEventListener("change", () => {
+    if (box.checked) {
+      ctx.secrets.clear.add(path);
+      input.value = "";
+      holder[key] = "";
+    } else ctx.secrets.clear.delete(path);
+    input.disabled = box.checked;
+    ctx.changed();
+  });
+  return el("div", { class: "secret" }, input, el("label", { class: "check" }, box, el("span", {}, "Remove")));
 }

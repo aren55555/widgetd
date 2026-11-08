@@ -100,3 +100,8 @@ describe("placeholders", () => {
     expect(instanceOf("bare")).toBe("");
   });
 });
+
+test("an instance waiting for an account offers sign-in, saying why", () => {
+  expect(placeholderFor(InstanceStatus_State.NEEDS_SIGN_IN, "")).toEqual({ show: true, text: "Needs an account signed in.", setUp: false, signIn: true });
+  expect(placeholderFor(InstanceStatus_State.NEEDS_SIGN_IN, "The sign-in lapsed. Sign in again.")).toMatchObject({ text: "The sign-in lapsed. Sign in again." });
+});

@@ -31,3 +31,5 @@ button.danger, .devices button.danger { background: #dc2626; }
 .actions button { width: auto; padding: 0.4rem 0.8rem; font-size: 0.9rem; }
 .devices button { width: auto; display: inline-block; margin-top: 0.5rem; padding: 0.4rem 0.8rem; }
 .log { margin: 0.5rem 0 0; padding-left: 1rem; font: 0.8rem/1.4 ui-monospace, monospace; word-break: break-all; }
+.secret { display: flex; flex-direction: column; gap: 0.25rem; }
+.secret .check { margin: 0; font-size: 0.9rem; }

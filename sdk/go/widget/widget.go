@@ -44,6 +44,10 @@ type Spec struct {
 	// Wasm is the server half as a WASI module instead, run in a sandbox.
 	// Exactly one of Run and Wasm is set.
 	Wasm []byte
+	// Secrets are Config fields (top-level strings) that are write-only:
+	// stored sealed, never shown again, and given only to the widget.
+	Secrets []string
+
 	// Modes are the helper modes a Wasm module implements: "choices",
 	// "verify". The host only runs a module in a mode it declares, since a
 	// module that doesn't know one would just start its main loop.
@@ -59,6 +63,11 @@ type Spec struct {
 
 	// View is the built view: view.js (and view.css, if any) at its root.
 	View fs.FS
+
+	// SignIn, if set, means the widget uses an account: the host runs the
+	// sign-in and keeps the token, and the widget's Authorize'd requests to
+	// SignIn.APIHosts carry it.
+	SignIn *SignIn
 
 	// Network is what the widget asks to reach. The host grants at most
 	// this, and may grant less.
@@ -297,4 +306,41 @@ type VerifyFunc func(ctx context.Context, h Host) (Verdict, error)
 //	func main() { widget.Main(server.Run, widget.WithVerify(server.Verify)) }
 func WithVerify(f VerifyFunc) MainOption {
 	return func(o *mainOptions) { o.verify = f }
+}
+
+// SignIn describes an OAuth 2.0 device-flow sign-in (RFC 8628): the screen
+// shows a code, someone approves it on the provider's site from a phone,
+// and the host keeps the resulting token.
+type SignIn struct {
+	// Provider is what people see: "GitHub".
+	Provider string
+	// DeviceURL and TokenURL are the provider's device authorization and
+	// token endpoints.
+	DeviceURL string
+	TokenURL  string
+	Scopes    []string
+	// APIHosts are where the token may be sent; each must be in the
+	// widget's network request.
+	APIHosts []string
+}
+
+// authorizeHeader marks a request for the host to sign in. The host strips
+// it, so it never leaves the machine.
+const authorizeHeader = "Widgetd-Authorize"
+
+// Authorize marks req to carry the signed-in account's token. The host adds
+// it, only if req goes to one of the SignIn's API hosts, and the widget
+// never sees the token itself. A 401 back means the sign-in has lapsed:
+// the host stops the instance and asks for it again.
+func Authorize(req *http.Request) *http.Request {
+	req.Header.Set(authorizeHeader, "1")
+	return req
+}
+
+// IsAuthorized reports whether req was marked by Authorize, and unmarks it.
+// For hosts implementing Fetch.
+func IsAuthorized(req *http.Request) bool {
+	ok := req.Header.Get(authorizeHeader) != ""
+	req.Header.Del(authorizeHeader)
+	return ok
 }

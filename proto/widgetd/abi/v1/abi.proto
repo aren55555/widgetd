@@ -70,6 +70,10 @@ message Fetch {
   string url = 2;
   repeated Header headers = 3;
   bytes body = 4;
+  // Sign the request in: the host adds the account's token, if the URL is
+  // one of the hosts the widget's sign-in declares. The module never sees
+  // the token.
+  bool authorize = 5;
 }
 
 // FetchResponse carries the whole body; the policy caps its size.
