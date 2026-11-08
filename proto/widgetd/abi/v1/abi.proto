@@ -36,6 +36,7 @@ message Call {
     Log log = 9;
     TakeActions take_actions = 10;
     Exit exit = 11;
+    Choices choices = 12;
   }
 }
 
@@ -170,4 +171,27 @@ message CardAction {
 // exit code alone can't say.
 message Exit {
   string error = 1;
+}
+
+// Choices is a module's answer when the host runs it in choices mode: its
+// arguments are then [name, "widgetd:choices"], ConfigGet returns the
+// settings being edited (unsaved, and not yet checked against their rules),
+// and the module sends one Choices and exits. Each field listed becomes a
+// pick-list in the settings form. A module with nothing to offer sends an
+// empty Choices.
+message Choices {
+  repeated FieldChoices fields = 1;
+}
+
+message FieldChoices {
+  // The field's name, dotted for nested fields: "team", "location.city".
+  string field = 1;
+  repeated Choice choices = 2;
+}
+
+message Choice {
+  // What the field is set to.
+  string value = 1;
+  // What the list shows; the value if empty.
+  string label = 2;
 }

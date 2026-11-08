@@ -30,6 +30,11 @@ service WidgetAdminService {
   // or directly by id (the admin page's "Settings" link).
   rpc GetConfigForm(GetConfigFormRequest) returns (GetConfigFormResponse);
 
+  // Choices for the form's fields, given the settings as edited so far:
+  // the widget's server half answers them (a team list for the league
+  // picked, say). Admin.
+  rpc GetConfigChoices(GetConfigChoicesRequest) returns (GetConfigChoicesResponse);
+
   // Check and save a configuration, then (re)start the instance. Admin.
   rpc SaveConfig(SaveConfigRequest) returns (SaveConfigResponse);
 
@@ -180,4 +185,26 @@ message Fetch {
 
 message GetInstanceActivityResponse {
   repeated Fetch fetches = 1;
+}
+
+message GetConfigChoicesRequest {
+  // Which instance: a QR code's ticket, or (from the admin page) its id.
+  string ticket = 1;
+  // The settings as edited so far, encoded as the widget's Config.
+  bytes config = 2;
+  string instance_id = 3;
+}
+
+message ConfigChoice {
+  string value = 1;
+  string label = 2;
+}
+
+message ConfigFieldChoices {
+  string field = 1;
+  repeated ConfigChoice choices = 2;
+}
+
+message GetConfigChoicesResponse {
+  repeated ConfigFieldChoices fields = 1;
 }

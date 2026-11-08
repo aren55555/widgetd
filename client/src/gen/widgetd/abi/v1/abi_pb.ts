@@ -30,7 +30,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file widgetd/abi/v1/abi.proto.
  */
 export const file_widgetd_abi_v1_abi: GenFile = /*@__PURE__*/
-  fileDesc("Chh3aWRnZXRkL2FiaS92MS9hYmkucHJvdG8SDndpZGdldGQuYWJpLnYxIt8DCgRDYWxsEi8KCmNvbmZpZ19nZXQYASABKAsyGS53aWRnZXRkLmFiaS52MS5Db25maWdHZXRIABImCgVmZXRjaBgCIAEoCzIVLndpZGdldGQuYWJpLnYxLkZldGNoSAASJwoGa3ZfZ2V0GAMgASgLMhUud2lkZ2V0ZC5hYmkudjEuS3ZHZXRIABInCgZrdl9wdXQYBCABKAsyFS53aWRnZXRkLmFiaS52MS5LdlB1dEgAEi0KCWt2X2RlbGV0ZRgFIAEoCzIYLndpZGdldGQuYWJpLnYxLkt2RGVsZXRlSAASJgoFbW91bnQYBiABKAsyFS53aWRnZXRkLmFiaS52MS5Nb3VudEgAEioKB3VubW91bnQYByABKAsyFy53aWRnZXRkLmFiaS52MS5Vbm1vdW50SAASJAoEZW1pdBgIIAEoCzIULndpZGdldGQuYWJpLnYxLkVtaXRIABIiCgNsb2cYCSABKAsyEy53aWRnZXRkLmFiaS52MS5Mb2dIABIzCgx0YWtlX2FjdGlvbnMYCiABKAsyGy53aWRnZXRkLmFiaS52MS5UYWtlQWN0aW9uc0gAEiQKBGV4aXQYCyABKAsyFC53aWRnZXRkLmFiaS52MS5FeGl0SABCBAoCb3Ai9gEKBlJlc3VsdBINCgVlcnJvchgBIAEoCRITCgtkZW5pZWRfcnVsZRgCIAEoCRIQCgZjb25maWcYAyABKAxIABIuCgVmZXRjaBgEIAEoCzIdLndpZGdldGQuYWJpLnYxLkZldGNoUmVzcG9uc2VIABIlCgJrdhgFIAEoCzIXLndpZGdldGQuYWJpLnYxLkt2VmFsdWVIABIqCgRlbWl0GAYgASgLMhoud2lkZ2V0ZC5hYmkudjEuRW1pdFJlc3VsdEgAEioKB2FjdGlvbnMYByABKAsyFy53aWRnZXRkLmFiaS52MS5BY3Rpb25zSABCBwoFdmFsdWUiCwoJQ29uZmlnR2V0IiUKBkhlYWRlchIMCgRuYW1lGAEgASgJEg0KBXZhbHVlGAIgASgJIlsKBUZldGNoEg4KBm1ldGhvZBgBIAEoCRILCgN1cmwYAiABKAkSJwoHaGVhZGVycxgDIAMoCzIWLndpZGdldGQuYWJpLnYxLkhlYWRlchIMCgRib2R5GAQgASgMIlYKDUZldGNoUmVzcG9uc2USDgoGc3RhdHVzGAEgASgFEicKB2hlYWRlcnMYAiADKAsyFi53aWRnZXRkLmFiaS52MS5IZWFkZXISDAoEYm9keRgDIAEoDCIUCgVLdkdldBILCgNrZXkYASABKAkiJwoHS3ZWYWx1ZRINCgVmb3VuZBgBIAEoCBINCgV2YWx1ZRgCIAEoDCIjCgVLdlB1dBILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAwiFwoIS3ZEZWxldGUSCwoDa2V5GAEgASgJIpUBCgVNb3VudBIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIMCgRjb2xzGAMgASgNEgwKBHJvd3MYBCABKA0SGAoQdmlzaWJsZV91bnRpbF9tcxgFIAEoAxISCgpzdGF0ZV90eXBlGAYgASgJEhIKCmRlbHRhX3R5cGUYByABKAkSEwoLYWN0aW9uX3R5cGUYCCABKAkiFQoHVW5tb3VudBIKCgJpZBgBIAEoCSKlAQoERW1pdBIPCgdjYXJkX2lkGAEgASgJEicKBGtpbmQYAiABKA4yGS53aWRnZXRkLmFiaS52MS5FbWl0LktpbmQSDQoFdmFsdWUYAyABKAwiVAoES2luZBIUChBLSU5EX1VOU1BFQ0lGSUVEEAASEQoNS0lORF9TTkFQU0hPVBABEg4KCktJTkRfREVMVEEQAhITCg9LSU5EX0NIRUNLUE9JTlQQAyIlCgpFbWl0UmVzdWx0EhcKD3dhbnRfY2hlY2twb2ludBgBIAEoCCLJAQoDTG9nEigKBWxldmVsGAEgASgOMhkud2lkZ2V0ZC5hYmkudjEuTG9nLkxldmVsEg8KB21lc3NhZ2UYAiABKAkSJQoFYXR0cnMYAyADKAsyFi53aWRnZXRkLmFiaS52MS5IZWFkZXIiYAoFTGV2ZWwSFQoRTEVWRUxfVU5TUEVDSUZJRUQQABIPCgtMRVZFTF9ERUJVRxABEg4KCkxFVkVMX0lORk8QAhIOCgpMRVZFTF9XQVJOEAMSDwoLTEVWRUxfRVJST1IQBCINCgtUYWtlQWN0aW9ucyI2CgdBY3Rpb25zEisKB2FjdGlvbnMYASADKAsyGi53aWRnZXRkLmFiaS52MS5DYXJkQWN0aW9uIiwKCkNhcmRBY3Rpb24SDwoHY2FyZF9pZBgBIAEoCRINCgV2YWx1ZRgCIAEoDCIVCgRFeGl0Eg0KBWVycm9yGAEgASgJQjdaNWdpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvZ2VuL3dpZGdldGQvYWJpL3YxO2FiaXYxYgZwcm90bzM");
+  fileDesc("Chh3aWRnZXRkL2FiaS92MS9hYmkucHJvdG8SDndpZGdldGQuYWJpLnYxIosECgRDYWxsEi8KCmNvbmZpZ19nZXQYASABKAsyGS53aWRnZXRkLmFiaS52MS5Db25maWdHZXRIABImCgVmZXRjaBgCIAEoCzIVLndpZGdldGQuYWJpLnYxLkZldGNoSAASJwoGa3ZfZ2V0GAMgASgLMhUud2lkZ2V0ZC5hYmkudjEuS3ZHZXRIABInCgZrdl9wdXQYBCABKAsyFS53aWRnZXRkLmFiaS52MS5LdlB1dEgAEi0KCWt2X2RlbGV0ZRgFIAEoCzIYLndpZGdldGQuYWJpLnYxLkt2RGVsZXRlSAASJgoFbW91bnQYBiABKAsyFS53aWRnZXRkLmFiaS52MS5Nb3VudEgAEioKB3VubW91bnQYByABKAsyFy53aWRnZXRkLmFiaS52MS5Vbm1vdW50SAASJAoEZW1pdBgIIAEoCzIULndpZGdldGQuYWJpLnYxLkVtaXRIABIiCgNsb2cYCSABKAsyEy53aWRnZXRkLmFiaS52MS5Mb2dIABIzCgx0YWtlX2FjdGlvbnMYCiABKAsyGy53aWRnZXRkLmFiaS52MS5UYWtlQWN0aW9uc0gAEiQKBGV4aXQYCyABKAsyFC53aWRnZXRkLmFiaS52MS5FeGl0SAASKgoHY2hvaWNlcxgMIAEoCzIXLndpZGdldGQuYWJpLnYxLkNob2ljZXNIAEIECgJvcCL2AQoGUmVzdWx0Eg0KBWVycm9yGAEgASgJEhMKC2RlbmllZF9ydWxlGAIgASgJEhAKBmNvbmZpZxgDIAEoDEgAEi4KBWZldGNoGAQgASgLMh0ud2lkZ2V0ZC5hYmkudjEuRmV0Y2hSZXNwb25zZUgAEiUKAmt2GAUgASgLMhcud2lkZ2V0ZC5hYmkudjEuS3ZWYWx1ZUgAEioKBGVtaXQYBiABKAsyGi53aWRnZXRkLmFiaS52MS5FbWl0UmVzdWx0SAASKgoHYWN0aW9ucxgHIAEoCzIXLndpZGdldGQuYWJpLnYxLkFjdGlvbnNIAEIHCgV2YWx1ZSILCglDb25maWdHZXQiJQoGSGVhZGVyEgwKBG5hbWUYASABKAkSDQoFdmFsdWUYAiABKAkiWwoFRmV0Y2gSDgoGbWV0aG9kGAEgASgJEgsKA3VybBgCIAEoCRInCgdoZWFkZXJzGAMgAygLMhYud2lkZ2V0ZC5hYmkudjEuSGVhZGVyEgwKBGJvZHkYBCABKAwiVgoNRmV0Y2hSZXNwb25zZRIOCgZzdGF0dXMYASABKAUSJwoHaGVhZGVycxgCIAMoCzIWLndpZGdldGQuYWJpLnYxLkhlYWRlchIMCgRib2R5GAMgASgMIhQKBUt2R2V0EgsKA2tleRgBIAEoCSInCgdLdlZhbHVlEg0KBWZvdW5kGAEgASgIEg0KBXZhbHVlGAIgASgMIiMKBUt2UHV0EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoDCIXCghLdkRlbGV0ZRILCgNrZXkYASABKAkilQEKBU1vdW50EgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEgwKBGNvbHMYAyABKA0SDAoEcm93cxgEIAEoDRIYChB2aXNpYmxlX3VudGlsX21zGAUgASgDEhIKCnN0YXRlX3R5cGUYBiABKAkSEgoKZGVsdGFfdHlwZRgHIAEoCRITCgthY3Rpb25fdHlwZRgIIAEoCSIVCgdVbm1vdW50EgoKAmlkGAEgASgJIqUBCgRFbWl0Eg8KB2NhcmRfaWQYASABKAkSJwoEa2luZBgCIAEoDjIZLndpZGdldGQuYWJpLnYxLkVtaXQuS2luZBINCgV2YWx1ZRgDIAEoDCJUCgRLaW5kEhQKEEtJTkRfVU5TUEVDSUZJRUQQABIRCg1LSU5EX1NOQVBTSE9UEAESDgoKS0lORF9ERUxUQRACEhMKD0tJTkRfQ0hFQ0tQT0lOVBADIiUKCkVtaXRSZXN1bHQSFwoPd2FudF9jaGVja3BvaW50GAEgASgIIskBCgNMb2cSKAoFbGV2ZWwYASABKA4yGS53aWRnZXRkLmFiaS52MS5Mb2cuTGV2ZWwSDwoHbWVzc2FnZRgCIAEoCRIlCgVhdHRycxgDIAMoCzIWLndpZGdldGQuYWJpLnYxLkhlYWRlciJgCgVMZXZlbBIVChFMRVZFTF9VTlNQRUNJRklFRBAAEg8KC0xFVkVMX0RFQlVHEAESDgoKTEVWRUxfSU5GTxACEg4KCkxFVkVMX1dBUk4QAxIPCgtMRVZFTF9FUlJPUhAEIg0KC1Rha2VBY3Rpb25zIjYKB0FjdGlvbnMSKwoHYWN0aW9ucxgBIAMoCzIaLndpZGdldGQuYWJpLnYxLkNhcmRBY3Rpb24iLAoKQ2FyZEFjdGlvbhIPCgdjYXJkX2lkGAEgASgJEg0KBXZhbHVlGAIgASgMIhUKBEV4aXQSDQoFZXJyb3IYASABKAkiNwoHQ2hvaWNlcxIsCgZmaWVsZHMYASADKAsyHC53aWRnZXRkLmFiaS52MS5GaWVsZENob2ljZXMiRgoMRmllbGRDaG9pY2VzEg0KBWZpZWxkGAEgASgJEicKB2Nob2ljZXMYAiADKAsyFi53aWRnZXRkLmFiaS52MS5DaG9pY2UiJgoGQ2hvaWNlEg0KBXZhbHVlGAEgASgJEg0KBWxhYmVsGAIgASgJQjdaNWdpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvZ2VuL3dpZGdldGQvYWJpL3YxO2FiaXYxYgZwcm90bzM");
 
 /**
  * @generated from message widgetd.abi.v1.Call
@@ -105,6 +105,12 @@ export type Call = Message<"widgetd.abi.v1.Call"> & {
      */
     value: Exit;
     case: "exit";
+  } | {
+    /**
+     * @generated from field: widgetd.abi.v1.Choices choices = 12;
+     */
+    value: Choices;
+    case: "choices";
   } | { case: undefined; value?: undefined };
 };
 
@@ -658,4 +664,78 @@ export type Exit = Message<"widgetd.abi.v1.Exit"> & {
  */
 export const ExitSchema: GenMessage<Exit> = /*@__PURE__*/
   messageDesc(file_widgetd_abi_v1_abi, 18);
+
+/**
+ * Choices is a module's answer when the host runs it in choices mode: its
+ * arguments are then [name, "widgetd:choices"], ConfigGet returns the
+ * settings being edited (unsaved, and not yet checked against their rules),
+ * and the module sends one Choices and exits. Each field listed becomes a
+ * pick-list in the settings form. A module with nothing to offer sends an
+ * empty Choices.
+ *
+ * @generated from message widgetd.abi.v1.Choices
+ */
+export type Choices = Message<"widgetd.abi.v1.Choices"> & {
+  /**
+   * @generated from field: repeated widgetd.abi.v1.FieldChoices fields = 1;
+   */
+  fields: FieldChoices[];
+};
+
+/**
+ * Describes the message widgetd.abi.v1.Choices.
+ * Use `create(ChoicesSchema)` to create a new message.
+ */
+export const ChoicesSchema: GenMessage<Choices> = /*@__PURE__*/
+  messageDesc(file_widgetd_abi_v1_abi, 19);
+
+/**
+ * @generated from message widgetd.abi.v1.FieldChoices
+ */
+export type FieldChoices = Message<"widgetd.abi.v1.FieldChoices"> & {
+  /**
+   * The field's name, dotted for nested fields: "team", "location.city".
+   *
+   * @generated from field: string field = 1;
+   */
+  field: string;
+
+  /**
+   * @generated from field: repeated widgetd.abi.v1.Choice choices = 2;
+   */
+  choices: Choice[];
+};
+
+/**
+ * Describes the message widgetd.abi.v1.FieldChoices.
+ * Use `create(FieldChoicesSchema)` to create a new message.
+ */
+export const FieldChoicesSchema: GenMessage<FieldChoices> = /*@__PURE__*/
+  messageDesc(file_widgetd_abi_v1_abi, 20);
+
+/**
+ * @generated from message widgetd.abi.v1.Choice
+ */
+export type Choice = Message<"widgetd.abi.v1.Choice"> & {
+  /**
+   * What the field is set to.
+   *
+   * @generated from field: string value = 1;
+   */
+  value: string;
+
+  /**
+   * What the list shows; the value if empty.
+   *
+   * @generated from field: string label = 2;
+   */
+  label: string;
+};
+
+/**
+ * Describes the message widgetd.abi.v1.Choice.
+ * Use `create(ChoiceSchema)` to create a new message.
+ */
+export const ChoiceSchema: GenMessage<Choice> = /*@__PURE__*/
+  messageDesc(file_widgetd_abi_v1_abi, 21);
 

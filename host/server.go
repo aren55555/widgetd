@@ -90,6 +90,7 @@ type Server struct {
 	transport http.RoundTripper
 	wasm      *wasmHost // nil unless a widget is sandboxed
 	tickets   *tickets
+	choices   choiceCache
 
 	mu            sync.Mutex // guards instances, instanceOrder, runCtx and each instance's run
 	instances     map[string]*instance

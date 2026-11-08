@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { ScalarType } from "@bufbuild/protobuf";
 
-import { enumLabel, humanize, normalizePath, parseScalar } from "./form.ts";
+import { choiceOptions, enumLabel, humanize, normalizePath, parseScalar, sameChoices } from "./form.ts";
 
 describe("humanize", () => {
   test("snake and camel case read as words", () => {
@@ -44,4 +44,20 @@ describe("parseScalar", () => {
 
 test("paths drop indexes so both validators agree", () => {
   expect(normalizePath("teams[0].league")).toBe("teams.league");
+});
+
+describe("choices", () => {
+  const picks = [{ value: "SJ", label: "San Jose Sharks" }, { value: "ANA", label: "" }];
+  test("labels default to values", () => {
+    expect(choiceOptions(picks, "SJ")).toEqual([{ value: "SJ", label: "San Jose Sharks" }, { value: "ANA", label: "ANA" }]);
+  });
+  test("a saved value off the list stays", () => {
+    expect(choiceOptions(picks, "SJS")[0]).toEqual({ value: "SJS", label: "SJS (current)" });
+  });
+  test("sameChoices", () => {
+    const a = new Map([["team", picks]]);
+    expect(sameChoices(a, new Map([["team", [...picks]]]))).toBe(true);
+    expect(sameChoices(a, new Map())).toBe(false);
+    expect(sameChoices(a, new Map([["team", picks.slice(1)]]))).toBe(false);
+  });
 });

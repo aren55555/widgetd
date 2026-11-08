@@ -19,7 +19,7 @@ import { FileDescriptorSetSchema } from "@bufbuild/protobuf/wkt";
 import { AuthService, Role } from "./gen/widgetd/v1/auth_pb.ts";
 import { WidgetAdminService, type WidgetInfo } from "./gen/widgetd/v1/admin_pb.ts";
 import { InstanceStatus_State } from "./gen/widgetd/v1/stream_pb.ts";
-import { buildForm } from "./lib/form.ts";
+import { buildForm, sameChoices, type Choices } from "./lib/form.ts";
 
 const base = new URL(".", import.meta.url).pathname; // the bundle sits at <base>admin.js
 const transport = createConnectTransport({ baseUrl: location.origin, useBinaryFormat: true });
@@ -178,7 +178,36 @@ async function configure(target: ConfigTarget) {
       desc = registry.getMessage(form.configType);
       if (!desc) throw new Error(`the schema has no ${form.configType}`);
       msg = form.config.length ? fromBinary(desc, form.config) : create(desc);
-      ({ validate } = buildForm(fields, desc, msg, () => validate()));
+      const d = desc;
+      const m = msg;
+      // The widget may offer pick-lists for some fields (a league's teams),
+      // which depend on what's been picked so far: ask again after each
+      // edit settles, and redraw only when the lists change.
+      let choices: Choices = new Map();
+      let asked = 0;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const draw = () => ({ validate } = buildForm(fields, d, m, edited, choices));
+      const refreshChoices = async () => {
+        const mine = ++asked;
+        try {
+          const res = await admin.getConfigChoices({ ...target, config: toBinary(d, m) });
+          if (mine !== asked) return; // a newer edit already asked
+          const next: Choices = new Map(res.fields.map((f) => [f.field, f.choices.map((c) => ({ value: c.value, label: c.label }))]));
+          if (!sameChoices(choices, next)) {
+            choices = next;
+            draw();
+          }
+        } catch {
+          // Choices are a convenience: without them, fields stay free text.
+        }
+      };
+      function edited() {
+        validate();
+        clearTimeout(timer);
+        timer = setTimeout(refreshChoices, 400);
+      }
+      draw();
+      void refreshChoices();
     } else {
       fields.append(h("p", { class: "muted" }, "This widget has no settings."));
     }

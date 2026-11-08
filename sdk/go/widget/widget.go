@@ -45,6 +45,10 @@ type Spec struct {
 	// Exactly one of Run and Wasm is set.
 	Wasm []byte
 
+	// Choices, for a native widget, offers pick-lists for settings fields.
+	// A sandboxed widget passes WithChoices to Main instead.
+	Choices ChoicesFunc
+
 	// View is the built view: view.js (and view.css, if any) at its root.
 	View fs.FS
 
@@ -226,4 +230,32 @@ func Actions[A proto.Message](card interface{ Raw() RawCard }) <-chan A {
 		}
 	}()
 	return out
+}
+
+// Choice is one option for a settings field.
+type Choice struct {
+	Value string // what the field is set to
+	Label string // what the list shows; Value if empty
+}
+
+// ChoicesFunc offers pick-lists for settings fields, given the settings as
+// edited so far: read them with h.Config (they are unsaved, and may not yet
+// pass their rules), fetch what you need with h.Fetch, and return choices
+// keyed by field name ("team"; dotted for nested fields). A field you don't
+// return stays free text. It runs briefly, while someone edits settings,
+// and must not mount cards.
+type ChoicesFunc func(ctx context.Context, h Host) (map[string][]Choice, error)
+
+// MainOption configures Main.
+type MainOption func(*mainOptions)
+
+type mainOptions struct {
+	choices ChoicesFunc
+}
+
+// WithChoices gives a sandboxed widget pick-lists for its settings form.
+//
+//	func main() { widget.Main(server.Run, widget.WithChoices(server.Choices)) }
+func WithChoices(f ChoicesFunc) MainOption {
+	return func(o *mainOptions) { o.choices = f }
 }

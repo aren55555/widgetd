@@ -305,3 +305,26 @@ func TestWasmExitReason(t *testing.T) {
 		}
 	}
 }
+
+func TestWasmChoices(t *testing.T) {
+	h := newWasmHarness(t, "basic")
+	in := h.srv.instances["basic"]
+	fields, err := h.srv.configChoices(context.Background(), in, cfgBytes(t, "hi"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fields) != 1 || fields[0].GetField() != "label" {
+		t.Fatalf("fields = %v", fields)
+	}
+	cs := fields[0].GetChoices()
+	if cs[0].GetValue() != "hi!" || cs[0].GetLabel() != "echo" {
+		t.Fatalf("choices should be built from the unsaved settings: %v", cs)
+	}
+	if cs[1].GetValue() != "true" {
+		t.Fatal("a widget offering choices must not be able to mount a card")
+	}
+	// Garbage settings are refused before the module runs.
+	if _, err := h.srv.configChoices(context.Background(), in, []byte{0xff, 0xff}); err == nil {
+		t.Fatal("settings that don't decode should be refused")
+	}
+}

@@ -45,6 +45,9 @@ const (
 	// WidgetAdminServiceGetConfigFormProcedure is the fully-qualified name of the WidgetAdminService's
 	// GetConfigForm RPC.
 	WidgetAdminServiceGetConfigFormProcedure = "/widgetd.v1.WidgetAdminService/GetConfigForm"
+	// WidgetAdminServiceGetConfigChoicesProcedure is the fully-qualified name of the
+	// WidgetAdminService's GetConfigChoices RPC.
+	WidgetAdminServiceGetConfigChoicesProcedure = "/widgetd.v1.WidgetAdminService/GetConfigChoices"
 	// WidgetAdminServiceSaveConfigProcedure is the fully-qualified name of the WidgetAdminService's
 	// SaveConfig RPC.
 	WidgetAdminServiceSaveConfigProcedure = "/widgetd.v1.WidgetAdminService/SaveConfig"
@@ -80,6 +83,10 @@ type WidgetAdminServiceClient interface {
 	// instance is named by a ticket (a phone that scanned a screen's QR code)
 	// or directly by id (the admin page's "Settings" link).
 	GetConfigForm(context.Context, *connect.Request[v1.GetConfigFormRequest]) (*connect.Response[v1.GetConfigFormResponse], error)
+	// Choices for the form's fields, given the settings as edited so far:
+	// the widget's server half answers them (a team list for the league
+	// picked, say). Admin.
+	GetConfigChoices(context.Context, *connect.Request[v1.GetConfigChoicesRequest]) (*connect.Response[v1.GetConfigChoicesResponse], error)
 	// Check and save a configuration, then (re)start the instance. Admin.
 	SaveConfig(context.Context, *connect.Request[v1.SaveConfigRequest]) (*connect.Response[v1.SaveConfigResponse], error)
 	// Admin.
@@ -124,6 +131,12 @@ func NewWidgetAdminServiceClient(httpClient connect.HTTPClient, baseURL string, 
 			httpClient,
 			baseURL+WidgetAdminServiceGetConfigFormProcedure,
 			connect.WithSchema(widgetAdminServiceMethods.ByName("GetConfigForm")),
+			connect.WithClientOptions(opts...),
+		),
+		getConfigChoices: connect.NewClient[v1.GetConfigChoicesRequest, v1.GetConfigChoicesResponse](
+			httpClient,
+			baseURL+WidgetAdminServiceGetConfigChoicesProcedure,
+			connect.WithSchema(widgetAdminServiceMethods.ByName("GetConfigChoices")),
 			connect.WithClientOptions(opts...),
 		),
 		saveConfig: connect.NewClient[v1.SaveConfigRequest, v1.SaveConfigResponse](
@@ -171,6 +184,7 @@ type widgetAdminServiceClient struct {
 	addInstance         *connect.Client[v1.AddInstanceRequest, v1.AddInstanceResponse]
 	requestConfigTicket *connect.Client[v1.RequestConfigTicketRequest, v1.RequestConfigTicketResponse]
 	getConfigForm       *connect.Client[v1.GetConfigFormRequest, v1.GetConfigFormResponse]
+	getConfigChoices    *connect.Client[v1.GetConfigChoicesRequest, v1.GetConfigChoicesResponse]
 	saveConfig          *connect.Client[v1.SaveConfigRequest, v1.SaveConfigResponse]
 	listInstances       *connect.Client[v1.ListInstancesRequest, v1.ListInstancesResponse]
 	renameInstance      *connect.Client[v1.RenameInstanceRequest, v1.RenameInstanceResponse]
@@ -197,6 +211,11 @@ func (c *widgetAdminServiceClient) RequestConfigTicket(ctx context.Context, req 
 // GetConfigForm calls widgetd.v1.WidgetAdminService.GetConfigForm.
 func (c *widgetAdminServiceClient) GetConfigForm(ctx context.Context, req *connect.Request[v1.GetConfigFormRequest]) (*connect.Response[v1.GetConfigFormResponse], error) {
 	return c.getConfigForm.CallUnary(ctx, req)
+}
+
+// GetConfigChoices calls widgetd.v1.WidgetAdminService.GetConfigChoices.
+func (c *widgetAdminServiceClient) GetConfigChoices(ctx context.Context, req *connect.Request[v1.GetConfigChoicesRequest]) (*connect.Response[v1.GetConfigChoicesResponse], error) {
+	return c.getConfigChoices.CallUnary(ctx, req)
 }
 
 // SaveConfig calls widgetd.v1.WidgetAdminService.SaveConfig.
@@ -244,6 +263,10 @@ type WidgetAdminServiceHandler interface {
 	// instance is named by a ticket (a phone that scanned a screen's QR code)
 	// or directly by id (the admin page's "Settings" link).
 	GetConfigForm(context.Context, *connect.Request[v1.GetConfigFormRequest]) (*connect.Response[v1.GetConfigFormResponse], error)
+	// Choices for the form's fields, given the settings as edited so far:
+	// the widget's server half answers them (a team list for the league
+	// picked, say). Admin.
+	GetConfigChoices(context.Context, *connect.Request[v1.GetConfigChoicesRequest]) (*connect.Response[v1.GetConfigChoicesResponse], error)
 	// Check and save a configuration, then (re)start the instance. Admin.
 	SaveConfig(context.Context, *connect.Request[v1.SaveConfigRequest]) (*connect.Response[v1.SaveConfigResponse], error)
 	// Admin.
@@ -284,6 +307,12 @@ func NewWidgetAdminServiceHandler(svc WidgetAdminServiceHandler, opts ...connect
 		WidgetAdminServiceGetConfigFormProcedure,
 		svc.GetConfigForm,
 		connect.WithSchema(widgetAdminServiceMethods.ByName("GetConfigForm")),
+		connect.WithHandlerOptions(opts...),
+	)
+	widgetAdminServiceGetConfigChoicesHandler := connect.NewUnaryHandler(
+		WidgetAdminServiceGetConfigChoicesProcedure,
+		svc.GetConfigChoices,
+		connect.WithSchema(widgetAdminServiceMethods.ByName("GetConfigChoices")),
 		connect.WithHandlerOptions(opts...),
 	)
 	widgetAdminServiceSaveConfigHandler := connect.NewUnaryHandler(
@@ -332,6 +361,8 @@ func NewWidgetAdminServiceHandler(svc WidgetAdminServiceHandler, opts ...connect
 			widgetAdminServiceRequestConfigTicketHandler.ServeHTTP(w, r)
 		case WidgetAdminServiceGetConfigFormProcedure:
 			widgetAdminServiceGetConfigFormHandler.ServeHTTP(w, r)
+		case WidgetAdminServiceGetConfigChoicesProcedure:
+			widgetAdminServiceGetConfigChoicesHandler.ServeHTTP(w, r)
 		case WidgetAdminServiceSaveConfigProcedure:
 			widgetAdminServiceSaveConfigHandler.ServeHTTP(w, r)
 		case WidgetAdminServiceListInstancesProcedure:
@@ -367,6 +398,10 @@ func (UnimplementedWidgetAdminServiceHandler) RequestConfigTicket(context.Contex
 
 func (UnimplementedWidgetAdminServiceHandler) GetConfigForm(context.Context, *connect.Request[v1.GetConfigFormRequest]) (*connect.Response[v1.GetConfigFormResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetAdminService.GetConfigForm is not implemented"))
+}
+
+func (UnimplementedWidgetAdminServiceHandler) GetConfigChoices(context.Context, *connect.Request[v1.GetConfigChoicesRequest]) (*connect.Response[v1.GetConfigChoicesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetAdminService.GetConfigChoices is not implemented"))
 }
 
 func (UnimplementedWidgetAdminServiceHandler) SaveConfig(context.Context, *connect.Request[v1.SaveConfigRequest]) (*connect.Response[v1.SaveConfigResponse], error) {

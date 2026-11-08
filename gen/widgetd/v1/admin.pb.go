@@ -1350,6 +1350,216 @@ func (x *GetInstanceActivityResponse) GetFetches() []*Fetch {
 	return nil
 }
 
+type GetConfigChoicesRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Which instance: a QR code's ticket, or (from the admin page) its id.
+	Ticket string `protobuf:"bytes,1,opt,name=ticket,proto3" json:"ticket,omitempty"`
+	// The settings as edited so far, encoded as the widget's Config.
+	Config        []byte `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
+	InstanceId    string `protobuf:"bytes,3,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetConfigChoicesRequest) Reset() {
+	*x = GetConfigChoicesRequest{}
+	mi := &file_widgetd_v1_admin_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetConfigChoicesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetConfigChoicesRequest) ProtoMessage() {}
+
+func (x *GetConfigChoicesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_admin_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetConfigChoicesRequest.ProtoReflect.Descriptor instead.
+func (*GetConfigChoicesRequest) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *GetConfigChoicesRequest) GetTicket() string {
+	if x != nil {
+		return x.Ticket
+	}
+	return ""
+}
+
+func (x *GetConfigChoicesRequest) GetConfig() []byte {
+	if x != nil {
+		return x.Config
+	}
+	return nil
+}
+
+func (x *GetConfigChoicesRequest) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
+	}
+	return ""
+}
+
+type ConfigChoice struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	Label         string                 `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfigChoice) Reset() {
+	*x = ConfigChoice{}
+	mi := &file_widgetd_v1_admin_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfigChoice) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfigChoice) ProtoMessage() {}
+
+func (x *ConfigChoice) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_admin_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfigChoice.ProtoReflect.Descriptor instead.
+func (*ConfigChoice) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *ConfigChoice) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *ConfigChoice) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+type ConfigFieldChoices struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Field         string                 `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
+	Choices       []*ConfigChoice        `protobuf:"bytes,2,rep,name=choices,proto3" json:"choices,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfigFieldChoices) Reset() {
+	*x = ConfigFieldChoices{}
+	mi := &file_widgetd_v1_admin_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfigFieldChoices) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfigFieldChoices) ProtoMessage() {}
+
+func (x *ConfigFieldChoices) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_admin_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfigFieldChoices.ProtoReflect.Descriptor instead.
+func (*ConfigFieldChoices) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *ConfigFieldChoices) GetField() string {
+	if x != nil {
+		return x.Field
+	}
+	return ""
+}
+
+func (x *ConfigFieldChoices) GetChoices() []*ConfigChoice {
+	if x != nil {
+		return x.Choices
+	}
+	return nil
+}
+
+type GetConfigChoicesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Fields        []*ConfigFieldChoices  `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetConfigChoicesResponse) Reset() {
+	*x = GetConfigChoicesResponse{}
+	mi := &file_widgetd_v1_admin_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetConfigChoicesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetConfigChoicesResponse) ProtoMessage() {}
+
+func (x *GetConfigChoicesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_admin_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetConfigChoicesResponse.ProtoReflect.Descriptor instead.
+func (*GetConfigChoicesResponse) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *GetConfigChoicesResponse) GetFields() []*ConfigFieldChoices {
+	if x != nil {
+		return x.Fields
+	}
+	return nil
+}
+
 var File_widgetd_v1_admin_proto protoreflect.FileDescriptor
 
 const file_widgetd_v1_admin_proto_rawDesc = "" +
@@ -1453,12 +1663,26 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\vduration_ms\x18\t \x01(\x03R\n" +
 	"durationMs\"J\n" +
 	"\x1bGetInstanceActivityResponse\x12+\n" +
-	"\afetches\x18\x01 \x03(\v2\x11.widgetd.v1.FetchR\afetches2\x8b\a\n" +
+	"\afetches\x18\x01 \x03(\v2\x11.widgetd.v1.FetchR\afetches\"j\n" +
+	"\x17GetConfigChoicesRequest\x12\x16\n" +
+	"\x06ticket\x18\x01 \x01(\tR\x06ticket\x12\x16\n" +
+	"\x06config\x18\x02 \x01(\fR\x06config\x12\x1f\n" +
+	"\vinstance_id\x18\x03 \x01(\tR\n" +
+	"instanceId\":\n" +
+	"\fConfigChoice\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\"^\n" +
+	"\x12ConfigFieldChoices\x12\x14\n" +
+	"\x05field\x18\x01 \x01(\tR\x05field\x122\n" +
+	"\achoices\x18\x02 \x03(\v2\x18.widgetd.v1.ConfigChoiceR\achoices\"R\n" +
+	"\x18GetConfigChoicesResponse\x126\n" +
+	"\x06fields\x18\x01 \x03(\v2\x1e.widgetd.v1.ConfigFieldChoicesR\x06fields2\xea\a\n" +
 	"\x12WidgetAdminService\x12N\n" +
 	"\vListWidgets\x12\x1e.widgetd.v1.ListWidgetsRequest\x1a\x1f.widgetd.v1.ListWidgetsResponse\x12N\n" +
 	"\vAddInstance\x12\x1e.widgetd.v1.AddInstanceRequest\x1a\x1f.widgetd.v1.AddInstanceResponse\x12f\n" +
 	"\x13RequestConfigTicket\x12&.widgetd.v1.RequestConfigTicketRequest\x1a'.widgetd.v1.RequestConfigTicketResponse\x12T\n" +
-	"\rGetConfigForm\x12 .widgetd.v1.GetConfigFormRequest\x1a!.widgetd.v1.GetConfigFormResponse\x12K\n" +
+	"\rGetConfigForm\x12 .widgetd.v1.GetConfigFormRequest\x1a!.widgetd.v1.GetConfigFormResponse\x12]\n" +
+	"\x10GetConfigChoices\x12#.widgetd.v1.GetConfigChoicesRequest\x1a$.widgetd.v1.GetConfigChoicesResponse\x12K\n" +
 	"\n" +
 	"SaveConfig\x12\x1d.widgetd.v1.SaveConfigRequest\x1a\x1e.widgetd.v1.SaveConfigResponse\x12T\n" +
 	"\rListInstances\x12 .widgetd.v1.ListInstancesRequest\x1a!.widgetd.v1.ListInstancesResponse\x12W\n" +
@@ -1479,7 +1703,7 @@ func file_widgetd_v1_admin_proto_rawDescGZIP() []byte {
 	return file_widgetd_v1_admin_proto_rawDescData
 }
 
-var file_widgetd_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_widgetd_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_widgetd_v1_admin_proto_goTypes = []any{
 	(*WidgetInfo)(nil),                  // 0: widgetd.v1.WidgetInfo
 	(*ListWidgetsRequest)(nil),          // 1: widgetd.v1.ListWidgetsRequest
@@ -1505,45 +1729,53 @@ var file_widgetd_v1_admin_proto_goTypes = []any{
 	(*GetInstanceActivityRequest)(nil),  // 21: widgetd.v1.GetInstanceActivityRequest
 	(*Fetch)(nil),                       // 22: widgetd.v1.Fetch
 	(*GetInstanceActivityResponse)(nil), // 23: widgetd.v1.GetInstanceActivityResponse
-	(*timestamppb.Timestamp)(nil),       // 24: google.protobuf.Timestamp
-	(*InstanceStatus)(nil),              // 25: widgetd.v1.InstanceStatus
+	(*GetConfigChoicesRequest)(nil),     // 24: widgetd.v1.GetConfigChoicesRequest
+	(*ConfigChoice)(nil),                // 25: widgetd.v1.ConfigChoice
+	(*ConfigFieldChoices)(nil),          // 26: widgetd.v1.ConfigFieldChoices
+	(*GetConfigChoicesResponse)(nil),    // 27: widgetd.v1.GetConfigChoicesResponse
+	(*timestamppb.Timestamp)(nil),       // 28: google.protobuf.Timestamp
+	(*InstanceStatus)(nil),              // 29: widgetd.v1.InstanceStatus
 }
 var file_widgetd_v1_admin_proto_depIdxs = []int32{
 	0,  // 0: widgetd.v1.ListWidgetsResponse.widgets:type_name -> widgetd.v1.WidgetInfo
-	24, // 1: widgetd.v1.RequestConfigTicketResponse.expires_at:type_name -> google.protobuf.Timestamp
+	28, // 1: widgetd.v1.RequestConfigTicketResponse.expires_at:type_name -> google.protobuf.Timestamp
 	0,  // 2: widgetd.v1.GetConfigFormResponse.widget:type_name -> widgetd.v1.WidgetInfo
-	25, // 3: widgetd.v1.GetConfigFormResponse.status:type_name -> widgetd.v1.InstanceStatus
+	29, // 3: widgetd.v1.GetConfigFormResponse.status:type_name -> widgetd.v1.InstanceStatus
 	10, // 4: widgetd.v1.SaveConfigResponse.violations:type_name -> widgetd.v1.FieldViolation
 	14, // 5: widgetd.v1.ListInstancesResponse.instances:type_name -> widgetd.v1.InstanceInfo
-	25, // 6: widgetd.v1.InstanceInfo.status:type_name -> widgetd.v1.InstanceStatus
-	24, // 7: widgetd.v1.InstanceInfo.created_at:type_name -> google.protobuf.Timestamp
-	24, // 8: widgetd.v1.Fetch.at:type_name -> google.protobuf.Timestamp
+	29, // 6: widgetd.v1.InstanceInfo.status:type_name -> widgetd.v1.InstanceStatus
+	28, // 7: widgetd.v1.InstanceInfo.created_at:type_name -> google.protobuf.Timestamp
+	28, // 8: widgetd.v1.Fetch.at:type_name -> google.protobuf.Timestamp
 	22, // 9: widgetd.v1.GetInstanceActivityResponse.fetches:type_name -> widgetd.v1.Fetch
-	1,  // 10: widgetd.v1.WidgetAdminService.ListWidgets:input_type -> widgetd.v1.ListWidgetsRequest
-	3,  // 11: widgetd.v1.WidgetAdminService.AddInstance:input_type -> widgetd.v1.AddInstanceRequest
-	5,  // 12: widgetd.v1.WidgetAdminService.RequestConfigTicket:input_type -> widgetd.v1.RequestConfigTicketRequest
-	7,  // 13: widgetd.v1.WidgetAdminService.GetConfigForm:input_type -> widgetd.v1.GetConfigFormRequest
-	9,  // 14: widgetd.v1.WidgetAdminService.SaveConfig:input_type -> widgetd.v1.SaveConfigRequest
-	12, // 15: widgetd.v1.WidgetAdminService.ListInstances:input_type -> widgetd.v1.ListInstancesRequest
-	15, // 16: widgetd.v1.WidgetAdminService.RenameInstance:input_type -> widgetd.v1.RenameInstanceRequest
-	17, // 17: widgetd.v1.WidgetAdminService.DeleteInstance:input_type -> widgetd.v1.DeleteInstanceRequest
-	19, // 18: widgetd.v1.WidgetAdminService.SetNetworkGrant:input_type -> widgetd.v1.SetNetworkGrantRequest
-	21, // 19: widgetd.v1.WidgetAdminService.GetInstanceActivity:input_type -> widgetd.v1.GetInstanceActivityRequest
-	2,  // 20: widgetd.v1.WidgetAdminService.ListWidgets:output_type -> widgetd.v1.ListWidgetsResponse
-	4,  // 21: widgetd.v1.WidgetAdminService.AddInstance:output_type -> widgetd.v1.AddInstanceResponse
-	6,  // 22: widgetd.v1.WidgetAdminService.RequestConfigTicket:output_type -> widgetd.v1.RequestConfigTicketResponse
-	8,  // 23: widgetd.v1.WidgetAdminService.GetConfigForm:output_type -> widgetd.v1.GetConfigFormResponse
-	11, // 24: widgetd.v1.WidgetAdminService.SaveConfig:output_type -> widgetd.v1.SaveConfigResponse
-	13, // 25: widgetd.v1.WidgetAdminService.ListInstances:output_type -> widgetd.v1.ListInstancesResponse
-	16, // 26: widgetd.v1.WidgetAdminService.RenameInstance:output_type -> widgetd.v1.RenameInstanceResponse
-	18, // 27: widgetd.v1.WidgetAdminService.DeleteInstance:output_type -> widgetd.v1.DeleteInstanceResponse
-	20, // 28: widgetd.v1.WidgetAdminService.SetNetworkGrant:output_type -> widgetd.v1.SetNetworkGrantResponse
-	23, // 29: widgetd.v1.WidgetAdminService.GetInstanceActivity:output_type -> widgetd.v1.GetInstanceActivityResponse
-	20, // [20:30] is the sub-list for method output_type
-	10, // [10:20] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	25, // 10: widgetd.v1.ConfigFieldChoices.choices:type_name -> widgetd.v1.ConfigChoice
+	26, // 11: widgetd.v1.GetConfigChoicesResponse.fields:type_name -> widgetd.v1.ConfigFieldChoices
+	1,  // 12: widgetd.v1.WidgetAdminService.ListWidgets:input_type -> widgetd.v1.ListWidgetsRequest
+	3,  // 13: widgetd.v1.WidgetAdminService.AddInstance:input_type -> widgetd.v1.AddInstanceRequest
+	5,  // 14: widgetd.v1.WidgetAdminService.RequestConfigTicket:input_type -> widgetd.v1.RequestConfigTicketRequest
+	7,  // 15: widgetd.v1.WidgetAdminService.GetConfigForm:input_type -> widgetd.v1.GetConfigFormRequest
+	24, // 16: widgetd.v1.WidgetAdminService.GetConfigChoices:input_type -> widgetd.v1.GetConfigChoicesRequest
+	9,  // 17: widgetd.v1.WidgetAdminService.SaveConfig:input_type -> widgetd.v1.SaveConfigRequest
+	12, // 18: widgetd.v1.WidgetAdminService.ListInstances:input_type -> widgetd.v1.ListInstancesRequest
+	15, // 19: widgetd.v1.WidgetAdminService.RenameInstance:input_type -> widgetd.v1.RenameInstanceRequest
+	17, // 20: widgetd.v1.WidgetAdminService.DeleteInstance:input_type -> widgetd.v1.DeleteInstanceRequest
+	19, // 21: widgetd.v1.WidgetAdminService.SetNetworkGrant:input_type -> widgetd.v1.SetNetworkGrantRequest
+	21, // 22: widgetd.v1.WidgetAdminService.GetInstanceActivity:input_type -> widgetd.v1.GetInstanceActivityRequest
+	2,  // 23: widgetd.v1.WidgetAdminService.ListWidgets:output_type -> widgetd.v1.ListWidgetsResponse
+	4,  // 24: widgetd.v1.WidgetAdminService.AddInstance:output_type -> widgetd.v1.AddInstanceResponse
+	6,  // 25: widgetd.v1.WidgetAdminService.RequestConfigTicket:output_type -> widgetd.v1.RequestConfigTicketResponse
+	8,  // 26: widgetd.v1.WidgetAdminService.GetConfigForm:output_type -> widgetd.v1.GetConfigFormResponse
+	27, // 27: widgetd.v1.WidgetAdminService.GetConfigChoices:output_type -> widgetd.v1.GetConfigChoicesResponse
+	11, // 28: widgetd.v1.WidgetAdminService.SaveConfig:output_type -> widgetd.v1.SaveConfigResponse
+	13, // 29: widgetd.v1.WidgetAdminService.ListInstances:output_type -> widgetd.v1.ListInstancesResponse
+	16, // 30: widgetd.v1.WidgetAdminService.RenameInstance:output_type -> widgetd.v1.RenameInstanceResponse
+	18, // 31: widgetd.v1.WidgetAdminService.DeleteInstance:output_type -> widgetd.v1.DeleteInstanceResponse
+	20, // 32: widgetd.v1.WidgetAdminService.SetNetworkGrant:output_type -> widgetd.v1.SetNetworkGrantResponse
+	23, // 33: widgetd.v1.WidgetAdminService.GetInstanceActivity:output_type -> widgetd.v1.GetInstanceActivityResponse
+	23, // [23:34] is the sub-list for method output_type
+	12, // [12:23] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_widgetd_v1_admin_proto_init() }
@@ -1558,7 +1790,7 @@ func file_widgetd_v1_admin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_widgetd_v1_admin_proto_rawDesc), len(file_widgetd_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   24,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -80,9 +80,15 @@ function el(tag: string, attrs: Record<string, string> = {}, ...kids: (Node | st
   return e;
 }
 
+export type FieldChoice = { value: string; label: string };
+
+/** Pick-lists by field path ("team", "location.city"), as the widget offered them. */
+export type Choices = ReadonlyMap<string, readonly FieldChoice[]>;
+
 type Ctx = {
   /** Called after any edit. */
   changed: () => void;
+  choices: Choices;
   /** Where to show an error for a field path. */
   errorSlots: Map<string, El>;
 };
@@ -92,10 +98,10 @@ type Ctx = {
  * validate(), which checks the message as it now stands and shows each
  * violation beside its field, returning whether it's valid.
  */
-export function buildForm(root: El, desc: DescMessage, msg: Message, onChange: () => void) {
+export function buildForm(root: El, desc: DescMessage, msg: Message, onChange: () => void, choices: Choices = new Map()) {
   const errorSlots = new Map<string, El>();
   const parseErrors = new Set<string>();
-  const ctx: Ctx = { changed: () => onChange(), errorSlots };
+  const ctx: Ctx = { changed: () => onChange(), errorSlots, choices };
   root.replaceChildren(messageFields(desc, msg as unknown as Record<string, unknown>, "", ctx, parseErrors));
   const validator = createValidator();
 
@@ -243,6 +249,8 @@ function itemEditor(
   if (t === ScalarType.BYTES) {
     return wrap(el("p", { class: "muted" }, "Can't be edited here."));
   }
+  const picks = t === ScalarType.STRING ? ctx.choices.get(path) : undefined;
+  if (picks) return wrap(choiceSelect(picks, holder, key, commit, ctx));
   const numeric = t !== ScalarType.STRING;
   const input = el("input", { type: "text", inputmode: numeric ? "decimal" : "text", autocomplete: "off" }) as HTMLInputElement;
   input.value = holder[key] === undefined ? "" : String(holder[key]);
@@ -298,4 +306,43 @@ function oneofField(o: DescOneof, obj: Record<string, unknown>, path: string, ct
   });
   render();
   return el("fieldset", { class: "field" }, el("legend", {}, humanize(o.name)), sel, body, err);
+}
+
+/**
+ * A pick-list for a string field the widget offered choices for. A saved
+ * value that isn't on the list stays selectable, so opening the form never
+ * changes a setting by itself.
+ */
+function choiceSelect(picks: readonly FieldChoice[], holder: Record<string, unknown>, key: string, commit: () => void, ctx: Ctx): El {
+  const sel = el("select") as HTMLSelectElement;
+  const current = String(holder[key] ?? "");
+  sel.append(el("option", { value: "" }, "(choose)"));
+  for (const opt of choiceOptions(picks, current)) {
+    const o = el("option", { value: opt.value }, opt.label) as HTMLOptionElement;
+    o.selected = opt.value === current;
+    sel.append(o);
+  }
+  sel.addEventListener("change", () => {
+    holder[key] = sel.value;
+    commit();
+    ctx.changed();
+  });
+  return sel;
+}
+
+/** The options a pick-list shows: the widget's, plus the current value if it's not among them. */
+export function choiceOptions(picks: readonly FieldChoice[], current: string): FieldChoice[] {
+  const out = picks.map((p) => ({ value: p.value, label: p.label || p.value }));
+  if (current && !picks.some((p) => p.value === current)) out.unshift({ value: current, label: `${current} (current)` });
+  return out;
+}
+
+/** Whether two sets of choices differ, so the form is only redrawn when they do. */
+export function sameChoices(a: Choices, b: Choices): boolean {
+  if (a.size !== b.size) return false;
+  for (const [k, v] of a) {
+    const w = b.get(k);
+    if (!w || w.length !== v.length || v.some((c, i) => c.value !== w[i]!.value || c.label !== w[i]!.label)) return false;
+  }
+  return true;
 }

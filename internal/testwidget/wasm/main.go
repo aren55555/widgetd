@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -24,7 +25,20 @@ import (
 	"github.com/aren55555/widgetd/sdk/go/widget"
 )
 
-func main() { widget.Main(run) }
+func main() { widget.Main(run, widget.WithChoices(choices)) }
+
+// choices echoes the unsaved label back (proving it reads the settings being
+// edited) and reports whether mounting a card was refused, as it must be.
+func choices(ctx context.Context, h widget.Host) (map[string][]widget.Choice, error) {
+	var cfg testwidgetv1.Config
+	if err := h.Config(&cfg); err != nil {
+		return nil, err
+	}
+	_, mountErr := widget.MountState[*testwidgetv1.State](h, "nope", widget.MountOptions{})
+	return map[string][]widget.Choice{
+		"label": {{Value: cfg.GetLabel() + "!", Label: "echo"}, {Value: fmt.Sprint(mountErr != nil)}},
+	}, nil
+}
 
 func run(ctx context.Context, h widget.Host) error {
 	var cfg testwidgetv1.Config

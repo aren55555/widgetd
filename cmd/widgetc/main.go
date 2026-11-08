@@ -23,7 +23,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"go/ast"
 	"go/format"
+	"go/parser"
+	"go/token"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -235,10 +238,10 @@ package main
 import (
 	"github.com/aren55555/widgetd/sdk/go/widget"
 
-	"{{.}}/server"
+	"{{.ImportPath}}/server"
 )
 
-func main() { widget.Main(server.Run) }
+func main() { widget.Main(server.Run{{if .Choices}}, widget.WithChoices(server.Choices){{end}}) }
 `))
 
 // pack builds server.wasm and the schema, and writes <name>.wpkg: the one
@@ -255,7 +258,11 @@ func pack(dir, importPath string, m manifest, protos []string) error {
 		return err
 	}
 	var src bytes.Buffer
-	if err := mainTmpl.Execute(&src, importPath); err != nil {
+	choices, err := exportsFunc(filepath.Join(dir, "server"), "Choices")
+	if err != nil {
+		return err
+	}
+	if err := mainTmpl.Execute(&src, map[string]any{"ImportPath": importPath, "Choices": choices}); err != nil {
 		return err
 	}
 	if err := os.WriteFile(filepath.Join(mainDir, "main_gen.go"), src.Bytes(), 0o644); err != nil {
@@ -379,4 +386,24 @@ func readManifest(dir string, m *manifest) error {
 		return fmt.Errorf("widget.toml: %w", err)
 	}
 	return nil
+}
+
+// exportsFunc reports whether the Go package in dir declares a top-level
+// function name (Choices, so a widget opts in just by writing it).
+func exportsFunc(dir, name string) (bool, error) {
+	fset := token.NewFileSet()
+	pkgs, err := parser.ParseDir(fset, dir, func(fi fs.FileInfo) bool { return !strings.HasSuffix(fi.Name(), "_test.go") }, parser.SkipObjectResolution)
+	if err != nil {
+		return false, err
+	}
+	for _, p := range pkgs {
+		for _, f := range p.Files {
+			for _, d := range f.Decls {
+				if fd, ok := d.(*ast.FuncDecl); ok && fd.Recv == nil && fd.Name.Name == name {
+					return true, nil
+				}
+			}
+		}
+	}
+	return false, nil
 }

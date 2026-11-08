@@ -33,8 +33,15 @@ func hostTake(ptr unsafe.Pointer, n uint32)
 //
 // run receives the same Host interface it would get compiled into a host,
 // so the widget's code doesn't change between the two.
-func Main(run func(ctx context.Context, h Host) error) {
+func Main(run func(ctx context.Context, h Host) error, opts ...MainOption) {
 	g := &guestHost{}
+	var o mainOptions
+	for _, opt := range opts {
+		opt(&o)
+	}
+	if len(os.Args) > 1 && os.Args[1] == "widgetd:choices" {
+		os.Exit(g.answerChoices(o.choices))
+	}
 	if err := run(context.Background(), g); err != nil {
 		// Say why first: the host shows it on every screen, where an exit
 		// code alone would only say that something went wrong.
@@ -290,4 +297,28 @@ func (g *guestHost) pollActions() {
 		}
 		g.actMu.Unlock()
 	}
+}
+
+// answerChoices is choices mode: run the widget's ChoicesFunc, if it has
+// one, send the answer, and say how to exit.
+func (g *guestHost) answerChoices(f ChoicesFunc) int {
+	out := &abiv1.Choices{}
+	if f != nil {
+		m, err := f(context.Background(), g)
+		if err != nil {
+			g.call(&abiv1.Call{Op: &abiv1.Call_Exit{Exit: &abiv1.Exit{Error: err.Error()}}})
+			return 1
+		}
+		for field, cs := range m {
+			fc := &abiv1.FieldChoices{Field: field}
+			for _, c := range cs {
+				fc.Choices = append(fc.Choices, &abiv1.Choice{Value: c.Value, Label: c.Label})
+			}
+			out.Fields = append(out.Fields, fc)
+		}
+	}
+	if _, err := g.call(&abiv1.Call{Op: &abiv1.Call_Choices{Choices: out}}); err != nil {
+		return 1
+	}
+	return 0
 }

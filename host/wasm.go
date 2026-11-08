@@ -89,13 +89,45 @@ func (w *wasmHost) compile(ctx context.Context, bin []byte) (wazero.CompiledModu
 // schema checks, storage and network policy are exactly the same.
 func (w *wasmHost) run(ctx context.Context, cm wazero.CompiledModule, name string, h *runHost) error {
 	g := &guest{h: h, cards: map[string]*rawCard{}}
+	err := w.start(ctx, cm, g, name)
+	if err == nil {
+		return errors.New("module exited")
+	}
+	return err
+}
+
+// choices runs a module in choices mode and returns what it offered.
+func (w *wasmHost) choices(ctx context.Context, cm wazero.CompiledModule, name string, h *runHost) (map[string][]widget.Choice, error) {
+	g := &guest{h: h, cards: map[string]*rawCard{}}
+	if err := w.start(ctx, cm, g, name, "widgetd:choices"); err != nil {
+		return nil, err
+	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.choices == nil {
+		return nil, errors.New("the widget exited without offering choices")
+	}
+	out := map[string][]widget.Choice{}
+	for _, f := range g.choices.GetFields() {
+		for _, c := range f.GetChoices() {
+			out[f.GetField()] = append(out[f.GetField()], widget.Choice{Value: c.GetValue(), Label: c.GetLabel()})
+		}
+	}
+	return out, nil
+}
+
+// start instantiates a module and runs its _start to the end. A clean exit
+// (code 0) is nil; anything else says why, in the module's words if it
+// gave them.
+func (w *wasmHost) start(ctx context.Context, cm wazero.CompiledModule, g *guest, args ...string) error {
+	h := g.h
 	out := &logWriter{log: h.Logger(), level: slog.LevelInfo}
 	errOut := &logWriter{log: h.Logger(), level: slog.LevelWarn}
 	defer out.Flush()
 	defer errOut.Flush()
 	cfg := wazero.NewModuleConfig().
 		WithName(""). // anonymous: many instances of one widget at once
-		WithArgs(name).
+		WithArgs(args...).
 		WithStartFunctions("_start").
 		WithSysWalltime().
 		WithSysNanotime().
@@ -119,7 +151,9 @@ func (w *wasmHost) run(ctx context.Context, cm wazero.CompiledModule, name strin
 	var exit *sys.ExitError
 	switch {
 	case err == nil:
-		return errors.New("module exited")
+		return nil
+	case errors.As(err, &exit) && exit.ExitCode() == 0:
+		return nil
 	case errors.As(err, &exit) && ctx.Err() != nil:
 		return ctx.Err()
 	case errors.As(err, &exit):
@@ -142,6 +176,7 @@ type guest struct {
 	pending []byte
 	cards   map[string]*rawCard
 	exitErr string // what the module said, just before exiting
+	choices *abiv1.Choices // what it offered, in choices mode
 }
 
 func hostCall(ctx context.Context, m api.Module, ptr, n uint32) uint32 {
@@ -197,6 +232,9 @@ func (g *guest) dispatch(ctx context.Context, call *abiv1.Call) *abiv1.Result {
 		h.in.mu.Lock()
 		cfg := h.in.config
 		h.in.mu.Unlock()
+		if h.helper {
+			cfg = h.helperConfig // the settings being edited, not the saved ones
+		}
 		return &abiv1.Result{Value: &abiv1.Result_Config{Config: cfg}}
 
 	case *abiv1.Call_Fetch:
@@ -279,6 +317,15 @@ func (g *guest) dispatch(ctx context.Context, call *abiv1.Call) *abiv1.Result {
 	case *abiv1.Call_Exit:
 		g.mu.Lock()
 		g.exitErr = truncate(op.Exit.GetError(), 500)
+		g.mu.Unlock()
+		return &abiv1.Result{}
+
+	case *abiv1.Call_Choices:
+		if !h.helper {
+			return &abiv1.Result{Error: "choices are only asked for in choices mode"}
+		}
+		g.mu.Lock()
+		g.choices = op.Choices
 		g.mu.Unlock()
 		return &abiv1.Result{}
 

@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"regexp"
 	"strings"
@@ -405,5 +406,45 @@ func TestPhonePagesAreServed(t *testing.T) {
 		if !phonePages[m[1]] {
 			t.Errorf("admin.ts routes %q, which the server doesn't serve", m[1])
 		}
+	}
+}
+
+func TestConfigChoicesRPC(t *testing.T) {
+	calls := 0
+	spec := testSpec(func(ctx context.Context, _ widget.Host) error { <-ctx.Done(); return ctx.Err() })
+	spec.Choices = func(ctx context.Context, h widget.Host) (map[string][]widget.Choice, error) {
+		calls++
+		var cfg testwidgetv1.Config
+		h.Config(&cfg)
+		return map[string][]widget.Choice{"label": {{Value: cfg.GetLabel() + "?"}}}, nil
+	}
+	srv, err := New(Options{StateDir: t.TempDir(), PublicURL: "http://localhost", Widgets: []widget.Spec{spec},
+		Instances: []Instance{{ID: "one", Widget: "test"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	srv.Register(mux)
+	h := &harness{t: t, srv: srv, http: httptest.NewServer(mux)}
+	srv.Start()
+	t.Cleanup(func() { h.http.Close(); srv.Close(context.Background()) })
+
+	c := h.adminClient()
+	ctx := context.Background()
+	if _, err := c.GetConfigChoices(ctx, withCookie(&widgetdv1.GetConfigChoicesRequest{InstanceId: "one", Config: cfgBytes(t, "a")}, h.deviceCookie("d1"))); connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("a screen asking for choices: %v", err)
+	}
+	admin := h.adminCookie()
+	for range 2 {
+		res, err := c.GetConfigChoices(ctx, withCookie(&widgetdv1.GetConfigChoicesRequest{InstanceId: "one", Config: cfgBytes(t, "a")}, admin))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if f := res.Msg.GetFields(); len(f) != 1 || f[0].GetChoices()[0].GetValue() != "a?" || f[0].GetChoices()[0].GetLabel() != "a?" {
+			t.Fatalf("fields = %v", f)
+		}
+	}
+	if calls != 1 {
+		t.Fatalf("the widget was asked %d times for the same settings; want once (cached)", calls)
 	}
 }

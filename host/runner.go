@@ -123,6 +123,12 @@ type runHost struct {
 	mu     sync.Mutex
 	closed bool
 	cards  map[string]*card // by local id
+
+	// helper marks a run in choices mode: it offers settings choices and
+	// must not show anything. Its Config is helperConfig, the unsaved
+	// settings being edited.
+	helper       bool
+	helperConfig []byte
 }
 
 func (h *runHost) close() {
@@ -157,6 +163,9 @@ func (h *runHost) deliver(c *card, b []byte) bool {
 func localID(c *card) string { return strings.TrimPrefix(c.id, c.instanceID+"/") }
 
 func (h *runHost) Config(dst proto.Message) error {
+	if h.helper {
+		return proto.Unmarshal(h.helperConfig, dst)
+	}
 	cfg := h.in.w.spec.Config
 	if cfg == nil {
 		return errors.New("widget declares no Config")
@@ -182,6 +191,9 @@ func (h *runHost) KV() widget.KV { return instanceKV{db: h.in.srv.db, instance: 
 func (h *runHost) Logger() *slog.Logger { return h.in.log }
 
 func (h *runHost) Mount(id string, opts widget.MountOptions) (widget.RawCard, error) {
+	if h.helper {
+		return nil, errors.New("a widget offering settings choices can't show cards")
+	}
 	if !cardIDRE.MatchString(id) {
 		return nil, fmt.Errorf("card id %q: want letters, digits, '.', '_' or '-', at most 64", id)
 	}
