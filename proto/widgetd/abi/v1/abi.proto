@@ -35,6 +35,7 @@ message Call {
     Emit emit = 8;
     Log log = 9;
     TakeActions take_actions = 10;
+    Exit exit = 11;
   }
 }
 
@@ -162,4 +163,11 @@ message CardAction {
   string card_id = 1;
   // Encoded as the card's action_type; already checked against it.
   bytes value = 2;
+}
+
+// Exit tells the host why the module is about to stop, just before it
+// exits: the host shows this as the instance's status, which a module's
+// exit code alone can't say.
+message Exit {
+  string error = 1;
 }

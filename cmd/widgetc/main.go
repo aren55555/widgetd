@@ -262,7 +262,7 @@ func pack(dir, importPath string, m manifest, protos []string) error {
 		return err
 	}
 	wasmPath := filepath.Join(work, "server.wasm")
-	build := exec.Command("go", "build", "-trimpath", "-ldflags=-s -w", "-o", wasmPath, "./wasm")
+	build := exec.Command("go", "build", "-trimpath", "-buildvcs=false", "-ldflags=-s -w", "-o", wasmPath, "./wasm")
 	build.Dir = dir
 	build.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm")
 	build.Stdout, build.Stderr = os.Stdout, os.Stderr

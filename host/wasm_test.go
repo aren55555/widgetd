@@ -290,3 +290,18 @@ func TestWasmActions(t *testing.T) {
 	}
 	f.waitState("act/act", func(s *testwidgetv1.State) bool { return len(s.GetValues()) == 1 && s.GetValues()[0] == 7 })
 }
+
+// A sandboxed widget's error is what screens see, not just its exit code.
+func TestWasmExitReason(t *testing.T) {
+	h := newWasmHarness(t, "fail")
+	f := h.open(h.deviceCookie("d1"))
+	for {
+		st := f.nextInstance("fail")
+		if st.GetState() == widgetdv1.InstanceStatus_STATE_FAULTED {
+			if st.GetMessage() != "deliberately failed" {
+				t.Fatalf("message = %q", st.GetMessage())
+			}
+			return
+		}
+	}
+}

@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# The same recipe a developer runs. Every build step lives in the justfile;
+# this file only supplies the runner and the checkout.
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # go, buf, bun and just, at the versions mise.toml pins.
+      - uses: jdx/mise-action@v2
+
+      # codegen → client bundle → example packages → bun tests → go vet → go test.
+      - name: Run checks
+        run: just test
+
+      # gen/, client/dist and the example .wpkg files are committed, because
+      # anyone importing this module runs them as they are and can't rebuild
+      # them. A change that didn't rebuild them would ship stale code that no
+      # test here ran, so the rebuild above must leave the tree unchanged.
+      # (Builds are reproducible: widgetc builds modules with -buildvcs=false.)
+      - name: Generated files are up to date
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --short
+            echo "::error::Generated files are stale. Run \`just test\` and commit the result."
+            exit 1
+          fi

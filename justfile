@@ -24,13 +24,14 @@ client-build:
 
 # Build the example widgets into .wpkg packages (both authoring forms)
 examples:
-    {{mise}} go run ./cmd/widgetc build examples/bitcoin-spiral examples/clock.widget
+    {{mise}} go run ./cmd/widgetc build examples/bitcoin-spiral examples/sports-game examples/clock.widget
 
 # The full check suite
 test: generate client-build examples
     cd client && {{mise}} bun test
     cd sdk/web && {{mise}} bun test
     cd examples/bitcoin-spiral/view && {{mise}} bun test
+    cd examples/sports-game/view && {{mise}} bun test
     {{mise}} go vet ./...
     GOOS=wasip1 GOARCH=wasm {{mise}} go vet ./sdk/go/widget ./internal/testwidget/wasm
     {{mise}} go test -race ./...

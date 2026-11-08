@@ -36,6 +36,9 @@ func hostTake(ptr unsafe.Pointer, n uint32)
 func Main(run func(ctx context.Context, h Host) error) {
 	g := &guestHost{}
 	if err := run(context.Background(), g); err != nil {
+		// Say why first: the host shows it on every screen, where an exit
+		// code alone would only say that something went wrong.
+		g.call(&abiv1.Call{Op: &abiv1.Call_Exit{Exit: &abiv1.Exit{Error: err.Error()}}})
 		fmt.Fprintln(os.Stderr, "widget:", err)
 		os.Exit(1)
 	}

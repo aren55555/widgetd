@@ -123,6 +123,12 @@ func (w *wasmHost) run(ctx context.Context, cm wazero.CompiledModule, name strin
 	case errors.As(err, &exit) && ctx.Err() != nil:
 		return ctx.Err()
 	case errors.As(err, &exit):
+		g.mu.Lock()
+		why := g.exitErr
+		g.mu.Unlock()
+		if why != "" {
+			return errors.New(why)
+		}
 		return fmt.Errorf("module exited with code %d", exit.ExitCode())
 	}
 	return err
@@ -135,6 +141,7 @@ type guest struct {
 	mu      sync.Mutex
 	pending []byte
 	cards   map[string]*rawCard
+	exitErr string // what the module said, just before exiting
 }
 
 func hostCall(ctx context.Context, m api.Module, ptr, n uint32) uint32 {
@@ -268,6 +275,12 @@ func (g *guest) dispatch(ctx context.Context, call *abiv1.Call) *abiv1.Result {
 			return errResult(err)
 		}
 		return &abiv1.Result{Value: &abiv1.Result_Emit{Emit: &abiv1.EmitResult{WantCheckpoint: want}}}
+
+	case *abiv1.Call_Exit:
+		g.mu.Lock()
+		g.exitErr = truncate(op.Exit.GetError(), 500)
+		g.mu.Unlock()
+		return &abiv1.Result{}
 
 	case *abiv1.Call_TakeActions:
 		out := &abiv1.Actions{}

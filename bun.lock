@@ -40,6 +40,16 @@
         "@bufbuild/protoc-gen-es": "^2.14.1",
       },
     },
+    "examples/sports-game/view": {
+      "name": "@widgetd-example/sports-game",
+      "dependencies": {
+        "@bufbuild/protobuf": "^2.14.1",
+        "@widgetd/sdk": "workspace:*",
+      },
+      "devDependencies": {
+        "@bufbuild/protoc-gen-es": "^2.14.1",
+      },
+    },
     "sdk/web": {
       "name": "@widgetd/sdk",
       "version": "0.0.0",
@@ -75,6 +85,8 @@
     "@typescript/vfs": ["@typescript/vfs@1.6.6", "", { "dependencies": { "debug": "^4.4.3" }, "peerDependencies": { "typescript": "*" } }, "sha512-gXw0+tpchiQUjTcbnNIPnyLFIhbwJ7M1VaxLQ1vXhjQxtTBK3sdDLY1ih0jxCu1I5K3V0dDxq8CkVZtIMspC3A=="],
 
     "@widgetd-example/bitcoin-spiral": ["@widgetd-example/bitcoin-spiral@workspace:examples/bitcoin-spiral/view"],
+
+    "@widgetd-example/sports-game": ["@widgetd-example/sports-game@workspace:examples/sports-game/view"],
 
     "@widgetd/client": ["@widgetd/client@workspace:client"],
 

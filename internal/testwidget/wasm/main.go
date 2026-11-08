@@ -11,6 +11,7 @@
 //	alloc   allocate without bound
 //	spin    loop forever without yielding
 //	act     take actions; echo each tap into values
+//	fail    return an error at once
 package main
 
 import (
@@ -98,6 +99,8 @@ func run(ctx context.Context, h widget.Host) error {
 			hog = append(hog, make([]byte, 16<<20))
 			hog[len(hog)-1][0] = 1
 		}
+	case "fail":
+		return errors.New("deliberately failed")
 	case "act":
 		ac, err := widget.Mount[*testwidgetv1.State, *testwidgetv1.Delta](h, "act", widget.WithAction[*testwidgetv1.Action](widget.MountOptions{}))
 		if err != nil {

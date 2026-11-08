@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package sportsgame.v1;
+
+import "buf/validate/validate.proto";
+
+enum League {
+  LEAGUE_UNSPECIFIED = 0;
+  LEAGUE_NFL = 1;
+  LEAGUE_NHL = 2;
+  LEAGUE_NBA = 3;
+  LEAGUE_MLB = 4;
+  LEAGUE_WNBA = 5;
+  LEAGUE_MLS = 6;
+}
+
+// Config is one team to follow. Follow two teams with two instances.
+message Config {
+  League league = 1 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  // ESPN's abbreviation for the team, e.g. "SJ" (Sharks) or "SF" (49ers).
+  string team = 2 [(buf.validate.field).string.pattern = "^[A-Za-z]{2,4}$"];
+  // How long before the start a game's card appears. 0 means 3.
+  uint32 hours_before = 3 [(buf.validate.field).uint32.lte = 48];
+  // How long after the end it stays. 0 means 24.
+  uint32 hours_after = 4 [(buf.validate.field).uint32.lte = 72];
+}
+
+message Team {
+  string abbreviation = 1 [(buf.validate.field).string.pattern = "^[A-Za-z0-9]{1,6}$"];
+  string name = 2 [(buf.validate.field).string.max_len = 64];
+  string short_name = 3 [(buf.validate.field).string.max_len = 32];
+  // As ESPN gives it: "4", or empty before the game.
+  string score = 4 [(buf.validate.field).string.max_len = 8];
+  // Hex without "#", or empty.
+  string color = 5 [(buf.validate.field).string.pattern = "^([0-9a-fA-F]{6})?$"];
+  // Only ESPN's image host: the card may load images from nowhere else.
+  string logo = 6 [(buf.validate.field).string.pattern = "^(https://a\\.espncdn\\.com/[A-Za-z0-9/._-]+)?$"];
+  string record = 7 [(buf.validate.field).string.max_len = 16];
+  bool winner = 8;
+}
+
+// State is one game's card.
+message State {
+  enum Phase {
+    PHASE_UNSPECIFIED = 0;
+    PHASE_PRE = 1;
+    PHASE_LIVE = 2;
+    PHASE_FINAL = 3;
+  }
+  League league = 1 [(buf.validate.field).enum.defined_only = true];
+  string event_id = 2 [(buf.validate.field).string.pattern = "^[0-9]{1,16}$"];
+  int64 start_unix_ms = 3 [(buf.validate.field).int64.gt = 0];
+  Phase phase = 4 [(buf.validate.field).enum.defined_only = true];
+  // ESPN's short status: "1:28 - 2nd", "Final/OT", "Postponed".
+  string detail = 5 [(buf.validate.field).string.max_len = 64];
+  Team home = 6 [(buf.validate.field).required = true];
+  Team away = 7 [(buf.validate.field).required = true];
+  string broadcast = 8 [(buf.validate.field).string.max_len = 48];
+  // The followed team's abbreviation, so the card can highlight it.
+  string mine = 9 [(buf.validate.field).string.max_len = 6];
+}
+
+// End is what the server half stores per game: when it saw it end.
+message End {
+  int64 unix_ms = 1;
+}

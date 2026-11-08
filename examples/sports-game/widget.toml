@@ -1,0 +1,13 @@
+# The widget's manifest. widgetc reads it to wire the widget up.
+name    = "sports-game"
+version = "0.1.0"
+title   = "Game cards"
+config  = "sportsgame.v1.Config"
+
+# The hosts it may reach: ESPN's public API for schedules and live scores,
+# and ESPN's image host for team logos (the view loads those; the server
+# never fetches them).
+[network]
+hosts   = ["site.api.espn.com", "a.espncdn.com"]
+methods = ["GET"]
+why     = "Schedules and live scores from ESPN, and team logos"
