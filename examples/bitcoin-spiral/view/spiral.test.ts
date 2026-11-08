@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { cycleOf, formatChange, formatPrice, logScale, point, radial, rings } from "./spiral.ts";
+import { cycleOf, formatChange, formatPrice, formatWhen, logScale, nearest, point, radial, rings } from "./spiral.ts";
 
 const utc = (y: number, m: number, d: number) => Date.UTC(y, m - 1, d);
 
@@ -62,5 +62,37 @@ describe("format", () => {
   test("changes", () => {
     expect(formatChange(100, 101.5)).toBe("+1.50%");
     expect(formatChange(100, 98)).toBe("−2.00%");
+  });
+});
+
+describe("nearest", () => {
+  const pts = [
+    { x: 0, y: 0 },
+    { x: 10, y: 0 },
+    { x: 20, y: 0 },
+  ];
+
+  test("picks the closest point", () => {
+    expect(nearest(pts, 12, 1, 8)).toBe(1);
+    expect(nearest(pts, 19, -3, 8)).toBe(2);
+  });
+
+  test("ignores points farther than max", () => {
+    expect(nearest(pts, 10, 30, 8)).toBe(-1);
+    expect(nearest([], 0, 0, 8)).toBe(-1);
+  });
+
+  test("prefers the later of two equally near points", () => {
+    expect(nearest([{ x: 0, y: 0 }, { x: 0, y: 0 }], 0, 0, 8)).toBe(1);
+  });
+});
+
+describe("formatWhen", () => {
+  test("a UTC day has no time and no timezone drift", () => {
+    expect(formatWhen(utc(2021, 3, 12), false)).toBe("Mar 12, 2021");
+  });
+
+  test("a live quote includes the time", () => {
+    expect(formatWhen(utc(2021, 3, 12) + 12 * 3600_000, true)).toMatch(/2021.*\d:\d\d/);
   });
 });

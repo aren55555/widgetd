@@ -44,3 +44,49 @@ canvas {
   line-height: 16px;
   color: var(--wd-ink-faint, #71717a);
 }
+
+/* Hover: a dot on the line and a tip with that point's price and date. */
+.dot,
+.tip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: var(--wd-accent, #60a5fa);
+  box-shadow: 0 0 0 2px var(--wd-surface, #18181b);
+}
+
+.dot[data-live="true"] {
+  background: var(--wd-up, #4ade80);
+}
+
+.tip {
+  padding: 4px 8px;
+  border: 1px solid var(--wd-edge, #27272a);
+  border-radius: 6px;
+  background: var(--wd-surface, #18181b);
+  white-space: nowrap;
+}
+
+.tip-price {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.tip-when {
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--wd-ink-muted, #a1a1aa);
+}
+
+[hidden] {
+  display: none !important;
+}

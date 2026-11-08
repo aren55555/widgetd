@@ -84,3 +84,24 @@ export function formatChange(from: number, to: number): string {
   const pct = ((to - from) / from) * 100;
   return `${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(2)}%`;
 }
+
+/** Index of the point nearest (x, y), or -1 if none is within `max`. */
+export function nearest(points: readonly { x: number; y: number }[], x: number, y: number, max: number): number {
+  let best = -1;
+  let bestD = max * max;
+  points.forEach((p, i) => {
+    const d = (p.x - x) ** 2 + (p.y - y) ** 2;
+    if (d <= bestD) {
+      best = i;
+      bestD = d;
+    }
+  });
+  return best;
+}
+
+/** "Mar 12, 2021" for a UTC day, or with the local time for a live quote. */
+export function formatWhen(t: number, withTime: boolean): string {
+  return withTime
+    ? new Date(t).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })
+    : new Date(t).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" });
+}
