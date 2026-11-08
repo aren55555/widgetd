@@ -25,7 +25,23 @@ import (
 	"github.com/aren55555/widgetd/sdk/go/widget"
 )
 
-func main() { widget.Main(run, widget.WithChoices(choices)) }
+func main() { widget.Main(run, widget.WithChoices(choices), widget.WithVerify(verify)) }
+
+// verify objects to the label "reject", tidies "tidy" to "TIDIED", and
+// approves anything else as it is.
+func verify(ctx context.Context, h widget.Host) (widget.Verdict, error) {
+	var cfg testwidgetv1.Config
+	if err := h.Config(&cfg); err != nil {
+		return widget.Verdict{}, err
+	}
+	switch cfg.GetLabel() {
+	case "reject":
+		return widget.Verdict{Violations: []widget.Violation{{Field: "label", Message: "not that one"}}}, nil
+	case "tidy":
+		return widget.Verdict{Config: &testwidgetv1.Config{Label: "TIDIED"}}, nil
+	}
+	return widget.Verdict{}, nil
+}
 
 // choices echoes the unsaved label back (proving it reads the settings being
 // edited) and reports whether mounting a card was refused, as it must be.

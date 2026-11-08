@@ -37,6 +37,7 @@ message Call {
     TakeActions take_actions = 10;
     Exit exit = 11;
     Choices choices = 12;
+    Verdict verdict = 13;
   }
 }
 
@@ -194,4 +195,23 @@ message Choice {
   string value = 1;
   // What the list shows; the value if empty.
   string label = 2;
+}
+
+// Verdict is a module's answer when the host runs it in verify mode: its
+// arguments are then [name, "widgetd:verify"], ConfigGet returns settings
+// someone is about to save (they already pass the schema's rules), and the
+// module sends one Verdict and exits. It checks what rules can't: that a
+// team exists, that an account answers.
+message Verdict {
+  // Empty means the settings are fine.
+  repeated Violation violations = 1;
+  // If set, what to save instead, encoded as the widget's Config: the same
+  // settings tidied up ("sj" made "SJ"). It must pass the rules too.
+  bytes config = 2;
+}
+
+message Violation {
+  // The field's name, dotted for nested fields; empty for the whole thing.
+  string field = 1;
+  string message = 2;
 }

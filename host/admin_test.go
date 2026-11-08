@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -446,5 +447,50 @@ func TestConfigChoicesRPC(t *testing.T) {
 	}
 	if calls != 1 {
 		t.Fatalf("the widget was asked %d times for the same settings; want once (cached)", calls)
+	}
+}
+
+func TestSaveRunsVerify(t *testing.T) {
+	spec := testSpec(func(ctx context.Context, _ widget.Host) error { <-ctx.Done(); return ctx.Err() })
+	spec.Verify = func(ctx context.Context, h widget.Host) (widget.Verdict, error) {
+		var cfg testwidgetv1.Config
+		h.Config(&cfg)
+		if cfg.GetLabel() == "nope" {
+			return widget.Verdict{Violations: []widget.Violation{{Field: "label", Message: "no such thing"}}}, nil
+		}
+		if cfg.GetLabel() == "down" {
+			return widget.Verdict{}, errors.New("upstream is down")
+		}
+		return widget.Verdict{Config: &testwidgetv1.Config{Label: strings.ToUpper(cfg.GetLabel())}}, nil
+	}
+	srv, err := New(Options{StateDir: t.TempDir(), PublicURL: "http://localhost", Widgets: []widget.Spec{spec},
+		Instances: []Instance{{ID: "one", Widget: "test"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	srv.Register(mux)
+	h := &harness{t: t, srv: srv, http: httptest.NewServer(mux)}
+	srv.Start()
+	t.Cleanup(func() { h.http.Close(); srv.Close(context.Background()) })
+	c, admin, ctx := h.adminClient(), h.adminCookie(), context.Background()
+	save := func(label string) (*connect.Response[widgetdv1.SaveConfigResponse], error) {
+		return c.SaveConfig(ctx, withCookie(&widgetdv1.SaveConfigRequest{InstanceId: "one", Config: cfgBytes(t, label)}, admin))
+	}
+
+	res, err := save("nope")
+	if err != nil || len(res.Msg.GetViolations()) != 1 || res.Msg.GetViolations()[0].GetMessage() != "no such thing" {
+		t.Fatalf("objection: %v, %v", res, err)
+	}
+	if _, err := save("down"); connect.CodeOf(err) != connect.CodeUnavailable || !strings.Contains(err.Error(), "upstream is down") {
+		t.Fatalf("check failed: %v", err)
+	}
+	if res, err := save("ok"); err != nil || len(res.Msg.GetViolations()) != 0 {
+		t.Fatalf("approval: %v, %v", res, err)
+	}
+	var cfg testwidgetv1.Config
+	proto.Unmarshal(srv.instances["one"].config, &cfg)
+	if cfg.GetLabel() != "OK" {
+		t.Fatalf("saved %q, want the widget's tidied OK", cfg.GetLabel())
 	}
 }

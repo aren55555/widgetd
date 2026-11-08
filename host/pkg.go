@@ -39,6 +39,8 @@ type Manifest struct {
 	// message, if the widget takes one.
 	Config  string                `json:"config,omitempty"`
 	Network widget.NetworkRequest `json:"network"`
+	// Modes are the helper modes server.wasm implements ("choices", "verify").
+	Modes []string `json:"modes,omitempty"`
 	// Protos are the widget's own files within the descriptor set (the rest
 	// are their imports).
 	Protos []string `json:"protos"`
@@ -133,6 +135,7 @@ func LoadPackage(b []byte) (widget.Spec, error) {
 		Name:    m.Name,
 		Version: m.Version,
 		Title:   m.Title,
+		Modes:   m.Modes,
 		Files:   own,
 		Config:  cfg,
 		Wasm:    wasm,

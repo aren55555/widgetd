@@ -3,6 +3,8 @@ package server
 import (
 	"testing"
 	"time"
+
+	"github.com/aren55555/widgetd/sdk/go/widget"
 )
 
 func TestWindow(t *testing.T) {
@@ -46,5 +48,15 @@ func TestParseESPNTime(t *testing.T) {
 	}
 	if _, err := parseESPNTime("tomorrow"); err == nil {
 		t.Fatal("junk should not parse")
+	}
+}
+
+func TestSuggest(t *testing.T) {
+	teams := []widget.Choice{{Value: "SJ", Label: "San Jose Sharks"}, {Value: "SEA", Label: "Seattle Kraken"}, {Value: "STL", Label: "St. Louis Blues"}}
+	if got := suggest("SJS", teams); len(got) != 1 || got[0] != "SJ (San Jose Sharks)" {
+		t.Fatalf("SJS → %v", got)
+	}
+	if got := suggest("ZZZ", teams); len(got) != 0 {
+		t.Fatalf("ZZZ → %v", got)
 	}
 }

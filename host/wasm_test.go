@@ -65,6 +65,7 @@ func newWasmHarness(t *testing.T, labels ...string) *harness {
 		View:    fstest.MapFS{"view.js": {Data: []byte("/* view */")}},
 		Wasm:    testWasm(t),
 		Network: widget.NetworkRequest{Hosts: []string{"api.example.com"}},
+		Modes:   []string{"choices", "verify"},
 	}
 	var instances []Instance
 	for _, l := range labels {
@@ -326,5 +327,37 @@ func TestWasmChoices(t *testing.T) {
 	// Garbage settings are refused before the module runs.
 	if _, err := h.srv.configChoices(context.Background(), in, []byte{0xff, 0xff}); err == nil {
 		t.Fatal("settings that don't decode should be refused")
+	}
+}
+
+func TestWasmVerify(t *testing.T) {
+	h := newWasmHarness(t, "basic")
+	in := h.srv.instances["basic"]
+	ctx := context.Background()
+
+	v, _, err := h.srv.verifyConfig(ctx, in, cfgBytes(t, "reject"))
+	if err != nil || len(v) != 1 || v[0].GetField() != "label" || v[0].GetMessage() != "not that one" {
+		t.Fatalf("reject: %v, %v", v, err)
+	}
+	_, saved, err := h.srv.verifyConfig(ctx, in, cfgBytes(t, "tidy"))
+	var cfg testwidgetv1.Config
+	proto.Unmarshal(saved, &cfg)
+	if err != nil || cfg.GetLabel() != "TIDIED" {
+		t.Fatalf("tidy: saved %v, %v", &cfg, err)
+	}
+	ok := cfgBytes(t, "fine")
+	if v, saved, err := h.srv.verifyConfig(ctx, in, ok); err != nil || len(v) != 0 || string(saved) != string(ok) {
+		t.Fatalf("fine: %v %q %v", v, saved, err)
+	}
+}
+
+// A module that doesn't declare verify mode is never asked: it would only
+// start its main loop.
+func TestVerifyOnlyIfDeclared(t *testing.T) {
+	h := newWasmHarness(t, "basic")
+	in := h.srv.instances["basic"]
+	in.w.spec.Modes = nil
+	if v, saved, err := h.srv.verifyConfig(context.Background(), in, cfgBytes(t, "reject")); err != nil || len(v) != 0 || saved == nil {
+		t.Fatalf("undeclared verify ran: %v %v %v", v, saved, err)
 	}
 }

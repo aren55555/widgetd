@@ -44,10 +44,18 @@ type Spec struct {
 	// Wasm is the server half as a WASI module instead, run in a sandbox.
 	// Exactly one of Run and Wasm is set.
 	Wasm []byte
+	// Modes are the helper modes a Wasm module implements: "choices",
+	// "verify". The host only runs a module in a mode it declares, since a
+	// module that doesn't know one would just start its main loop.
+	Modes []string
 
 	// Choices, for a native widget, offers pick-lists for settings fields.
 	// A sandboxed widget passes WithChoices to Main instead.
 	Choices ChoicesFunc
+
+	// Verify, for a native widget, checks settings before they're saved.
+	// A sandboxed widget passes WithVerify to Main instead.
+	Verify VerifyFunc
 
 	// View is the built view: view.js (and view.css, if any) at its root.
 	View fs.FS
@@ -251,6 +259,7 @@ type MainOption func(*mainOptions)
 
 type mainOptions struct {
 	choices ChoicesFunc
+	verify  VerifyFunc
 }
 
 // WithChoices gives a sandboxed widget pick-lists for its settings form.
@@ -258,4 +267,34 @@ type mainOptions struct {
 //	func main() { widget.Main(server.Run, widget.WithChoices(server.Choices)) }
 func WithChoices(f ChoicesFunc) MainOption {
 	return func(o *mainOptions) { o.choices = f }
+}
+
+// Violation is a problem with one settings field ("" for the whole thing).
+type Violation struct {
+	Field   string
+	Message string
+}
+
+// Verdict is what Verify decides.
+type Verdict struct {
+	// Violations, if any, stop the save and show beside their fields.
+	Violations []Violation
+	// Config, if set, is saved instead: the same settings tidied up. It must
+	// still pass the schema's rules.
+	Config proto.Message
+}
+
+// VerifyFunc checks settings someone is about to save, beyond what the
+// schema's rules can say: that a team exists, that an account answers. Read
+// them with h.Config (they already pass the rules); h.Fetch works as ever.
+// Return an error only if the check itself couldn't be made (the save is
+// then refused with that reason, so it can be retried); a problem with the
+// settings is a Violation. It runs briefly and must not mount cards.
+type VerifyFunc func(ctx context.Context, h Host) (Verdict, error)
+
+// WithVerify gives a sandboxed widget a settings check.
+//
+//	func main() { widget.Main(server.Run, widget.WithVerify(server.Verify)) }
+func WithVerify(f VerifyFunc) MainOption {
+	return func(o *mainOptions) { o.verify = f }
 }

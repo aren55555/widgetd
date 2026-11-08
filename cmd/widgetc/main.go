@@ -241,7 +241,9 @@ import (
 	"{{.ImportPath}}/server"
 )
 
-func main() { widget.Main(server.Run{{if .Choices}}, widget.WithChoices(server.Choices){{end}}) }
+func main() {
+	widget.Main(server.Run{{if .Choices}}, widget.WithChoices(server.Choices){{end}}{{if .Verify}}, widget.WithVerify(server.Verify){{end}})
+}
 `))
 
 // pack builds server.wasm and the schema, and writes <name>.wpkg: the one
@@ -262,7 +264,18 @@ func pack(dir, importPath string, m manifest, protos []string) error {
 	if err != nil {
 		return err
 	}
-	if err := mainTmpl.Execute(&src, map[string]any{"ImportPath": importPath, "Choices": choices}); err != nil {
+	verify, err := exportsFunc(filepath.Join(dir, "server"), "Verify")
+	if err != nil {
+		return err
+	}
+	var modes []string
+	if choices {
+		modes = append(modes, "choices")
+	}
+	if verify {
+		modes = append(modes, "verify")
+	}
+	if err := mainTmpl.Execute(&src, map[string]any{"ImportPath": importPath, "Choices": choices, "Verify": verify}); err != nil {
 		return err
 	}
 	if err := os.WriteFile(filepath.Join(mainDir, "main_gen.go"), src.Bytes(), 0o644); err != nil {
@@ -314,7 +327,7 @@ func pack(dir, importPath string, m manifest, protos []string) error {
 	}
 	defer out.Close()
 	man := host.Manifest{
-		Name: m.Name, Version: m.Version, Title: m.Title, Config: m.Config,
+		Name: m.Name, Version: m.Version, Title: m.Title, Config: m.Config, Modes: modes,
 		Network: widget.NetworkRequest{Hosts: m.Network.Hosts, Methods: m.Network.Methods, Why: m.Network.Why},
 	}
 	if err := host.WritePackage(out, man, own, wasm, os.DirFS(filepath.Join(dir, "dist"))); err != nil {

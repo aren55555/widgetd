@@ -10,4 +10,6 @@ import (
 	"github.com/aren55555/widgetd/examples/sports-game/server"
 )
 
-func main() { widget.Main(server.Run, widget.WithChoices(server.Choices)) }
+func main() {
+	widget.Main(server.Run, widget.WithChoices(server.Choices), widget.WithVerify(server.Verify))
+}

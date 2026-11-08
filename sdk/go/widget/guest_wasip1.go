@@ -42,6 +42,9 @@ func Main(run func(ctx context.Context, h Host) error, opts ...MainOption) {
 	if len(os.Args) > 1 && os.Args[1] == "widgetd:choices" {
 		os.Exit(g.answerChoices(o.choices))
 	}
+	if len(os.Args) > 1 && os.Args[1] == "widgetd:verify" {
+		os.Exit(g.answerVerify(o.verify))
+	}
 	if err := run(context.Background(), g); err != nil {
 		// Say why first: the host shows it on every screen, where an exit
 		// code alone would only say that something went wrong.
@@ -318,6 +321,34 @@ func (g *guestHost) answerChoices(f ChoicesFunc) int {
 		}
 	}
 	if _, err := g.call(&abiv1.Call{Op: &abiv1.Call_Choices{Choices: out}}); err != nil {
+		return 1
+	}
+	return 0
+}
+
+// answerVerify is verify mode: run the widget's VerifyFunc, if it has one
+// (no check means no objections), send the verdict, and say how to exit.
+func (g *guestHost) answerVerify(f VerifyFunc) int {
+	out := &abiv1.Verdict{}
+	if f != nil {
+		v, err := f(context.Background(), g)
+		if err != nil {
+			g.call(&abiv1.Call{Op: &abiv1.Call_Exit{Exit: &abiv1.Exit{Error: err.Error()}}})
+			return 1
+		}
+		for _, x := range v.Violations {
+			out.Violations = append(out.Violations, &abiv1.Violation{Field: x.Field, Message: x.Message})
+		}
+		if v.Config != nil {
+			b, err := proto.Marshal(v.Config)
+			if err != nil {
+				g.call(&abiv1.Call{Op: &abiv1.Call_Exit{Exit: &abiv1.Exit{Error: err.Error()}}})
+				return 1
+			}
+			out.Config = b
+		}
+	}
+	if _, err := g.call(&abiv1.Call{Op: &abiv1.Call_Verdict{Verdict: out}}); err != nil {
 		return 1
 	}
 	return 0

@@ -175,8 +175,9 @@ type guest struct {
 	mu      sync.Mutex
 	pending []byte
 	cards   map[string]*rawCard
-	exitErr string // what the module said, just before exiting
+	exitErr string         // what the module said, just before exiting
 	choices *abiv1.Choices // what it offered, in choices mode
+	verdict *abiv1.Verdict // what it decided, in verify mode
 }
 
 func hostCall(ctx context.Context, m api.Module, ptr, n uint32) uint32 {
@@ -329,6 +330,15 @@ func (g *guest) dispatch(ctx context.Context, call *abiv1.Call) *abiv1.Result {
 		g.mu.Unlock()
 		return &abiv1.Result{}
 
+	case *abiv1.Call_Verdict:
+		if !h.helper {
+			return &abiv1.Result{Error: "a verdict is only asked for in verify mode"}
+		}
+		g.mu.Lock()
+		g.verdict = op.Verdict
+		g.mu.Unlock()
+		return &abiv1.Result{}
+
 	case *abiv1.Call_TakeActions:
 		out := &abiv1.Actions{}
 		g.mu.Lock()
@@ -440,4 +450,18 @@ func (w *logWriter) Flush() {
 		w.emit(w.buf)
 		w.buf = nil
 	}
+}
+
+// verify runs a module in verify mode and returns its verdict.
+func (w *wasmHost) verify(ctx context.Context, cm wazero.CompiledModule, name string, h *runHost) (*abiv1.Verdict, error) {
+	g := &guest{h: h, cards: map[string]*rawCard{}}
+	if err := w.start(ctx, cm, g, name, "widgetd:verify"); err != nil {
+		return nil, err
+	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.verdict == nil {
+		return nil, errors.New("the widget exited without a verdict")
+	}
+	return g.verdict, nil
 }

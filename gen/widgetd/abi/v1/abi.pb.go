@@ -169,6 +169,7 @@ type Call struct {
 	//	*Call_TakeActions
 	//	*Call_Exit
 	//	*Call_Choices
+	//	*Call_Verdict
 	Op            isCall_Op `protobuf_oneof:"op"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -319,6 +320,15 @@ func (x *Call) GetChoices() *Choices {
 	return nil
 }
 
+func (x *Call) GetVerdict() *Verdict {
+	if x != nil {
+		if x, ok := x.Op.(*Call_Verdict); ok {
+			return x.Verdict
+		}
+	}
+	return nil
+}
+
 type isCall_Op interface {
 	isCall_Op()
 }
@@ -371,6 +381,10 @@ type Call_Choices struct {
 	Choices *Choices `protobuf:"bytes,12,opt,name=choices,proto3,oneof"`
 }
 
+type Call_Verdict struct {
+	Verdict *Verdict `protobuf:"bytes,13,opt,name=verdict,proto3,oneof"`
+}
+
 func (*Call_ConfigGet) isCall_Op() {}
 
 func (*Call_Fetch) isCall_Op() {}
@@ -394,6 +408,8 @@ func (*Call_TakeActions) isCall_Op() {}
 func (*Call_Exit) isCall_Op() {}
 
 func (*Call_Choices) isCall_Op() {}
+
+func (*Call_Verdict) isCall_Op() {}
 
 type Result struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1608,11 +1624,124 @@ func (x *Choice) GetLabel() string {
 	return ""
 }
 
+// Verdict is a module's answer when the host runs it in verify mode: its
+// arguments are then [name, "widgetd:verify"], ConfigGet returns settings
+// someone is about to save (they already pass the schema's rules), and the
+// module sends one Verdict and exits. It checks what rules can't: that a
+// team exists, that an account answers.
+type Verdict struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Empty means the settings are fine.
+	Violations []*Violation `protobuf:"bytes,1,rep,name=violations,proto3" json:"violations,omitempty"`
+	// If set, what to save instead, encoded as the widget's Config: the same
+	// settings tidied up ("sj" made "SJ"). It must pass the rules too.
+	Config        []byte `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Verdict) Reset() {
+	*x = Verdict{}
+	mi := &file_widgetd_abi_v1_abi_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Verdict) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Verdict) ProtoMessage() {}
+
+func (x *Verdict) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_abi_v1_abi_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Verdict.ProtoReflect.Descriptor instead.
+func (*Verdict) Descriptor() ([]byte, []int) {
+	return file_widgetd_abi_v1_abi_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *Verdict) GetViolations() []*Violation {
+	if x != nil {
+		return x.Violations
+	}
+	return nil
+}
+
+func (x *Verdict) GetConfig() []byte {
+	if x != nil {
+		return x.Config
+	}
+	return nil
+}
+
+type Violation struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The field's name, dotted for nested fields; empty for the whole thing.
+	Field         string `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
+	Message       string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Violation) Reset() {
+	*x = Violation{}
+	mi := &file_widgetd_abi_v1_abi_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Violation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Violation) ProtoMessage() {}
+
+func (x *Violation) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_abi_v1_abi_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Violation.ProtoReflect.Descriptor instead.
+func (*Violation) Descriptor() ([]byte, []int) {
+	return file_widgetd_abi_v1_abi_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *Violation) GetField() string {
+	if x != nil {
+		return x.Field
+	}
+	return ""
+}
+
+func (x *Violation) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_widgetd_abi_v1_abi_proto protoreflect.FileDescriptor
 
 const file_widgetd_abi_v1_abi_proto_rawDesc = "" +
 	"\n" +
-	"\x18widgetd/abi/v1/abi.proto\x12\x0ewidgetd.abi.v1\"\xec\x04\n" +
+	"\x18widgetd/abi/v1/abi.proto\x12\x0ewidgetd.abi.v1\"\xa1\x05\n" +
 	"\x04Call\x12:\n" +
 	"\n" +
 	"config_get\x18\x01 \x01(\v2\x19.widgetd.abi.v1.ConfigGetH\x00R\tconfigGet\x12-\n" +
@@ -1627,7 +1756,8 @@ const file_widgetd_abi_v1_abi_proto_rawDesc = "" +
 	"\ftake_actions\x18\n" +
 	" \x01(\v2\x1b.widgetd.abi.v1.TakeActionsH\x00R\vtakeActions\x12*\n" +
 	"\x04exit\x18\v \x01(\v2\x14.widgetd.abi.v1.ExitH\x00R\x04exit\x123\n" +
-	"\achoices\x18\f \x01(\v2\x17.widgetd.abi.v1.ChoicesH\x00R\achoicesB\x04\n" +
+	"\achoices\x18\f \x01(\v2\x17.widgetd.abi.v1.ChoicesH\x00R\achoices\x123\n" +
+	"\averdict\x18\r \x01(\v2\x17.widgetd.abi.v1.VerdictH\x00R\averdictB\x04\n" +
 	"\x02op\"\xab\x02\n" +
 	"\x06Result\x12\x14\n" +
 	"\x05error\x18\x01 \x01(\tR\x05error\x12\x1f\n" +
@@ -1717,7 +1847,15 @@ const file_widgetd_abi_v1_abi_proto_rawDesc = "" +
 	"\achoices\x18\x02 \x03(\v2\x16.widgetd.abi.v1.ChoiceR\achoices\"4\n" +
 	"\x06Choice\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
-	"\x05label\x18\x02 \x01(\tR\x05labelB7Z5github.com/aren55555/widgetd/gen/widgetd/abi/v1;abiv1b\x06proto3"
+	"\x05label\x18\x02 \x01(\tR\x05label\"\\\n" +
+	"\aVerdict\x129\n" +
+	"\n" +
+	"violations\x18\x01 \x03(\v2\x19.widgetd.abi.v1.ViolationR\n" +
+	"violations\x12\x16\n" +
+	"\x06config\x18\x02 \x01(\fR\x06config\";\n" +
+	"\tViolation\x12\x14\n" +
+	"\x05field\x18\x01 \x01(\tR\x05field\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessageB7Z5github.com/aren55555/widgetd/gen/widgetd/abi/v1;abiv1b\x06proto3"
 
 var (
 	file_widgetd_abi_v1_abi_proto_rawDescOnce sync.Once
@@ -1732,7 +1870,7 @@ func file_widgetd_abi_v1_abi_proto_rawDescGZIP() []byte {
 }
 
 var file_widgetd_abi_v1_abi_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_widgetd_abi_v1_abi_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_widgetd_abi_v1_abi_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_widgetd_abi_v1_abi_proto_goTypes = []any{
 	(Emit_Kind)(0),        // 0: widgetd.abi.v1.Emit.Kind
 	(Log_Level)(0),        // 1: widgetd.abi.v1.Log.Level
@@ -1758,6 +1896,8 @@ var file_widgetd_abi_v1_abi_proto_goTypes = []any{
 	(*Choices)(nil),       // 21: widgetd.abi.v1.Choices
 	(*FieldChoices)(nil),  // 22: widgetd.abi.v1.FieldChoices
 	(*Choice)(nil),        // 23: widgetd.abi.v1.Choice
+	(*Verdict)(nil),       // 24: widgetd.abi.v1.Verdict
+	(*Violation)(nil),     // 25: widgetd.abi.v1.Violation
 }
 var file_widgetd_abi_v1_abi_proto_depIdxs = []int32{
 	4,  // 0: widgetd.abi.v1.Call.config_get:type_name -> widgetd.abi.v1.ConfigGet
@@ -1772,23 +1912,25 @@ var file_widgetd_abi_v1_abi_proto_depIdxs = []int32{
 	17, // 9: widgetd.abi.v1.Call.take_actions:type_name -> widgetd.abi.v1.TakeActions
 	20, // 10: widgetd.abi.v1.Call.exit:type_name -> widgetd.abi.v1.Exit
 	21, // 11: widgetd.abi.v1.Call.choices:type_name -> widgetd.abi.v1.Choices
-	7,  // 12: widgetd.abi.v1.Result.fetch:type_name -> widgetd.abi.v1.FetchResponse
-	9,  // 13: widgetd.abi.v1.Result.kv:type_name -> widgetd.abi.v1.KvValue
-	15, // 14: widgetd.abi.v1.Result.emit:type_name -> widgetd.abi.v1.EmitResult
-	18, // 15: widgetd.abi.v1.Result.actions:type_name -> widgetd.abi.v1.Actions
-	5,  // 16: widgetd.abi.v1.Fetch.headers:type_name -> widgetd.abi.v1.Header
-	5,  // 17: widgetd.abi.v1.FetchResponse.headers:type_name -> widgetd.abi.v1.Header
-	0,  // 18: widgetd.abi.v1.Emit.kind:type_name -> widgetd.abi.v1.Emit.Kind
-	1,  // 19: widgetd.abi.v1.Log.level:type_name -> widgetd.abi.v1.Log.Level
-	5,  // 20: widgetd.abi.v1.Log.attrs:type_name -> widgetd.abi.v1.Header
-	19, // 21: widgetd.abi.v1.Actions.actions:type_name -> widgetd.abi.v1.CardAction
-	22, // 22: widgetd.abi.v1.Choices.fields:type_name -> widgetd.abi.v1.FieldChoices
-	23, // 23: widgetd.abi.v1.FieldChoices.choices:type_name -> widgetd.abi.v1.Choice
-	24, // [24:24] is the sub-list for method output_type
-	24, // [24:24] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	24, // 12: widgetd.abi.v1.Call.verdict:type_name -> widgetd.abi.v1.Verdict
+	7,  // 13: widgetd.abi.v1.Result.fetch:type_name -> widgetd.abi.v1.FetchResponse
+	9,  // 14: widgetd.abi.v1.Result.kv:type_name -> widgetd.abi.v1.KvValue
+	15, // 15: widgetd.abi.v1.Result.emit:type_name -> widgetd.abi.v1.EmitResult
+	18, // 16: widgetd.abi.v1.Result.actions:type_name -> widgetd.abi.v1.Actions
+	5,  // 17: widgetd.abi.v1.Fetch.headers:type_name -> widgetd.abi.v1.Header
+	5,  // 18: widgetd.abi.v1.FetchResponse.headers:type_name -> widgetd.abi.v1.Header
+	0,  // 19: widgetd.abi.v1.Emit.kind:type_name -> widgetd.abi.v1.Emit.Kind
+	1,  // 20: widgetd.abi.v1.Log.level:type_name -> widgetd.abi.v1.Log.Level
+	5,  // 21: widgetd.abi.v1.Log.attrs:type_name -> widgetd.abi.v1.Header
+	19, // 22: widgetd.abi.v1.Actions.actions:type_name -> widgetd.abi.v1.CardAction
+	22, // 23: widgetd.abi.v1.Choices.fields:type_name -> widgetd.abi.v1.FieldChoices
+	23, // 24: widgetd.abi.v1.FieldChoices.choices:type_name -> widgetd.abi.v1.Choice
+	25, // 25: widgetd.abi.v1.Verdict.violations:type_name -> widgetd.abi.v1.Violation
+	26, // [26:26] is the sub-list for method output_type
+	26, // [26:26] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_widgetd_abi_v1_abi_proto_init() }
@@ -1809,6 +1951,7 @@ func file_widgetd_abi_v1_abi_proto_init() {
 		(*Call_TakeActions)(nil),
 		(*Call_Exit)(nil),
 		(*Call_Choices)(nil),
+		(*Call_Verdict)(nil),
 	}
 	file_widgetd_abi_v1_abi_proto_msgTypes[1].OneofWrappers = []any{
 		(*Result_Config)(nil),
@@ -1823,7 +1966,7 @@ func file_widgetd_abi_v1_abi_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_widgetd_abi_v1_abi_proto_rawDesc), len(file_widgetd_abi_v1_abi_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   22,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

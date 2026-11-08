@@ -10,4 +10,6 @@ import (
 	"github.com/aren55555/widgetd/examples/bitcoin-spiral/server"
 )
 
-func main() { widget.Main(server.Run) }
+func main() {
+	widget.Main(server.Run)
+}

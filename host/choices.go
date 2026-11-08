@@ -74,7 +74,7 @@ func (c *choiceCache) put(key string, fields []*widgetdv1.ConfigFieldChoices) {
 // choices, given settings as edited so far.
 func (s *Server) configChoices(ctx context.Context, in *instance, cfg []byte) ([]*widgetdv1.ConfigFieldChoices, error) {
 	spec := in.w.spec.Config
-	if spec == nil {
+	if spec == nil || !in.w.hasMode("choices") {
 		return nil, nil
 	}
 	if len(cfg) > maxPayloadBytes {
@@ -105,10 +105,9 @@ func (s *Server) configChoices(ctx context.Context, in *instance, cfg []byte) ([
 	h := &runHost{in: in, ctx: ctx, cancel: cancel, cards: map[string]*card{}, helper: true, helperConfig: cfg}
 	var m map[string][]widget.Choice
 	var err error
-	switch {
-	case cm != nil:
+	if cm != nil {
 		m, err = s.wasm.choices(ctx, cm, in.w.spec.Name, h)
-	case in.w.spec.Choices != nil:
+	} else {
 		m, err = in.w.spec.Choices(ctx, h)
 	}
 	h.close()

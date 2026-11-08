@@ -203,6 +203,15 @@ func (a *adminService) SaveConfig(ctx context.Context, req *connect.Request[widg
 		if v := in.w.schema.violations(c.ProtoReflect().Descriptor().FullName(), cfg); len(v) > 0 {
 			return connect.NewResponse(&widgetdv1.SaveConfigResponse{Violations: v}), nil
 		}
+		// The rules pass; now the widget checks what they can't.
+		v, checked, err := a.srv.verifyConfig(ctx, in, cfg)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeUnavailable, err)
+		}
+		if len(v) > 0 {
+			return connect.NewResponse(&widgetdv1.SaveConfigResponse{Violations: v}), nil
+		}
+		cfg = checked
 	} else {
 		cfg = nil
 	}

@@ -97,3 +97,22 @@ view/           the built view: view.js, view.css
 ```
 
 A module built by another toolchain only needs to replace `server.wasm`.
+
+## Helper modes: choices and verify
+
+Besides its main loop, a module can help with its settings form. The host
+runs it briefly, with the arguments `[name, mode]`, where `ConfigGet`
+returns the settings being edited. It gets a 15-second limit, the same
+network policy, and no cards (`Mount` is refused). The module answers with
+one call, then exits 0.
+
+| Mode | When | Answer |
+|---|---|---|
+| `widgetd:choices` | As settings are edited | `Choices`: pick-lists by field name ("team"), each a value and a label. Fields not listed stay free text. |
+| `widgetd:verify` | On save, after the schema's rules pass | `Verdict`: violations by field (the save is refused and they're shown beside their fields), or approval, optionally with tidied settings to save instead (which must pass the rules too). |
+
+A module only gets asked for the modes its package declares (`modes` in
+`manifest.json`, which widgetc fills in when the server package exports
+`Choices` or `Verify`): a module that doesn't know a mode would just start
+its main loop. If verify can't reach a verdict (exits non-zero, or times
+out), the save is refused with that reason, so it can be retried.
