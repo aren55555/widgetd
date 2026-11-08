@@ -103,7 +103,8 @@ func (a *adminService) widgetInfo(w *loadedWidget) *widgetdv1.WidgetInfo {
 	}
 	if si := w.spec.SignIn; si != nil {
 		info.SignInProvider = si.Provider
-		_, info.SignInClientSet, _ = a.srv.loadClient(w.spec.Name)
+		c, ok, _ := a.srv.loadClient(w.spec.Name)
+		info.SignInClientSet, info.SignInSecretSet = ok, ok && c.secret != ""
 	}
 	if g, ok, _ := a.srv.loadGrant(w.spec.Name); ok {
 		info.GrantSet, info.NetworkDisabled, info.GrantedHosts = true, g.disabled, g.hosts

@@ -78,6 +78,8 @@ message WidgetInfo {
   // client (OAuth app) has been registered for it yet.
   string sign_in_provider = 11;
   bool sign_in_client_set = 12;
+  // Whether a client secret is stored too (needed to renew expiring tokens).
+  bool sign_in_secret_set = 13;
 }
 
 message ListWidgetsRequest {}
@@ -256,7 +258,8 @@ message SignOutResponse {}
 message SetSignInClientRequest {
   string widget = 1;
   string client_id = 2;
-  // Optional: device flow with most providers needs none. Write-only.
+  // Optional: device flow itself needs none, but renewing an expiring token
+  // usually does. Write-only; empty keeps the stored one.
   string client_secret = 3;
 }
 

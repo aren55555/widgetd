@@ -93,7 +93,8 @@ func (s *Server) setClient(widget, id, secret string) error {
 		sealed = s.sealer.seal([]byte(secret), "client:"+widget, "secret")
 	}
 	_, err := s.db.Exec(`INSERT INTO sign_in_clients (widget, client_id, client_secret) VALUES (?, ?, ?)
-		ON CONFLICT (widget) DO UPDATE SET client_id = excluded.client_id, client_secret = excluded.client_secret`, widget, id, sealed)
+		ON CONFLICT (widget) DO UPDATE SET client_id = excluded.client_id,
+			client_secret = COALESCE(excluded.client_secret, sign_in_clients.client_secret)`, widget, id, sealed)
 	return err
 }
 
@@ -487,6 +488,12 @@ func (a *adminService) SetSignInClient(ctx context.Context, req *connect.Request
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no widget by that name signs in"))
 	}
 	id := strings.TrimSpace(req.Msg.GetClientId())
+	if id == "" {
+		// Blank keeps the stored ID, so a secret can be added on its own.
+		if c, ok, _ := a.srv.loadClient(w.spec.Name); ok {
+			id = c.id
+		}
+	}
 	if id == "" || len(id) > 200 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("a client ID is required"))
 	}

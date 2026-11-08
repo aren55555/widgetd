@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -191,5 +192,50 @@ func TestSignInManifestChecks(t *testing.T) {
 	}
 	if _, err := loadWidget(si(func(*widget.SignIn) {})); err != nil {
 		t.Fatalf("a good sign-in: %v", err)
+	}
+}
+
+func TestRefreshUsesClientSecret(t *testing.T) {
+	var gotSecret atomic.Value
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /token", func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		gotSecret.Store(r.Form.Get("client_secret"))
+		if r.Form.Get("grant_type") != "refresh_token" || r.Form.Get("refresh_token") != "ref-1" || r.Form.Get("client_secret") != "s3cret" {
+			io.WriteString(w, `{"error":"bad_refresh_token"}`)
+			return
+		}
+		io.WriteString(w, `{"access_token":"tok-new","token_type":"bearer","expires_in":28800,"refresh_token":"ref-2"}`)
+	})
+	_, tr := publicTLS(t, mux, true)
+	spec := testSpec(func(ctx context.Context, _ widget.Host) error { <-ctx.Done(); return ctx.Err() })
+	spec.SignIn = &widget.SignIn{Provider: "Test", DeviceURL: "https://auth.example.com/device", TokenURL: "https://auth.example.com/token", APIHosts: []string{"a.example.com"}}
+	srv, err := New(Options{StateDir: t.TempDir(), PublicURL: "http://localhost", Widgets: []widget.Spec{spec},
+		Instances: []Instance{{ID: "one", Widget: "test"}}, transport: tr})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { srv.Close(context.Background()) })
+
+	// ID and secret separately: each save keeps the other.
+	if err := srv.setClient("test", "app-1", "s3cret"); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.setClient("test", "app-1", ""); err != nil {
+		t.Fatal(err)
+	}
+	if c, _, _ := srv.loadClient("test"); c.secret != "s3cret" {
+		t.Fatalf("saving without a secret dropped it: %+v", c)
+	}
+
+	// A token about to expire is renewed, with the secret, before use.
+	srv.storeToken("one", &token{Access: "tok-old", Refresh: "ref-1", Expiry: time.Now().Add(30 * time.Second)})
+	u, _ := url.Parse("https://a.example.com/me")
+	auth, err := srv.authorization(context.Background(), srv.instances["one"], u)
+	if err != nil || auth != "Bearer tok-new" {
+		t.Fatalf("authorization = %q, %v (secret sent: %v)", auth, err, gotSecret.Load())
+	}
+	if tok, _ := srv.loadToken("one"); tok.Refresh != "ref-2" || time.Until(tok.Expiry) < time.Hour {
+		t.Fatalf("stored after refresh: %+v", tok)
 	}
 }

@@ -374,12 +374,29 @@ async function adminHome() {
     const apps = h("ul", { class: "devices" });
     for (const w of widgets.filter((w) => w.signInProvider)) {
       const id = h("input", { placeholder: w.signInClientSet ? "Registered. Enter a new one to replace it." : "Client ID", autocomplete: "off", "aria-label": `${w.signInProvider} client ID` }) as HTMLInputElement;
+      const secret = h("input", {
+        type: "password",
+        autocomplete: "new-password",
+        placeholder: w.signInSecretSet ? "Stored. Enter a new one to replace it." : "Client secret (to renew expiring tokens)",
+        "aria-label": `${w.signInProvider} client secret`,
+      }) as HTMLInputElement;
       const [save, st] = button("Save", async (s) => {
-        await admin.setSignInClient({ widget: w.name, clientId: id.value });
-        id.value = "";
+        await admin.setSignInClient({ widget: w.name, clientId: id.value, clientSecret: secret.value });
+        id.value = secret.value = "";
         s.textContent = "Saved.";
       });
-      apps.append(h("li", {}, h("strong", {}, w.title), h("p", { class: "muted" }, `Signs in to ${w.signInProvider}. Register an OAuth app there (with device flow enabled) and enter its client ID.`), id, save, st));
+      apps.append(
+        h(
+          "li",
+          {},
+          h("strong", {}, w.title),
+          h("p", { class: "muted" }, `Signs in to ${w.signInProvider}. Register an OAuth app there (with device flow enabled) and enter its client ID. If its tokens expire, add its client secret too, so they can be renewed without signing in again.`),
+          id,
+          secret,
+          save,
+          st,
+        ),
+      );
     }
     const appsSection = widgets.some((w) => w.signInProvider) ? [h("h2", {}, "Sign-in apps"), apps] : [];
 

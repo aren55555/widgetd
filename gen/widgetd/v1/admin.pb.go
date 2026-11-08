@@ -42,6 +42,8 @@ type WidgetInfo struct {
 	// client (OAuth app) has been registered for it yet.
 	SignInProvider  string `protobuf:"bytes,11,opt,name=sign_in_provider,json=signInProvider,proto3" json:"sign_in_provider,omitempty"`
 	SignInClientSet bool   `protobuf:"varint,12,opt,name=sign_in_client_set,json=signInClientSet,proto3" json:"sign_in_client_set,omitempty"`
+	// Whether a client secret is stored too (needed to renew expiring tokens).
+	SignInSecretSet bool `protobuf:"varint,13,opt,name=sign_in_secret_set,json=signInSecretSet,proto3" json:"sign_in_secret_set,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -156,6 +158,13 @@ func (x *WidgetInfo) GetSignInProvider() string {
 func (x *WidgetInfo) GetSignInClientSet() bool {
 	if x != nil {
 		return x.SignInClientSet
+	}
+	return false
+}
+
+func (x *WidgetInfo) GetSignInSecretSet() bool {
+	if x != nil {
+		return x.SignInSecretSet
 	}
 	return false
 }
@@ -1814,7 +1823,8 @@ type SetSignInClientRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Widget   string                 `protobuf:"bytes,1,opt,name=widget,proto3" json:"widget,omitempty"`
 	ClientId string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
-	// Optional: device flow with most providers needs none. Write-only.
+	// Optional: device flow itself needs none, but renewing an expiring token
+	// usually does. Write-only; empty keeps the stored one.
 	ClientSecret  string `protobuf:"bytes,3,opt,name=client_secret,json=clientSecret,proto3" json:"client_secret,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1912,7 +1922,7 @@ var File_widgetd_v1_admin_proto protoreflect.FileDescriptor
 const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\n" +
 	"\x16widgetd/v1/admin.proto\x12\n" +
-	"widgetd.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17widgetd/v1/stream.proto\"\xaf\x03\n" +
+	"widgetd.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17widgetd/v1/stream.proto\"\xdc\x03\n" +
 	"\n" +
 	"WidgetInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
@@ -1928,7 +1938,8 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\fconfigurable\x18\n" +
 	" \x01(\bR\fconfigurable\x12(\n" +
 	"\x10sign_in_provider\x18\v \x01(\tR\x0esignInProvider\x12+\n" +
-	"\x12sign_in_client_set\x18\f \x01(\bR\x0fsignInClientSet\"\x14\n" +
+	"\x12sign_in_client_set\x18\f \x01(\bR\x0fsignInClientSet\x12+\n" +
+	"\x12sign_in_secret_set\x18\r \x01(\bR\x0fsignInSecretSet\"\x14\n" +
 	"\x12ListWidgetsRequest\"G\n" +
 	"\x13ListWidgetsResponse\x120\n" +
 	"\awidgets\x18\x01 \x03(\v2\x16.widgetd.v1.WidgetInfoR\awidgets\",\n" +
