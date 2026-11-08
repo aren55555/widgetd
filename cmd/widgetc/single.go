@@ -97,13 +97,18 @@ func buildSingleFile(path string) error {
 		return err
 	}
 	genGo := importPath + "/gen/" + protoDir
+	// A fixed, machine-independent name: Go records //line paths in the
+	// binary as they resolve (relative ones against the file's directory) and
+	// -trimpath leaves them alone, so the real path would make the package
+	// differ on every machine. Errors read "/widget/clock.widget:42: …".
+	lineTarget := "/widget/" + filepath.Base(path)
 	genTS := "./gen/" + strings.TrimSuffix(protoRel, ".proto") + "_pb.ts"
 
 	files := map[string]string{
 		"widget.toml":       blocks["manifest"].body,
 		"buf.yaml":          bufYAML,
 		"proto/" + protoRel: blocks["schema"].body,
-		"server/server.go": fmt.Sprintf("//line %s:%d\n%s", path, blocks["server"].line,
+		"server/server.go": fmt.Sprintf("//line %s:%d\n%s", lineTarget, blocks["server"].line,
 			strings.ReplaceAll(blocks["server"].body, `"widget/schema"`, `"`+genGo+`"`)),
 		"view/view.ts": fmt.Sprintf("// Generated from %s (view starts at line %d). Edit that file.\n%s", filepath.Base(path), blocks["view"].line,
 			strings.ReplaceAll(strings.ReplaceAll(blocks["view"].body, `"widget/schema"`, `"`+genTS+`"`), `'widget/schema'`, `'`+genTS+`'`)),
