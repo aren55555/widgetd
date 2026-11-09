@@ -14,6 +14,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	abiv1 "github.com/aren55555/widgetd/gen/widgetd/abi/v1"
 	widgetdv1 "github.com/aren55555/widgetd/gen/widgetd/v1"
 	"github.com/aren55555/widgetd/sdk/go/widget"
 )
@@ -237,5 +238,37 @@ func TestRefreshUsesClientSecret(t *testing.T) {
 	}
 	if tok, _ := srv.loadToken("one"); tok.Refresh != "ref-2" || time.Until(tok.Expiry) < time.Hour {
 		t.Fatalf("stored after refresh: %+v", tok)
+	}
+}
+
+// A sandboxed widget asks for signing with the Fetch call's authorize flag,
+// not a header: the host must honour it the same way. (It once didn't, and
+// a freshly signed-in sandboxed widget got 401s.)
+func TestSandboxedFetchIsSigned(t *testing.T) {
+	p := &fakeProvider{approved: atomic.Bool{}}
+	_, tr := publicTLS(t, p.handler(t), true)
+	spec := testSpec(func(ctx context.Context, _ widget.Host) error { <-ctx.Done(); return ctx.Err() })
+	spec.Network = widget.NetworkRequest{Hosts: []string{"api.example.com"}}
+	spec.SignIn = &widget.SignIn{Provider: "Test", DeviceURL: "https://auth.example.com/device", TokenURL: "https://auth.example.com/token", APIHosts: []string{"api.example.com"}}
+	srv, err := New(Options{StateDir: t.TempDir(), PublicURL: "http://localhost", Widgets: []widget.Spec{spec},
+		Instances: []Instance{{ID: "one", Widget: "test"}}, transport: tr})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { srv.Close(context.Background()) })
+	srv.storeToken("one", &token{Access: "tok-123"})
+	in := srv.instances["one"]
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	g := &guest{h: &runHost{in: in, ctx: ctx, cancel: cancel, cards: map[string]*card{}}, cards: map[string]*rawCard{}}
+
+	res := g.fetch(ctx, &abiv1.Fetch{Method: "GET", Url: "https://api.example.com/me", Authorize: true})
+	if res.GetError() != "" || res.GetFetch().GetStatus() != 200 || string(res.GetFetch().GetBody()) != "me" {
+		t.Fatalf("authorized sandboxed fetch: %v", res)
+	}
+	// Without the flag, no token (and a forged marker header is ignored).
+	res = g.fetch(ctx, &abiv1.Fetch{Method: "GET", Url: "https://api.example.com/me", Headers: []*abiv1.Header{{Name: "Widgetd-Authorize", Value: "1"}}})
+	if res.GetFetch().GetStatus() != 401 {
+		t.Fatalf("unflagged fetch got %v; want it unsigned", res.GetFetch().GetStatus())
 	}
 }

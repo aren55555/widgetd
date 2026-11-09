@@ -384,6 +384,13 @@ func (g *guest) fetch(ctx context.Context, f *abiv1.Fetch) *abiv1.Result {
 	for _, hd := range f.GetHeaders() {
 		req.Header.Add(hd.GetName(), hd.GetValue())
 	}
+	// A module asks for its request to be signed with the authorize flag,
+	// never a header of its own: hand it on the way a native widget's
+	// widget.Authorize does, so the Host signs both the same way.
+	widget.IsAuthorized(req)
+	if f.GetAuthorize() {
+		widget.Authorize(req)
+	}
 	resp, err := g.h.Fetch(req)
 	if err != nil {
 		return errResult(err)
