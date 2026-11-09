@@ -1,13 +1,15 @@
 // What a screen keeps between visits, in localStorage: for each card, the
 // last state its view accepted and the cursor it was accepted at (so the
 // next visit draws instantly and asks the server only for what changed), and
-// a small key-value space the view can use for its own preferences.
+// a small space the view can use for its own preferences: string keys, and
+// one typed local value kept as its type name next to its bytes.
 //
-// Each card's entries are namespaced by card id and tagged with the widget
-// build's digest and state type, so a new build of a widget never reads
-// state written by an old one.
+// Each card's entries are namespaced by card id. Its state is tagged with the
+// widget build's digest and state type, so a new build of a widget never
+// reads state written by an old one. Preferences outlive builds: the view
+// checks the local value's type name and ignores a value of another type.
 
-import type { Cursor } from "@widgetd/sdk/bridge";
+import type { Cursor, Local } from "@widgetd/sdk/bridge";
 
 export type Stored = {
   digest: string;
@@ -19,7 +21,7 @@ export type Stored = {
 /** The subset of the Web Storage API the store needs, so tests can fake it. */
 export type KVBackend = Pick<Storage, "getItem" | "setItem" | "removeItem" | "key" | "length">;
 
-/** Bytes a card's own key-value space may hold. */
+/** Characters a card's preferences (keys, values and local value) may hold. */
 export const VIEW_QUOTA = 64 * 1024;
 
 const b64 = (b: Uint8Array) => {
@@ -37,6 +39,7 @@ export class CardStore {
 
   private stateKey = (cardId: string) => `${this.prefix}state:${cardId}`;
   private viewPrefix = (cardId: string) => `${this.prefix}view:${cardId}:`;
+  private localKey = (cardId: string) => `${this.prefix}local:${cardId}`;
 
   load(cardId: string): Stored | undefined {
     const raw = this.ls.getItem(this.stateKey(cardId));
@@ -80,6 +83,45 @@ export class CardStore {
     this.ls.removeItem(this.stateKey(cardId));
     if (!view) return;
     for (const k of this.keys()) if (k.startsWith(this.viewPrefix(cardId))) this.ls.removeItem(k);
+    this.ls.removeItem(this.localKey(cardId));
+  }
+
+  /** The card's typed local value, if it saved one. */
+  localGet(cardId: string): Local | undefined {
+    const raw = this.ls.getItem(this.localKey(cardId));
+    if (!raw) return undefined;
+    try {
+      const v = JSON.parse(raw) as { type: unknown; value: unknown };
+      if (typeof v.type !== "string" || typeof v.value !== "string") return undefined;
+      return { type: v.type, value: unb64(v.value) };
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** Keep (or with null, forget) the card's typed local value. It counts towards the card's quota. */
+  localSet(cardId: string, local: Local | null): void {
+    const k = this.localKey(cardId);
+    if (local === null) {
+      this.ls.removeItem(k);
+      return;
+    }
+    const raw = JSON.stringify({ type: local.type, value: b64(local.value) });
+    if (this.used(cardId, k) + raw.length > VIEW_QUOTA) throw new Error(`storage quota of ${VIEW_QUOTA} bytes exceeded`);
+    this.ls.setItem(k, raw);
+  }
+
+  /** What the card's preferences take up, leaving out the entry at `except`. */
+  private used(cardId: string, except: string): number {
+    const p = this.viewPrefix(cardId);
+    const local = this.localKey(cardId);
+    let used = 0;
+    for (const k of this.keys()) {
+      if (k === except) continue;
+      if (k.startsWith(p)) used += k.length - p.length + (this.ls.getItem(k)?.length ?? 0);
+      else if (k === local) used += this.ls.getItem(k)?.length ?? 0;
+    }
+    return used;
   }
 
   viewGet(cardId: string, key: string): string | undefined {
@@ -92,13 +134,7 @@ export class CardStore {
       this.ls.removeItem(k);
       return;
     }
-    let used = key.length + value.length;
-    for (const other of this.keys()) {
-      if (other.startsWith(this.viewPrefix(cardId)) && other !== k) {
-        used += other.length - this.viewPrefix(cardId).length + (this.ls.getItem(other)?.length ?? 0);
-      }
-    }
-    if (used > VIEW_QUOTA) throw new Error(`storage quota of ${VIEW_QUOTA} bytes exceeded`);
+    if (this.used(cardId, k) + key.length + value.length > VIEW_QUOTA) throw new Error(`storage quota of ${VIEW_QUOTA} bytes exceeded`);
     this.ls.setItem(k, value);
   }
 

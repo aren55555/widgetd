@@ -3,8 +3,15 @@ import { create, toBinary, type MessageInitShape } from "@bufbuild/protobuf";
 
 import { CardCore, defineWidget, typeUrlOf, type WidgetDef } from "../src/index.ts";
 import { decodeChecked } from "../src/checks.ts";
-import type { FromFrame } from "../src/bridge.ts";
-import { DeltaSchema, StateSchema, type Delta, type State } from "./gen/testwidget/v1/testwidget_pb.ts";
+import type { FromFrame, Local as LocalBytes } from "../src/bridge.ts";
+import {
+  ActionSchema,
+  ConfigSchema,
+  DeltaSchema,
+  StateSchema,
+  type Delta,
+  type State,
+} from "./gen/testwidget/v1/testwidget_pb.ts";
 
 const cursor = (seq: number) => ({ epoch: "1", seq: String(seq) });
 
@@ -110,5 +117,91 @@ describe("decodeChecked", () => {
   test("refuses bytes that don't decode", () => {
     const r = decodeChecked(StateSchema, typeUrlOf(StateSchema), new Uint8Array([0xff, 0xff, 0xff]));
     expect(r.ok).toBe(false);
+  });
+});
+
+describe("typed local value", () => {
+  // Config stands in for a view's local message: its label has a max_len rule.
+  function localHarness(local?: LocalBytes) {
+    const saved: (LocalBytes | null)[] = [];
+    const seen: string[] = [];
+    let refuse: string | undefined;
+    const def = defineWidget({
+      state: StateSchema,
+      local: ConfigSchema,
+      mount: (ctx) => {
+        seen.push(ctx.local.value.label); // read before the first update
+        return { update() {} };
+      },
+    });
+    const core = new CardCore(
+      def,
+      () => {},
+      (local) => def.mount({ local } as never),
+      async (l) => {
+        if (refuse) throw new Error(refuse);
+        saved.push(l);
+      },
+    );
+    core.handle({ t: "init", cardId: "a/b", stateType: "testwidget.v1.State", deltaType: "", theme: {}, local });
+    return { core, saved, seen, refuseWith: (e: string) => (refuse = e) };
+  }
+  const bytes = (label: string) => ({
+    type: "testwidget.v1.Config",
+    value: toBinary(ConfigSchema, create(ConfigSchema, { label })),
+  });
+
+  test("is ready at mount, from what the board saved", () => {
+    const { core, seen } = localHarness(bytes("zoom2"));
+    expect(seen).toEqual(["zoom2"]);
+    expect(core.local.value.label).toBe("zoom2");
+  });
+
+  test("defaults when nothing was saved", () => {
+    expect(localHarness().seen).toEqual([""]);
+  });
+
+  test("ignores a value saved as another type", () => {
+    const other = { type: "testwidget.v1.Action", value: toBinary(ActionSchema, create(ActionSchema, { tap: 3n })) };
+    expect(localHarness(other).seen).toEqual([""]);
+  });
+
+  test("ignores a saved value that breaks a rule or doesn't decode", () => {
+    expect(localHarness(bytes("far too long")).seen).toEqual([""]);
+    expect(localHarness({ type: "testwidget.v1.Config", value: new Uint8Array([0xff, 0xff]) }).seen).toEqual([""]);
+  });
+
+  test("set checks, keeps and saves the value with its type name", async () => {
+    const { core, saved } = localHarness();
+    await core.local.set(create(ConfigSchema, { label: "dark" }));
+    expect(core.local.value.label).toBe("dark");
+    expect(saved).toEqual([bytes("dark")]);
+  });
+
+  test("set refuses a value that breaks a rule and keeps the old one", async () => {
+    const { core, saved } = localHarness(bytes("ok"));
+    await expect(core.local.set(create(ConfigSchema, { label: "far too long" }))).rejects.toThrow();
+    expect(core.local.value.label).toBe("ok");
+    expect(saved).toEqual([]);
+  });
+
+  test("set rejects when the board refuses", async () => {
+    const { core, refuseWith } = localHarness();
+    refuseWith("storage quota exceeded");
+    await expect(core.local.set(create(ConfigSchema, { label: "x" }))).rejects.toThrow("quota");
+  });
+
+  test("clear goes back to the defaults and forgets the saved value", async () => {
+    const { core, saved } = localHarness(bytes("zoom2"));
+    await core.local.clear();
+    expect(core.local.value.label).toBe("");
+    expect(saved).toEqual([null]);
+  });
+
+  test("a widget without a local type can't use it", async () => {
+    const def = defineWidget({ state: StateSchema, mount: () => ({ update() {} }) });
+    const core = new CardCore(def, () => {}, () => def.mount({} as never));
+    expect(() => core.local.value).toThrow("declares no local type");
+    await expect(core.local.set(create(StateSchema, {}))).rejects.toThrow("declares no local type");
   });
 });

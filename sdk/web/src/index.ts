@@ -4,8 +4,8 @@
 // back to the board to keep, so the next page load draws instantly and
 // resumes from where it left off.
 
-import { toBinary, fromBinary, type DescMessage, type Message, type MessageShape } from "@bufbuild/protobuf";
-import type { Cursor, FromFrame, ToFrame } from "./bridge.ts";
+import { create, toBinary, fromBinary, type DescMessage, type Message, type MessageShape } from "@bufbuild/protobuf";
+import type { Cursor, FromFrame, Local as LocalBytes, ToFrame } from "./bridge.ts";
 import { decodeChecked, typeUrlOf, validated } from "./checks.ts";
 
 export { decodeChecked, validated, typeUrlOf } from "./checks.ts";
@@ -18,11 +18,32 @@ export type WidgetStorage = {
   set(key: string, value: string | null): Promise<void>;
 };
 
-export type WidgetContext = {
+/**
+ * The card's typed local value: a message of the widget's `local` type that
+ * this screen keeps for the card (a chosen zoom level, a dismissed hint). It
+ * is ready before the first `update`, so the first draw already uses it.
+ */
+export type Local<M> = {
+  /** The saved value, checked against its schema; the type's defaults if none was saved. */
+  readonly value: M;
+  /**
+   * Check and keep `value`, then save it. `this.value` changes at once; the
+   * promise settles when the board has stored it, and rejects if `value`
+   * breaks a rule or the card's storage quota is used up.
+   */
+  set(value: M): Promise<void>;
+  /** Forget the saved value; `this.value` goes back to the defaults. */
+  clear(): Promise<void>;
+};
+
+export type WidgetContext<L = never> = {
   cardId: string;
   /** The element to render into. It fills the card. */
   root: HTMLElement;
+  /** Untyped string storage. Prefer `local` for anything structured. */
   storage: WidgetStorage;
+  /** The typed local value. Only usable when the widget declares a `local` type. */
+  local: Local<L>;
   /**
    * Send the widget's server half something the viewer did (a tap, a
    * choice). The message must be the widget's `action` type; it is checked
@@ -37,14 +58,20 @@ export type View<S, D> = {
   destroy?(): void;
 };
 
-export type WidgetDef<SD extends DescMessage, DD extends DescMessage = DescMessage> = {
+export type WidgetDef<
+  SD extends DescMessage,
+  DD extends DescMessage = DescMessage,
+  LD extends DescMessage = DescMessage,
+> = {
   state: SD;
   delta?: DD;
+  /** The message `ctx.local` holds, if the view keeps typed local state. */
+  local?: LD;
   /** The message `ctx.act` sends, if the card takes actions. */
   action?: DescMessage;
   /** Pure: the state after `delta`. Required when `delta` is given. */
   apply?: (state: MessageShape<SD>, delta: MessageShape<DD>) => MessageShape<SD>;
-  mount(ctx: WidgetContext): View<MessageShape<SD>, MessageShape<DD>>;
+  mount(ctx: WidgetContext<MessageShape<LD>>): View<MessageShape<SD>, MessageShape<DD>>;
 };
 
 /**
@@ -52,15 +79,53 @@ export type WidgetDef<SD extends DescMessage, DD extends DescMessage = DescMessa
  * messages into checked states and replies. Kept apart so it can be tested
  * without a browser.
  */
-export class CardCore<SD extends DescMessage, DD extends DescMessage> {
+export class CardCore<SD extends DescMessage, DD extends DescMessage, LD extends DescMessage = DescMessage> {
   private state: MessageShape<SD> | undefined;
   private view: View<MessageShape<SD>, MessageShape<DD>> | undefined;
+  private localValue: MessageShape<LD> | undefined;
+  /** The card's typed local value, as `ctx.local`. */
+  readonly local: Local<MessageShape<LD>>;
 
+  /**
+   * `persist` asks the board to keep (or with null, forget) the local
+   * value; it rejects if the board refuses.
+   */
   constructor(
-    private def: WidgetDef<SD, DD>,
+    private def: WidgetDef<SD, DD, LD>,
     private send: (m: FromFrame) => void,
-    private makeView: () => View<MessageShape<SD>, MessageShape<DD>>,
-  ) {}
+    private makeView: (local: Local<MessageShape<LD>>) => View<MessageShape<SD>, MessageShape<DD>>,
+    private persist: (local: LocalBytes | null) => Promise<void> = async () => {},
+  ) {
+    const core = this;
+    const schema = () => {
+      if (!def.local) throw new Error("this widget declares no local type");
+      return def.local;
+    };
+    this.local = {
+      get value() {
+        return (core.localValue ??= create(schema()));
+      },
+      set(value) {
+        try {
+          const ld = schema();
+          const v = validated(ld, value);
+          if (!v.ok) throw new Error(v.error);
+          core.localValue = value;
+          return core.persist({ type: ld.typeName, value: toBinary(ld, value) });
+        } catch (e) {
+          return Promise.reject(e);
+        }
+      },
+      clear() {
+        try {
+          core.localValue = create(schema());
+          return core.persist(null);
+        } catch (e) {
+          return Promise.reject(e);
+        }
+      },
+    };
+  }
 
   get current(): MessageShape<SD> | undefined {
     return this.state;
@@ -100,7 +165,8 @@ export class CardCore<SD extends DescMessage, DD extends DescMessage> {
     if ((m.deltaType || undefined) !== this.def.delta?.typeName) {
       return this.fault(`card sends deltas of ${m.deltaType || "nothing"}, view expects ${this.def.delta?.typeName ?? "none"}`);
     }
-    this.view = this.makeView();
+    if (this.def.local) this.localValue = loadLocal(this.def.local, m.local);
+    this.view = this.makeView(this.local);
     if (m.stored) {
       // Stored state was checked when it was accepted, but storage is outside
       // our control, so check it again; if it fails, just wait for the server.
@@ -127,26 +193,54 @@ export class CardCore<SD extends DescMessage, DD extends DescMessage> {
   }
 }
 
+/**
+ * The saved local value if it is of the declared type, decodes and passes its
+ * rules; otherwise the defaults. A value saved as another type (the widget
+ * changed its `local` message) is ignored, and replaced on the next set.
+ * Unknown fields are allowed, so a value saved by an older or newer build of
+ * the same message still loads.
+ */
+function loadLocal<Desc extends DescMessage>(schema: Desc, saved: LocalBytes | undefined): MessageShape<Desc> {
+  if (saved?.type === schema.typeName && saved.value instanceof Uint8Array) {
+    try {
+      const m = fromBinary(schema, saved.value);
+      if (validated(schema, m).ok) return m;
+    } catch {
+      /* fall through to the defaults */
+    }
+  }
+  return create(schema);
+}
+
 /** A deep copy, so `apply` can mutate freely without touching kept state. */
 function structuredCloneMessage<Desc extends DescMessage>(schema: Desc, m: MessageShape<Desc>): MessageShape<Desc> {
   return fromBinary(schema, toBinary(schema, m));
 }
 
 /** Define the widget's view. Call once, at the top level of view.tsx. */
-export function defineWidget<SD extends DescMessage, DD extends DescMessage = DescMessage>(
-  def: WidgetDef<SD, DD>,
-): WidgetDef<SD, DD> {
+export function defineWidget<
+  SD extends DescMessage,
+  DD extends DescMessage = DescMessage,
+  LD extends DescMessage = DescMessage,
+>(def: WidgetDef<SD, DD, LD>): WidgetDef<SD, DD, LD> {
   if (def.delta && !def.apply) throw new Error("defineWidget: a delta type needs apply");
   if (typeof window !== "undefined" && window.parent !== window) start(def);
   return def;
 }
 
-function start<SD extends DescMessage, DD extends DescMessage>(def: WidgetDef<SD, DD>): void {
+function start<SD extends DescMessage, DD extends DescMessage, LD extends DescMessage>(
+  def: WidgetDef<SD, DD, LD>,
+): void {
   const parent = window.parent;
   const send = (m: FromFrame) => parent.postMessage(m, "*");
   let nextId = 1;
   const pending = new Map<number, (m: Extract<ToFrame, { t: "storage" }>) => void>();
-  const call = (m: { t: "storage-get"; key: string } | { t: "storage-set"; key: string; value: string | null }) =>
+  const call = (
+    m:
+      | { t: "storage-get"; key: string }
+      | { t: "storage-set"; key: string; value: string | null }
+      | { t: "local-set"; local: LocalBytes | null },
+  ) =>
     new Promise<Extract<ToFrame, { t: "storage" }>>((resolve) => {
       const id = nextId++;
       pending.set(id, resolve);
@@ -173,7 +267,11 @@ function start<SD extends DescMessage, DD extends DescMessage>(def: WidgetDef<SD
     if (!v.ok) throw new Error(v.error);
     send({ t: "action", typeUrl: typeUrlOf(schema), value: toBinary(schema, action as never) });
   };
-  const core = new CardCore(def, send, () => def.mount({ cardId, root, storage, act }));
+  const persist = async (local: LocalBytes | null) => {
+    const r = await call({ t: "local-set", local });
+    if (r.error) throw new Error(r.error);
+  };
+  const core = new CardCore(def, send, (local) => def.mount({ cardId, root, storage, act, local }), persist);
 
   const applyTheme = (theme: Record<string, string>) => {
     for (const [k, v] of Object.entries(theme)) {

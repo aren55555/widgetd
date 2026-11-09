@@ -56,7 +56,37 @@ describe("CardStore", () => {
   test("garbage in storage reads as nothing", () => {
     const ls = memory();
     ls.setItem("widgetd:state:i/a", "{not json");
+    ls.setItem("widgetd:local:i/a", "{not json");
     expect(new CardStore(ls).load("i/a")).toBeUndefined();
+    expect(new CardStore(ls).localGet("i/a")).toBeUndefined();
+  });
+
+  test("the local value round-trips with its type name, per card", () => {
+    const s = new CardStore(memory());
+    const local = { type: "x.Prefs", value: new Uint8Array([8, 2]) };
+    s.localSet("i/a", local);
+    expect(s.localGet("i/a")).toEqual(local);
+    expect(s.localGet("i/b")).toBeUndefined();
+    s.localSet("i/a", null);
+    expect(s.localGet("i/a")).toBeUndefined();
+  });
+
+  test("the local value survives a new build's state but not forget with view", () => {
+    const s = new CardStore(memory());
+    s.localSet("i/a", { type: "x.Prefs", value: new Uint8Array([1]) });
+    s.forget("i/a", false);
+    expect(s.localGet("i/a")).toBeDefined();
+    s.forget("i/a", true);
+    expect(s.localGet("i/a")).toBeUndefined();
+  });
+
+  test("the local value shares the card's quota with its string keys", () => {
+    const s = new CardStore(memory());
+    s.viewSet("i/a", "big", "x".repeat(VIEW_QUOTA - 100));
+    expect(() => s.localSet("i/a", { type: "x.Prefs", value: new Uint8Array(200) })).toThrow("quota");
+    s.localSet("i/b", { type: "x.Prefs", value: new Uint8Array(200) });
+    s.localSet("i/a", { type: "x.Prefs", value: new Uint8Array(10) });
+    expect(() => s.viewSet("i/a", "more", "x".repeat(100))).toThrow("quota");
   });
 });
 
