@@ -399,13 +399,13 @@ func TestPhonePagesAreServed(t *testing.T) {
 		}
 	}
 	// And every route the app's router names is one of them.
-	src, err := os.ReadFile("../client/src/admin.ts")
+	src, err := os.ReadFile("../client/src/admin.tsx")
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, m := range regexp.MustCompile(`section === "([a-z]+)"`).FindAllStringSubmatch(string(src), -1) {
 		if !phonePages[m[1]] {
-			t.Errorf("admin.ts routes %q, which the server doesn't serve", m[1])
+			t.Errorf("admin.tsx routes %q, which the server doesn't serve", m[1])
 		}
 	}
 }

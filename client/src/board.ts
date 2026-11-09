@@ -59,10 +59,25 @@ const STYLE = `
   background: var(--wd-raised, #27272a); color: var(--wd-ink, #e5e7eb); font: 13px/18px var(--wd-font-mono, ui-monospace, monospace); }
 .link { border: 0; background: none; cursor: pointer; color: var(--wd-ink-faint, #71717a); font: 12px var(--wd-font-mono, monospace); }
 .picker { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
-.overlay { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-  padding: 12px; text-align: center; background: var(--wd-surface, #18181b); font: 12px/16px var(--wd-font-mono, monospace); color: var(--wd-ink-muted, #a1a1aa); }
+/* A set-up or sign-in code, filling its tile however the tile is shaped. The
+   overlay is the size container; .fit lays out inside it (a container query
+   can't restyle the container itself). The QR is sized from the tile's own
+   dimensions: above the text, as big as the text leaves room for, or beside
+   it in a tile at least twice as wide as it is tall. */
+.overlay { position: absolute; inset: 0; z-index: 3; container-type: size; background: var(--wd-surface, #18181b); }
+.overlay .fit { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 26px 8px 8px; box-sizing: border-box; text-align: center; font: 12px/15px var(--wd-font-mono, monospace); color: var(--wd-ink-muted, #a1a1aa); }
+.overlay .qr { flex: none; box-sizing: border-box; padding: 4px; border-radius: 6px;
+  width: max(64px, min(100cqw - 40px, 100cqh - 72px)); height: max(64px, min(100cqw - 40px, 100cqh - 72px)); }
+.overlay .info { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+.overlay .code { font-size: clamp(16px, 10cqmin, 32px); line-height: 1.15; white-space: nowrap; }
+@container (min-aspect-ratio: 2 / 1) {
+  .overlay .fit { flex-direction: row; gap: 12px; }
+  .overlay .qr { width: calc(100cqh - 16px); height: calc(100cqh - 16px); }
+  .overlay .info { flex: 1; align-items: flex-start; text-align: left; }
+  .overlay .code { font-size: clamp(16px, 16cqh, 36px); }
+}
 .overlay .close { position: absolute; right: 6px; top: 4px; border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--wd-ink-faint, #71717a); }
-.qr.small { width: 120px; height: 120px; padding: 6px; }
 `;
 
 const RECONNECT_MIN = 1000;
@@ -352,27 +367,14 @@ class WidgetBoard extends HTMLElement {
    * needs an admin passkey to save anything.
    */
   private async showSetUp(within: HTMLElement, instanceId: string) {
-    within.querySelector(".overlay")?.remove();
-    const overlay = document.createElement("div");
-    overlay.className = "overlay";
-    const close = document.createElement("button");
-    close.className = "close";
-    close.setAttribute("aria-label", "Close");
-    close.textContent = "\u00d7";
-    close.addEventListener("click", () => overlay.remove());
-    overlay.append(close, "Getting a code…");
-    within.append(overlay);
+    const o = this.codeOverlay(within);
     try {
       const admin = createClient(WidgetAdminService, this.transport());
       const t = await admin.requestConfigTicket({ instanceId });
-      const qr = document.createElement("div");
-      qr.className = "qr small";
-      qr.innerHTML = renderSVG(t.url, { border: 1 });
-      overlay.replaceChildren(close, qr, "Scan with your phone to set this up.");
-      const ttl = t.expiresAt ? Number(t.expiresAt.seconds) * 1000 - Date.now() : 600_000;
-      setTimeout(() => overlay.remove(), Math.max(1000, ttl));
+      o.show(t.url, ["Scan with your phone to set this up."]);
+      o.expireAt(t.expiresAt ? Number(t.expiresAt.seconds) * 1000 : Date.now() + 600_000);
     } catch (e) {
-      overlay.replaceChildren(close, `Couldn't get a code: ${e instanceof Error ? e.message : String(e)}`);
+      o.fail(`Couldn't get a code: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -383,33 +385,63 @@ class WidgetBoard extends HTMLElement {
    * turns into the widget when it comes.
    */
   private async showSignIn(within: HTMLElement, instanceId: string) {
+    const o = this.codeOverlay(within);
+    try {
+      const admin = createClient(WidgetAdminService, this.transport());
+      const s = await admin.beginSignIn({ instanceId });
+      o.show(s.verificationUriComplete || s.verificationUri, [`Sign in at ${s.verificationUri.replace(/^https:\/\//, "")}`], s.userCode);
+      o.expireAt(s.expiresAt ? Number(s.expiresAt.seconds) * 1000 : Date.now() + 600_000);
+    } catch (e) {
+      o.fail(`Couldn't start sign-in: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  /**
+   * An overlay filling `within` that shows a QR code with a line or two of
+   * text (and, for sign-in, the code to type), laid out to fit the tile:
+   * see .overlay in STYLE.
+   */
+  private codeOverlay(within: HTMLElement) {
     within.querySelector(".overlay")?.remove();
     const overlay = document.createElement("div");
     overlay.className = "overlay";
     const close = document.createElement("button");
     close.className = "close";
     close.setAttribute("aria-label", "Close");
-    close.textContent = "\u00d7";
+    close.textContent = "×";
     close.addEventListener("click", () => overlay.remove());
-    overlay.append(close, "Getting a code…");
+    const fit = document.createElement("div");
+    fit.className = "fit";
+    fit.textContent = "Getting a code…";
+    overlay.append(close, fit);
     within.append(overlay);
-    try {
-      const admin = createClient(WidgetAdminService, this.transport());
-      const s = await admin.beginSignIn({ instanceId });
-      const qr = document.createElement("div");
-      qr.className = "qr small";
-      qr.innerHTML = renderSVG(s.verificationUriComplete || s.verificationUri, { border: 1 });
-      const code = document.createElement("div");
-      code.className = "code";
-      code.textContent = s.userCode;
-      const where = document.createElement("div");
-      where.textContent = `Sign in to ${s.provider} at ${s.verificationUri.replace(/^https:\/\//, "")} with:`;
-      overlay.replaceChildren(close, qr, where, code);
-      const ttl = s.expiresAt ? Number(s.expiresAt.seconds) * 1000 - Date.now() : 600_000;
-      setTimeout(() => overlay.remove(), Math.max(1000, ttl));
-    } catch (e) {
-      overlay.replaceChildren(close, `Couldn't start sign-in: ${e instanceof Error ? e.message : String(e)}`);
-    }
+    return {
+      show(url: string, lines: string[], code?: string) {
+        const qr = document.createElement("div");
+        qr.className = "qr";
+        qr.innerHTML = renderSVG(url, { border: 1 });
+        const info = document.createElement("div");
+        info.className = "info";
+        for (const l of lines) {
+          const p = document.createElement("div");
+          p.textContent = l;
+          info.append(p);
+        }
+        if (code) {
+          const c = document.createElement("div");
+          c.className = "code";
+          c.textContent = code;
+          info.append(c);
+        }
+        fit.replaceChildren(qr, info);
+      },
+      fail(message: string) {
+        fit.textContent = message;
+      },
+      expireAt(ms: number) {
+        setTimeout(() => overlay.remove(), Math.max(1000, ms - Date.now()));
+      },
+    };
   }
 
   /** The last tile: add a widget from this screen. */
