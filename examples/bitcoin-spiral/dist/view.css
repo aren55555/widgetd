@@ -39,7 +39,11 @@ canvas {
   color: var(--wd-down, #f87171);
 }
 
+/* Bottom-left, clear of the ring labels, which run up the middle from the top. */
 .cycle {
+  position: fixed;
+  left: 12px;
+  bottom: 8px;
   font-size: 11px;
   line-height: 16px;
   color: var(--wd-ink-faint, #71717a);

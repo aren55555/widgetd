@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendar spectrum: spike</title>
+<style>
+  :root {
+    --surface: #18181b; --raised: #27272a; --edge: #27272a; --page: #0c0c0e;
+    --ink: #e5e7eb; --muted: #a1a1aa; --faint: #71717a;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 13px/1.4 var(--mono); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; padding: 20px; align-items: start; }
+  .stage { overflow-x: auto; }
+  .stage { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .presets { display: flex; gap: 6px; flex-wrap: wrap; }
+  button { font: 12px var(--mono); color: var(--ink); background: var(--raised); border: 1px solid #3f3f46; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+  button[aria-pressed="true"] { border-color: var(--ink); }
+
+  /* Mirrors client/src/board.ts .card */
+  .card { position: relative; display: flex; flex-direction: column; border-radius: 10px; border: 1px solid var(--edge); background: var(--surface); overflow: hidden; }
+  .card h3 { margin: 0; padding: 8px 12px 0; font: 500 12px/16px var(--mono); color: var(--muted); white-space: nowrap; }
+  .body { flex: 1; min-height: 0; padding: 6px 10px 10px; }
+  .days { display: grid; height: 100%; }
+  .day { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+  .day .lbl { font: 10px/12px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; display: flex; justify-content: space-between; gap: 4px; }
+  .day .lbl b { font-weight: 600; color: var(--ink); }
+  .day.today .lbl b { color: var(--accent); }
+  .day.weekend .lbl, .day.weekend .lbl b { color: var(--faint); }
+  .day.inside .lbl { position: absolute; top: 3px; left: 5px; right: 5px; z-index: 1; pointer-events: none; }
+  .day canvas { flex: 1; min-height: 0; width: 100%; display: block; border-radius: 3px; }
+  .readout { min-height: 18px; color: var(--muted); font-size: 12px; }
+
+  .panel { width: 340px; display: flex; flex-direction: column; gap: 14px; }
+  fieldset { border: 1px solid var(--edge); border-radius: 8px; margin: 0; padding: 8px 12px 10px; display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; }
+  legend { color: var(--muted); padding: 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  label { color: var(--muted); font-size: 12px; }
+  select, input[type=number] { font: 12px var(--mono); background: var(--raised); color: var(--ink); border: 1px solid #3f3f46; border-radius: 4px; padding: 2px 4px; width: 120px; }
+  input[type=range] { width: 120px; }
+  .daysel { display: flex; gap: 2px; }
+  .daysel label { display: inline-flex; flex-direction: column; align-items: center; font-size: 10px; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  td, th { padding: 3px 6px; text-align: left; border-bottom: 1px solid var(--edge); }
+  th { color: var(--muted); font-weight: 500; }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.best td { color: var(--accent); }
+  .note { color: var(--faint); font-size: 11px; margin: 4px 0 0; }
+  textarea { width: 100%; height: 90px; font: 11px var(--mono); background: var(--surface); color: var(--muted); border: 1px solid var(--edge); border-radius: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <section class="stage">
+    <div class="presets" id="presets"></div>
+    <div class="card" id="card">
+      <h3 id="title">Calendar · next 14 days</h3>
+      <div class="body"><div class="days" id="days"></div></div>
+    </div>
+    <div class="readout" id="readout">Hover a day to read times (debug only; a wall screen has no hover).</div>
+
+    <h4 style="margin:10px 0 0;color:var(--muted);font-weight:500">Payload (this fake fortnight)</h4>
+    <table id="payload"></table>
+    <p class="note">Full-snapshot sizes in bytes. "Packed" = one packed uint32 list per day of
+      [start − prev start, duration] in API-resolution units, plus a list for tentative spans.
+      Overlaps are kept, not merged, so the view can brighten double-booked time.</p>
+  </section>
+
+  <section class="panel" id="panel">
+    <fieldset><legend>Card</legend>
+      <label>Width px</label><input type="range" data-k="cardW" min="360" max="1400" step="10">
+      <label>Board rows tall</label><select data-k="rows"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+      <label>Day grid</label><select data-k="layout"><option value="7x2">7 × 2</option><option value="14x1">14 × 1</option><option value="2x7">2 × 7</option></select>
+      <label>Starts on</label><select data-k="align"><option value="today">today</option><option value="monday">this Monday</option></select>
+      <label>Gap px</label><input type="range" data-k="gap" min="0" max="12">
+      <label>Day labels</label><select data-k="labels"><option value="above">above</option><option value="inside">inside</option><option value="none">none</option></select>
+    </fieldset>
+
+    <fieldset><legend>Lines</legend>
+      <label>Style</label><select data-k="style"><option value="spectrum">spectrum (scanlines)</option><option value="bands">solid bands</option><option value="edges">edges + faint fill</option></select>
+      <label>Scanline pitch px</label><input type="range" data-k="pitch" min="2" max="8">
+      <label>Scanline thickness px</label><input type="range" data-k="thick" min="1" max="4">
+      <label>Colour</label><select data-k="hue"><option value="#22d3ee">cyan</option><option value="#fbbf24">amber</option><option value="#a78bfa">violet</option><option value="#4ade80">green</option><option value="#f472b6">pink</option><option value="#e5e7eb">white</option></select>
+      <label>Glow</label><input type="checkbox" data-k="glow">
+      <label>Overlap brightens</label><input type="checkbox" data-k="additive">
+      <label>Full width (over ticks)</label><input type="checkbox" data-k="fullWidth">
+      <label>Show tentative</label><input type="checkbox" data-k="tentative">
+    </fieldset>
+
+    <fieldset><legend>Time axis</legend>
+      <label>From hour</label><input type="number" data-k="r0" min="0" max="23">
+      <label>To hour</label><input type="number" data-k="r1" min="1" max="24">
+      <label>Dim the past</label><input type="checkbox" data-k="dimPast">
+      <label>"Now" line</label><input type="checkbox" data-k="now">
+    </fieldset>
+
+    <fieldset><legend>Working hours</legend>
+      <label>Start</label><input type="number" data-k="whStart" min="0" max="24" step="0.25">
+      <label>End</label><input type="number" data-k="whEnd" min="0" max="24" step="0.25">
+      <label>Days</label><div class="daysel" id="whDays"></div>
+      <label>Band lift %</label><input type="range" data-k="lift" min="0" max="16">
+      <label>Tick every (min)</label><select data-k="tick"><option>15</option><option>30</option><option>60</option><option>120</option></select>
+      <label>Major tick every (min)</label><select data-k="major"><option>60</option><option>120</option><option>240</option></select>
+      <label>Tick side</label><select data-k="tickSide"><option value="left">left</option><option value="right">right</option><option value="both">both</option></select>
+      <label>Tick length px</label><input type="range" data-k="tickLen" min="2" max="14">
+    </fieldset>
+
+    <fieldset><legend>API</legend>
+      <label>Resolution (min)</label><select data-k="res"><option>1</option><option>5</option><option>15</option></select>
+      <label>Fake-data seed</label><input type="number" data-k="seed" min="1" max="9999">
+    </fieldset>
+
+    <div>
+      <button id="copy">Copy settings</button>
+      <span class="note" id="copied"></span>
+      <textarea id="settings" readonly></textarea>
+      <p class="note">Paste these settings back with your feedback, so I can see the variant you mean.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+// ---------- settings ----------
+const DEFAULTS = {
+  cardW: 820, rows: 2, layout: "7x2", align: "today", gap: 6, labels: "above",
+  style: "spectrum", pitch: 3, thick: 1, hue: "#22d3ee", glow: true, additive: true, fullWidth: false, tentative: true,
+  r0: 0, r1: 24, dimPast: true, now: true,
+  whStart: 9, whEnd: 17.5, whDays: [1, 2, 3, 4, 5], lift: 6, tick: 60, major: 240, tickSide: "left", tickLen: 5,
+  res: 5, seed: 7,
+};
+const PRESETS = {
+  "A · spectrum": { style: "spectrum", pitch: 3, thick: 1, glow: true, r0: 0, r1: 24 },
+  "B · bands": { style: "bands", glow: false, r0: 0, r1: 24 },
+  "C · edges": { style: "edges", glow: true, r0: 0, r1: 24 },
+  "D · cropped 6–22": { style: "spectrum", pitch: 2, thick: 1, r0: 6, r1: 22 },
+  "E · strip 14×1": { layout: "14x1", rows: 1, cardW: 1200, style: "spectrum", pitch: 2 },
+};
+let S = { ...DEFAULTS };
+try { Object.assign(S, JSON.parse(localStorage.getItem("calspec") || "{}")); } catch {}
+
+// ---------- fake calendar ----------
+function rng(seed) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+function windowStart() {
+  const d = new Date(); d.setHours(0, 0, 0, 0);
+  if (S.align === "monday") d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+
+// Events as the server would see them after RRULE expansion: minutes from
+// local midnight, k = 0 busy / 1 tentative. Cross-midnight events are split.
+function fakeFortnight() {
+  const r = rng(S.seed), start = windowStart(), days = [];
+  for (let i = 0; i < 14; i++) {
+    const date = new Date(start); date.setDate(start.getDate() + i);
+    const wd = date.getDay(), ev = [], add = (s, e, k = 0) => ev.push({ s, e: Math.min(e, 1440), k });
+    if (wd >= 1 && wd <= 5) {
+      add(570, 585);                                     // standup
+      if (wd === 1) add(600, 660);                       // planning
+      if (wd === 2 || wd === 4) add(840, 870);           // 1:1
+      const n = 2 + Math.floor(r() * 4);
+      for (let j = 0; j < n; j++) {
+        const s = 540 + Math.floor(r() * 16) * 30, d = [25, 30, 30, 45, 60, 90][Math.floor(r() * 6)];
+        add(s, Math.min(s + d, 1080), r() < 0.18 ? 1 : 0);
+      }
+      if (r() < 0.5) add(720, 765);                      // lunch
+      if (r() < 0.25) add(1140, 1260);                   // evening thing
+      if (r() < 0.15) add(450, 480, 1);                  // early tentative
+    } else {
+      if (r() < 0.6) { const s = 600 + 30 * Math.floor(r() * 8); add(s, s + 120); }
+      if (r() < 0.4) add(1080, 1230);
+    }
+    days.push({ date, ev, allDay: 0 });
+  }
+  days[3].allDay = 1; days[4].allDay = 1;                 // two-day conference
+  days[9].allDay = 2;                                     // birthday + holiday
+  days[5].ev.push({ s: 1350, e: 1440, k: 0 });            // red-eye, split at midnight
+  days[6].ev.push({ s: 0, e: 135, k: 0 });
+  for (const d of days) {
+    d.ev = d.ev.map(({ s, e, k }) => ({ s: Math.floor(s / S.res) * S.res, e: Math.ceil(e / S.res) * S.res, k }))
+      .filter((x) => x.e > x.s).sort((a, b) => a.s - b.s || a.e - b.e);
+  }
+  return days;
+}
+
+// ---------- rendering ----------
+const daysEl = document.getElementById("days");
+let model = [];
+
+function rgba(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
+
+function layoutGrid() {
+  const [c, r] = S.layout.split("x").map(Number);
+  const card = document.getElementById("card");
+  card.style.width = S.cardW + "px";
+  card.style.height = S.rows * 180 + (S.rows - 1) * 12 + "px";
+  card.style.setProperty("--accent", S.hue);
+  document.body.style.setProperty("--accent", S.hue);
+  daysEl.style.gridTemplateColumns = `repeat(${c}, minmax(0,1fr))`;
+  daysEl.style.gridTemplateRows = `repeat(${r}, minmax(0,1fr))`;
+  daysEl.style.gap = S.gap + "px";
+}
+
+function build() {
+  model = fakeFortnight();
+  layoutGrid();
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  daysEl.replaceChildren(...model.map((d, i) => {
+    const el = document.createElement("div");
+    const wd = d.date.getDay();
+    el.className = "day" + (d.date.getTime() === today.getTime() ? " today" : "") + (wd === 0 || wd === 6 ? " weekend" : "") + (S.labels === "inside" ? " inside" : "");
+    if (S.labels !== "none") {
+      const l = document.createElement("div"); l.className = "lbl";
+      const name = d.date.toLocaleDateString(undefined, { weekday: "short" });
+      l.innerHTML = `<span><b>${name}</b> ${d.date.getDate()}</span><span>${"•".repeat(d.allDay)}</span>`;
+      el.append(l);
+    }
+    const cv = document.createElement("canvas");
+    cv.dataset.i = i;
+    cv.addEventListener("mousemove", hover); cv.addEventListener("mouseleave", () => (readout.textContent = ""));
+    el.append(cv);
+    return el;
+  }));
+  requestAnimationFrame(drawAll);
+  renderPayload();
+  const out = { ...S }; document.getElementById("settings").value = JSON.stringify(out);
+  try { localStorage.setItem("calspec", JSON.stringify(out)); } catch {}
+}
+
+function drawAll() { for (const cv of daysEl.querySelectorAll("canvas")) drawDay(cv, model[cv.dataset.i]); }
+new ResizeObserver(() => drawAll()).observe(daysEl);
+
+const scratch = document.createElement("canvas"), mask = document.createElement("canvas");
+
+function drawDay(cv, d) {
+  const dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  if (!W || !H) return;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const m0 = S.r0 * 60, m1 = Math.max(S.r1 * 60, m0 + 60), y = (m) => ((m - m0) / (m1 - m0)) * H;
+  const wd = d.date.getDay(), working = S.whDays.includes(wd);
+
+  // Box and working-hours band.
+  g.fillStyle = "#1d1d21"; g.fillRect(0, 0, W, H);
+  if (working) {
+    g.fillStyle = `rgba(255,255,255,${S.lift / 100})`;
+    g.fillRect(0, y(S.whStart * 60), W, y(S.whEnd * 60) - y(S.whStart * 60));
+  }
+
+  // Ticks over the working hours.
+  const left = S.tickSide !== "right", right = S.tickSide !== "left";
+  if (working) {
+    for (let t = Math.ceil((S.whStart * 60) / S.tick) * S.tick; t <= S.whEnd * 60; t += Number(S.tick)) {
+      const yy = Math.round(y(t)) + 0.5, major = t % S.major === 0, len = major ? S.tickLen * 1.8 : S.tickLen;
+      g.strokeStyle = major ? "#a1a1aa" : "#71717a"; g.lineWidth = 1; g.beginPath();
+      if (left) { g.moveTo(0, yy); g.lineTo(len, yy); }
+      if (right) { g.moveTo(W, yy); g.lineTo(W - len, yy); }
+      g.stroke();
+    }
+  }
+
+  // Events onto a scratch layer, then masked/glowed onto the box.
+  const gut = S.fullWidth ? 0 : S.tickLen * 1.8 + 2;
+  const x0 = left ? gut : 0, x1 = W - (right ? gut : 0);
+  scratch.width = cv.width; scratch.height = cv.height;
+  const s = scratch.getContext("2d"); s.setTransform(dpr, 0, 0, dpr, 0, 0);
+  s.globalCompositeOperation = S.additive ? "lighter" : "source-over";
+  for (const e of d.ev) {
+    if (e.k === 1 && !S.tentative) continue;
+    const a = e.k === 1 ? 0.35 : 0.75, top = y(e.s), bot = y(e.e);
+    if (bot < 0 || top > H) continue;
+    if (S.style === "edges") {
+      s.fillStyle = rgba(S.hue, a * 0.25); s.fillRect(x0, top, x1 - x0, bot - top);
+      s.fillStyle = rgba(S.hue, e.k ? 0.5 : 1);
+      s.fillRect(x0, top, x1 - x0, 1.5); s.fillRect(x0, bot - 1.5, x1 - x0, 1.5);
+    } else if (S.style === "bands") {
+      s.fillStyle = rgba(S.hue, a); s.fillRect(x0, top + 0.5, x1 - x0, Math.max(1, bot - top - 1));
+    } else {
+      s.fillStyle = rgba(S.hue, a); s.fillRect(x0, top, x1 - x0, Math.max(S.thick, bot - top));
+    }
+  }
+  if (S.style === "spectrum") {
+    // Keep only every pitch-th row: the scanline look. A short event that
+    // falls between lines still keeps one line, so nothing disappears.
+    // One mask layer, applied once: each destination-in draw clips
+    // everything outside itself, so the lines can't be drawn one by one.
+    mask.width = cv.width; mask.height = cv.height;
+    const mg = mask.getContext("2d"); mg.setTransform(dpr, 0, 0, dpr, 0, 0); mg.fillStyle = "#fff";
+    for (let yy = 0; yy < H; yy += Number(S.pitch)) mg.fillRect(0, yy, W, Number(S.thick));
+    s.setTransform(1, 0, 0, 1, 0, 0);
+    s.globalCompositeOperation = "destination-in"; s.drawImage(mask, 0, 0);
+    s.setTransform(dpr, 0, 0, dpr, 0, 0);
+    s.globalCompositeOperation = "lighter";
+    for (const e of d.ev) {
+      if (e.k === 1 && !S.tentative) continue;
+      const top = y(e.s), bot = y(e.e);
+      if (bot - top < S.pitch) { s.fillStyle = rgba(S.hue, e.k ? 0.35 : 0.75); s.fillRect(x0, Math.round(top), x1 - x0, S.thick); }
+    }
+  }
+  if (S.glow) { g.save(); g.shadowColor = S.hue; g.shadowBlur = 6; g.globalCompositeOperation = "lighter"; }
+  g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(scratch, 0, 0);
+  if (S.glow) g.restore();
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Past, and now.
+  const now = new Date(), today = new Date(now); today.setHours(0, 0, 0, 0);
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  if (S.dimPast) {
+    g.fillStyle = "rgba(24,24,27,0.6)";
+    if (d.date < today) g.fillRect(0, 0, W, H);
+    else if (d.date.getTime() === today.getTime()) g.fillRect(0, 0, W, Math.max(0, Math.min(H, y(nowMin))));
+  }
+  if (S.now && d.date.getTime() === today.getTime() && nowMin >= m0 && nowMin <= m1) {
+    const yy = Math.round(y(nowMin)) + 0.5;
+    g.strokeStyle = "#f87171"; g.lineWidth = 1; g.beginPath(); g.moveTo(0, yy); g.lineTo(W, yy); g.stroke();
+    g.fillStyle = "#f87171"; g.beginPath(); g.moveTo(0, yy - 3); g.lineTo(4, yy); g.lineTo(0, yy + 3); g.fill();
+  }
+  if (S.labels === "none" && d.allDay) {
+    g.fillStyle = S.hue; for (let j = 0; j < d.allDay; j++) { g.beginPath(); g.arc(W - 5 - j * 7, 5, 2, 0, 7); g.fill(); }
+  }
+}
+
+// ---------- hover readout (debug) ----------
+const readout = document.getElementById("readout");
+const hm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+function hover(ev) {
+  const cv = ev.currentTarget, d = model[cv.dataset.i], r = cv.getBoundingClientRect();
+  const m0 = S.r0 * 60, m1 = S.r1 * 60, m = Math.round(m0 + ((ev.clientY - r.top) / r.height) * (m1 - m0));
+  const hits = d.ev.filter((e) => e.s <= m && m < e.e).map((e) => `${hm(e.s)}–${hm(e.e)}${e.k ? " (tentative)" : ""}`);
+  readout.textContent = `${d.date.toDateString()} · ${hm(m)} · ${hits.length ? hits.join(", ") : "free"}`;
+}
+
+// ---------- payload sizes ----------
+const vlen = (v) => { let n = 1; while (v >= 128) { v = Math.floor(v / 128); n++; } return n; };
+const field = (len) => 1 + vlen(len) + len;   // tag + length + bytes
+function renderPayload() {
+  const res = Number(S.res), spans = model.reduce((n, d) => n + d.ev.length, 0);
+  // 1. JSON, readable.
+  const verbose = JSON.stringify({ days: model.map((d) => ({ date: d.date.toISOString().slice(0, 10), allDay: d.allDay, spans: d.ev.map((e) => ({ start: e.s, end: e.e, tentative: !!e.k })) })), workingHours: { start: S.whStart * 60, end: S.whEnd * 60, days: S.whDays } }).length;
+  // 2. Proto, naive: Day{year,month,day,weekday, repeated Span{start,end,kind}, all_day}.
+  let naive = 0;
+  for (const d of model) {
+    let day = 2 + vlen(d.date.getFullYear()) + 2 + 2 + 2 + (d.allDay ? 2 : 0);
+    for (const e of d.ev) day += field(1 + vlen(e.s) + 1 + vlen(e.e) + (e.k ? 2 : 0));
+    naive += field(day);
+  }
+  naive += field(2 + vlen(S.whStart * 60) + 2 + vlen(S.whEnd * 60) + 2 + S.whDays.length) + 2 + 6;
+  // 3. Proto, packed: State{first_day (days since epoch), resolution, repeated Day{packed busy, packed tentative, all_day}}.
+  let packed = 2 + vlen(20000) + 2;
+  for (const d of model) {
+    let day = (d.allDay ? 2 : 0);
+    for (const k of [0, 1]) {
+      let prev = 0, body = 0;
+      for (const e of d.ev.filter((x) => x.k === k)) { body += vlen((e.s - prev) / res) + vlen((e.e - e.s) / res); prev = e.s; }
+      if (body) day += field(body);
+    }
+    packed += field(day);
+  }
+  // 4. Fixed bitmap: 2 bits (free/tentative/busy/double) per slot.
+  const bitmap = 14 * field(Math.ceil(((1440 / res) * 2) / 8)) + 6;
+  const rows = [
+    ["JSON (readable)", verbose],
+    ["Proto, Span messages, minutes", naive],
+    [`Proto, packed deltas, ${res}-min units`, packed],
+    [`Bitmap, 2 bits × ${1440 / res} slots/day`, bitmap],
+  ];
+  const best = Math.min(...rows.map((r) => r[1]));
+  document.getElementById("payload").innerHTML =
+    `<tr><th>Encoding (${spans} spans)</th><th style="text-align:right">bytes</th></tr>` +
+    rows.map(([k, v]) => `<tr class="${v === best ? "best" : ""}"><td>${k}</td><td class="n">${v.toLocaleString()}</td></tr>`).join("");
+}
+
+// ---------- controls ----------
+const panel = document.getElementById("panel");
+function syncInputs() {
+  for (const el of panel.querySelectorAll("[data-k]")) {
+    const v = S[el.dataset.k];
+    if (el.type === "checkbox") el.checked = !!v; else el.value = v;
+  }
+  for (const cb of document.querySelectorAll("#whDays input")) cb.checked = S.whDays.includes(Number(cb.value));
+  for (const b of document.querySelectorAll("#presets button")) if (PRESETS[b.textContent]) b.setAttribute("aria-pressed", String(Object.entries(PRESETS[b.textContent]).every(([k, v]) => S[k] === v)));
+}
+panel.addEventListener("input", (ev) => {
+  const el = ev.target;
+  if (el.closest("#whDays")) S.whDays = [...document.querySelectorAll("#whDays input:checked")].map((c) => Number(c.value));
+  else if (el.dataset.k) {
+    const k = el.dataset.k, def = DEFAULTS[k];
+    S[k] = el.type === "checkbox" ? el.checked : typeof def === "number" ? Number(el.value) : el.value;
+  }
+  syncInputs(); build();
+});
+document.getElementById("whDays").append(...["S", "M", "T", "W", "T", "F", "S"].map((n, i) => {
+  const l = document.createElement("label"); l.innerHTML = `<input type="checkbox" value="${i}">${n}`; return l;
+}));
+document.getElementById("presets").append(...Object.keys(PRESETS).map((name) => {
+  const b = document.createElement("button"); b.textContent = name;
+  b.onclick = () => { Object.assign(S, PRESETS[name]); syncInputs(); build(); };
+  return b;
+}), Object.assign(document.createElement("button"), { textContent: "reset", onclick: () => { S = { ...DEFAULTS }; syncInputs(); build(); } }));
+document.getElementById("copy").onclick = async () => {
+  const t = document.getElementById("settings").value, msg = document.getElementById("copied");
+  try { await navigator.clipboard.writeText(t); msg.textContent = "copied"; } catch { document.getElementById("settings").select(); msg.textContent = "select and copy below"; }
+};
+setInterval(drawAll, 60_000);
+syncInputs(); build();
+</script>
+</body>
+</html>

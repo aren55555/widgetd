@@ -61,3 +61,19 @@ li {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+ul {
+  flex: 1;
+  min-height: 0;
+  position: relative; /* rows' offsetTop is measured from here */
+}
+
+.more {
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--wd-ink-faint, #71717a);
+}
+
+.more:empty {
+  display: none;
+}
