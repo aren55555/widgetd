@@ -18,8 +18,8 @@ generate: install
 # the Go module embeds it, and its users have no JS toolchain)
 client-build:
     cd client && {{mise}} bun x tsc -p .
-    cd client && {{mise}} bun build src/board.ts src/admin.ts --outdir dist --target browser --format esm --minify
-    cp client/src/admin.css client/dist/admin.css
+    cd client && {{mise}} bun build.ts
+    cd client && {{mise}} bun x tailwindcss -i src/admin.css -o dist/admin.css --minify
     touch client/dist/.gitkeep
 
 # Build the example widgets into .wpkg packages (both authoring forms)

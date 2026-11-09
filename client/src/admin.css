@@ -1,35 +1,13 @@
-:root { color-scheme: light dark; font: 16px/1.5 system-ui, sans-serif; }
-body { margin: 0; }
-main { max-width: 28rem; margin: 0 auto; padding: 2rem 1.25rem; }
-h1 { font-size: 1.5rem; margin: 0 0 1rem; }
-h2 { font-size: 1.1rem; margin: 2rem 0 0.5rem; }
-label { display: block; margin: 1rem 0; }
-input { display: block; width: 100%; box-sizing: border-box; margin-top: 0.25rem; padding: 0.6rem; font: inherit; border-radius: 8px; border: 1px solid #8884; }
-button { display: block; width: 100%; padding: 0.8rem; font: inherit; font-weight: 600; border: 0; border-radius: 10px; background: #2563eb; color: #fff; cursor: pointer; }
-button:disabled { opacity: 0.6; }
-.code { font: 600 2rem/1.2 ui-monospace, monospace; letter-spacing: 0.1em; text-align: center; margin: 0.5rem 0; }
-.muted { opacity: 0.65; font-size: 0.9rem; }
-.status { min-height: 1.5em; font-size: 0.9rem; }
-.error { color: #dc2626; }
-.devices { list-style: none; padding: 0; }
-.devices li { padding: 0.75rem 0; border-bottom: 1px solid #8883; }
-select { display: block; width: 100%; box-sizing: border-box; margin-top: 0.25rem; padding: 0.6rem; font: inherit; border-radius: 8px; border: 1px solid #8884; background: transparent; color: inherit; }
-fieldset { margin: 1rem 0; padding: 0.75rem; border: 1px solid #8884; border-radius: 10px; }
-legend { padding: 0 0.25rem; font-weight: 600; }
-.label { display: block; font-size: 0.9rem; font-weight: 600; }
-.check { display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0; }
-.check input { width: auto; margin: 0; }
-.field-error { margin: 0.25rem 0 0; min-height: 0; font-size: 0.85rem; color: #dc2626; }
-.field-error:empty { display: none; }
-input[aria-invalid="true"] { border-color: #dc2626; }
-.row { display: flex; gap: 0.5rem; align-items: flex-start; margin: 0.5rem 0; }
-.row > :first-child { flex: 1; }
-button.small { width: auto; display: inline-block; padding: 0.4rem 0.8rem; font-size: 0.9rem; }
-button.secondary { background: #8883; color: inherit; }
-button.danger, .devices button.danger { background: #dc2626; }
-.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
-.actions button { width: auto; padding: 0.4rem 0.8rem; font-size: 0.9rem; }
-.devices button { width: auto; display: inline-block; margin-top: 0.5rem; padding: 0.4rem 0.8rem; }
-.log { margin: 0.5rem 0 0; padding-left: 1rem; font: 0.8rem/1.4 ui-monospace, monospace; word-break: break-all; }
-.secret { display: flex; flex-direction: column; gap: 0.25rem; }
-.secret .check { margin: 0; font-size: 0.9rem; }
+/* Built by the Tailwind CLI into dist/admin.css (just client-build). Only the
+   admin sources are scanned; the board and widget views don't use it. */
+@import "tailwindcss" source(none);
+@source "./admin.tsx";
+@source "./lib/form.ts";
+@source "./lib/ConfigForm.tsx";
+@source "./lib/ui.ts";
+
+@layer base {
+  html {
+    color-scheme: light dark;
+  }
+}

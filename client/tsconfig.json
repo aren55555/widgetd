@@ -10,7 +10,9 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "skipLibCheck": true,
-    "types": ["bun"]
+    "types": ["bun"],
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js"
   },
   "include": ["src", "../sdk/web/src", "../sdk/web/test", "../examples/*/view/*.ts"]
 }

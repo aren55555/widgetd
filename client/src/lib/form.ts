@@ -4,12 +4,11 @@
 // widgets ship no settings UI at all, and the one a phone shows for a widget
 // installed yesterday works the same as for one built in.
 //
-// The form edits a protobuf-es message object in place. The DOM side is in
-// buildForm; the parsing and naming it relies on are pure, and tested.
+// The form edits a protobuf-es message object in place. The UI is the Solid
+// component in ConfigForm.tsx; the parsing and naming it relies on are here,
+// pure, and tested.
 
-import { create, ScalarType, type DescEnum, type DescField, type DescMessage, type DescOneof, type Message } from "@bufbuild/protobuf";
-import { pathToString } from "@bufbuild/protobuf/reflect";
-import { createValidator } from "@bufbuild/protovalidate";
+import { create, ScalarType, type DescEnum, type DescField } from "@bufbuild/protobuf";
 
 /** "time_zone" → "Time zone". */
 export function humanize(name: string): string {
@@ -69,17 +68,6 @@ export function parseScalar(t: ScalarType, text: string): Parsed {
 /** Field paths the way both validators can agree on: "teams.league", no indexes. */
 export const normalizePath = (p: string) => p.replace(/\[[^\]]*\]/g, "");
 
-// ---- DOM ----
-
-type El = HTMLElement;
-
-function el(tag: string, attrs: Record<string, string> = {}, ...kids: (Node | string)[]): El {
-  const e = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
-  e.append(...kids);
-  return e;
-}
-
 export type FieldChoice = { value: string; label: string };
 
 /** Pick-lists by field path ("team", "location.city"), as the widget offered them. */
@@ -88,113 +76,8 @@ export type Choices = ReadonlyMap<string, readonly FieldChoice[]>;
 /** Write-only fields: which they are, which have a stored value, and which the user asked to remove. */
 export type Secrets = { fields: ReadonlySet<string>; set: ReadonlySet<string>; clear: Set<string> };
 
-type Ctx = {
-  /** Called after any edit. */
-  changed: () => void;
-  choices: Choices;
-  secrets: Secrets;
-  /** Where to show an error for a field path. */
-  errorSlots: Map<string, El>;
-};
-
-/**
- * Render a form for `msg` (a message of `desc`) into `root`. Returns
- * validate(), which checks the message as it now stands and shows each
- * violation beside its field, returning whether it's valid.
- */
-export function buildForm(
-  root: El,
-  desc: DescMessage,
-  msg: Message,
-  onChange: () => void,
-  choices: Choices = new Map(),
-  secrets: Secrets = { fields: new Set(), set: new Set(), clear: new Set() },
-) {
-  const errorSlots = new Map<string, El>();
-  const parseErrors = new Set<string>();
-  const ctx: Ctx = { changed: () => onChange(), errorSlots, choices, secrets };
-  root.replaceChildren(messageFields(desc, msg as unknown as Record<string, unknown>, "", ctx, parseErrors));
-  const validator = createValidator();
-
-  function validate(serverViolations?: { field: string; message: string }[]): boolean {
-    for (const slot of errorSlots.values()) slot.textContent = "";
-    const violations =
-      serverViolations ??
-      (() => {
-        const r = validator.validate(desc, msg as never);
-        return r.kind === "valid" ? [] : r.kind === "invalid" ? r.violations.map((v) => ({ field: pathToString(v.field), message: v.message })) : [{ field: "", message: r.error.message }];
-      })();
-    for (const v of violations) {
-      const slot = errorSlots.get(normalizePath(v.field)) ?? errorSlots.get("");
-      if (slot) slot.textContent = slot.textContent ? `${slot.textContent}; ${v.message}` : v.message;
-    }
-    return violations.length === 0 && parseErrors.size === 0;
-  }
-  return { validate };
-}
-
-function messageFields(desc: DescMessage, obj: Record<string, unknown>, path: string, ctx: Ctx, parseErrors: Set<string>): El {
-  const box = el("div", { class: "fields" });
-  const whole = el("p", { class: "field-error", role: "alert" });
-  ctx.errorSlots.set(path, whole);
-  box.append(whole);
-  const seenOneofs = new Set<DescOneof>();
-  for (const f of desc.fields) {
-    if (f.oneof) {
-      if (seenOneofs.has(f.oneof)) continue;
-      seenOneofs.add(f.oneof);
-      box.append(oneofField(f.oneof, obj, path, ctx, parseErrors));
-      continue;
-    }
-    box.append(field(f, obj, path, ctx, parseErrors));
-  }
-  return box;
-}
-
-const join = (path: string, name: string) => (path ? `${path}.${name}` : name);
-
-function field(f: DescField, obj: Record<string, unknown>, path: string, ctx: Ctx, parseErrors: Set<string>): El {
-  const p = join(path, f.name);
-  const err = el("p", { class: "field-error", role: "alert" });
-  ctx.errorSlots.set(p, err);
-  const label = humanize(f.name);
-  const key = f.localName;
-
-  if (f.fieldKind === "map") {
-    return el("div", { class: "field" }, el("span", { class: "label" }, label), el("p", { class: "muted" }, "Maps can't be edited here yet."));
-  }
-  if (f.fieldKind === "list") {
-    const list = (obj[key] as unknown[]) ?? (obj[key] = []);
-    const rows = el("div", { class: "rows" });
-    const render = () => {
-      rows.replaceChildren();
-      list.forEach((_, i) => {
-        const holder = { v: list[i] } as Record<string, unknown>;
-        const item = itemEditor(f, holder, "v", `${p}`, ctx, parseErrors, () => {
-          list[i] = holder.v;
-        });
-        const remove = el("button", { type: "button", class: "small secondary" }, "Remove");
-        remove.addEventListener("click", () => {
-          list.splice(i, 1);
-          render();
-          ctx.changed();
-        });
-        rows.append(el("div", { class: "row" }, item, remove));
-      });
-    };
-    const add = el("button", { type: "button", class: "small secondary" }, `Add ${label.toLowerCase()}`);
-    add.addEventListener("click", () => {
-      list.push(defaultItem(f));
-      render();
-      ctx.changed();
-    });
-    render();
-    return el("fieldset", { class: "field" }, el("legend", {}, label), rows, add, err);
-  }
-  return el("div", { class: "field" }, itemEditor(f, obj, key, p, ctx, parseErrors, () => {}, label), err);
-}
-
-function defaultItem(f: DescField): unknown {
+/** A new list item: an empty message, the first enum value, or a scalar's zero. */
+export function defaultItem(f: DescField): unknown {
   if (f.fieldKind !== "list") return undefined;
   switch (f.listKind) {
     case "message":
@@ -204,142 +87,6 @@ function defaultItem(f: DescField): unknown {
     default:
       return parseScalar(f.scalar, "").ok ? (parseScalar(f.scalar, "") as { value: unknown }).value : "";
   }
-}
-
-/** One value: a scalar input, an enum select, or a nested message. */
-function itemEditor(
-  f: DescField,
-  holder: Record<string, unknown>,
-  key: string,
-  path: string,
-  ctx: Ctx,
-  parseErrors: Set<string>,
-  commit: () => void,
-  label?: string,
-): El {
-  const kind = f.fieldKind === "list" ? f.listKind : f.fieldKind;
-  const wrap = (input: El) => (label ? el("label", {}, el("span", { class: "label" }, label), input) : input);
-
-  if (kind === "message") {
-    const md = f.message!;
-    let m = holder[key] as Record<string, unknown> | undefined;
-    if (!m) {
-      m = create(md) as unknown as Record<string, unknown>;
-      holder[key] = m;
-      commit();
-    }
-    const inner = messageFields(md, m, path, ctx, parseErrors);
-    return label ? el("fieldset", {}, el("legend", {}, label), inner) : inner;
-  }
-  if (kind === "enum") {
-    const e = f.enum!;
-    const sel = el("select") as HTMLSelectElement;
-    for (const v of e.values) {
-      const o = el("option", { value: String(v.number) }, v.number === 0 ? `(${enumLabel(e, v.name).toLowerCase() || "default"})` : enumLabel(e, v.name)) as HTMLOptionElement;
-      if (holder[key] === v.number) o.selected = true;
-      sel.append(o);
-    }
-    sel.addEventListener("change", () => {
-      holder[key] = Number(sel.value);
-      commit();
-      ctx.changed();
-    });
-    return wrap(sel);
-  }
-  const t = f.scalar!;
-  if (t === ScalarType.BOOL) {
-    const box = el("input", { type: "checkbox" }) as HTMLInputElement;
-    box.checked = holder[key] === true;
-    box.addEventListener("change", () => {
-      holder[key] = box.checked;
-      commit();
-      ctx.changed();
-    });
-    return label ? el("label", { class: "check" }, box, el("span", { class: "label" }, label)) : box;
-  }
-  if (t === ScalarType.BYTES) {
-    return wrap(el("p", { class: "muted" }, "Can't be edited here."));
-  }
-  if (t === ScalarType.STRING && ctx.secrets.fields.has(path)) return wrap(secretInput(path, holder, key, commit, ctx));
-  const picks = t === ScalarType.STRING ? ctx.choices.get(path) : undefined;
-  if (picks) return wrap(choiceSelect(picks, holder, key, commit, ctx));
-  const numeric = t !== ScalarType.STRING;
-  const input = el("input", { type: "text", inputmode: numeric ? "decimal" : "text", autocomplete: "off" }) as HTMLInputElement;
-  input.value = holder[key] === undefined ? "" : String(holder[key]);
-  input.addEventListener("input", () => {
-    const r = parseScalar(t, input.value);
-    if (r.ok) {
-      holder[key] = r.value;
-      parseErrors.delete(path);
-      input.removeAttribute("aria-invalid");
-      commit();
-    } else {
-      parseErrors.add(path);
-      input.setAttribute("aria-invalid", "true");
-      const slot = ctx.errorSlots.get(path);
-      if (slot) slot.textContent = r.error;
-    }
-    ctx.changed();
-  });
-  return wrap(input);
-}
-
-/** A oneof: pick which field is set, then edit it. */
-function oneofField(o: DescOneof, obj: Record<string, unknown>, path: string, ctx: Ctx, parseErrors: Set<string>): El {
-  const p = join(path, o.name);
-  const err = el("p", { class: "field-error", role: "alert" });
-  ctx.errorSlots.set(p, err);
-  const cur = obj[o.localName] as { case?: string; value?: unknown } | undefined;
-  const sel = el("select") as HTMLSelectElement;
-  sel.append(el("option", { value: "" }, "(none)"));
-  for (const f of o.fields) {
-    const opt = el("option", { value: f.localName }, humanize(f.name)) as HTMLOptionElement;
-    if (cur?.case === f.localName) opt.selected = true;
-    sel.append(opt);
-  }
-  const body = el("div");
-  const render = () => {
-    body.replaceChildren();
-    const c = obj[o.localName] as { case?: string; value?: unknown };
-    const f = o.fields.find((x) => x.localName === c?.case);
-    if (!f) return;
-    const holder = c as Record<string, unknown>;
-    body.append(itemEditor(f, holder, "value", join(path, f.name), ctx, parseErrors, () => {}));
-  };
-  sel.addEventListener("change", () => {
-    const f = o.fields.find((x) => x.localName === sel.value);
-    if (!f) obj[o.localName] = { case: undefined };
-    else {
-      const v = f.fieldKind === "message" ? create(f.message) : f.fieldKind === "enum" ? 0 : (parseScalar(f.scalar!, "") as { value: unknown }).value ?? "";
-      obj[o.localName] = { case: f.localName, value: v };
-    }
-    render();
-    ctx.changed();
-  });
-  render();
-  return el("fieldset", { class: "field" }, el("legend", {}, humanize(o.name)), sel, body, err);
-}
-
-/**
- * A pick-list for a string field the widget offered choices for. A saved
- * value that isn't on the list stays selectable, so opening the form never
- * changes a setting by itself.
- */
-function choiceSelect(picks: readonly FieldChoice[], holder: Record<string, unknown>, key: string, commit: () => void, ctx: Ctx): El {
-  const sel = el("select") as HTMLSelectElement;
-  const current = String(holder[key] ?? "");
-  sel.append(el("option", { value: "" }, "(choose)"));
-  for (const opt of choiceOptions(picks, current)) {
-    const o = el("option", { value: opt.value }, opt.label) as HTMLOptionElement;
-    o.selected = opt.value === current;
-    sel.append(o);
-  }
-  sel.addEventListener("change", () => {
-    holder[key] = sel.value;
-    commit();
-    ctx.changed();
-  });
-  return sel;
 }
 
 /** The options a pick-list shows: the widget's, plus the current value if it's not among them. */
@@ -357,32 +104,4 @@ export function sameChoices(a: Choices, b: Choices): boolean {
     if (!w || w.length !== v.length || v.some((c, i) => c.value !== w[i]!.value || c.label !== w[i]!.label)) return false;
   }
   return true;
-}
-
-/**
- * A write-only field. It starts blank (the stored value is never sent to
- * the phone); blank keeps what's stored, typing replaces it, and "Remove"
- * deletes it.
- */
-function secretInput(path: string, holder: Record<string, unknown>, key: string, commit: () => void, ctx: Ctx): El {
-  const stored = ctx.secrets.set.has(path);
-  const input = el("input", { type: "password", autocomplete: "new-password", placeholder: stored ? "Stored. Leave blank to keep it." : "Not set" }) as HTMLInputElement;
-  input.addEventListener("input", () => {
-    holder[key] = input.value;
-    if (input.value) ctx.secrets.clear.delete(path);
-    commit();
-    ctx.changed();
-  });
-  if (!stored) return input;
-  const box = el("input", { type: "checkbox" }) as HTMLInputElement;
-  box.addEventListener("change", () => {
-    if (box.checked) {
-      ctx.secrets.clear.add(path);
-      input.value = "";
-      holder[key] = "";
-    } else ctx.secrets.clear.delete(path);
-    input.disabled = box.checked;
-    ctx.changed();
-  });
-  return el("div", { class: "secret" }, input, el("label", { class: "check" }, box, el("span", {}, "Remove")));
 }
