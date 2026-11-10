@@ -1,6 +1,6 @@
 # Board options and display preferences: plan
 
-Status: planned, not started. The first milestone of [the display app plan](mobile-app.md). It is useful without the app, because every option works the same in a plain browser.
+Status: done. The first milestone of [the display app plan](mobile-app.md). It is useful without the app, because every option works the same in a plain browser.
 
 ## Context
 A screen needs a few per-screen settings: how many columns to use, when to say it's offline, and which units, time zone and clock to show. We want them:
@@ -53,7 +53,9 @@ message Preferences {
 - Precedence: URL > element attribute > default.
 - `client/src/lib/options.fixture.json` holds `{o, json}` pairs (`json` is protojson). The TS tests check against it now, and the Dart tests will later, so the encodings can't drift.
 
-## Detecting defaults on the display (`client/src/lib/prefs.ts`, new)
+## Detecting defaults on the display (`sdk/web/src/prefs.ts`)
+As built, `resolvePrefs` lives in the web SDK (`@widgetd/sdk/prefs`), not in `client/`: the SDK runs the same detection when an older board sends no prefs, and the SDK can't import from the client. `client/src/lib/prefs.ts` holds the board-only parts (the modal's rows and the offline badge's text).
+
 `resolvePrefs(partial, env)` is a pure function. `env` is `{language, timeZone}`, so tests don't need a browser. It returns every field filled in, together with each field's **source**: `set` (from the URL), `detected` (with the evidence), or `default`.
 
 It follows the ICU/CLDR convention used by `Intl`, iOS and Android:

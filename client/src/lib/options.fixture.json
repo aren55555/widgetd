@@ -1,0 +1,42 @@
+[
+  {
+    "o": "CAMSAgg8",
+    "json": {
+      "cols": 3,
+      "staleAfter": "60s"
+    }
+  },
+  {
+    "o": "CAI",
+    "json": {
+      "cols": 2
+    }
+  },
+  {
+    "o": "GhwKBWVuLUNBEg9BbWVyaWNhL1Rvcm9udG8YAiAB",
+    "json": {
+      "prefs": {
+        "locale": "en-CA",
+        "timeZone": "America/Toronto",
+        "hourCycle": "HOUR_CYCLE_H24",
+        "temperature": "TEMPERATURE_UNIT_CELSIUS"
+      }
+    }
+  },
+  {
+    "o": "CAYSAwisAhogCgVlbi1HQhINRXVyb3BlL0xvbmRvbhgBIAIoAzACOAI",
+    "json": {
+      "cols": 6,
+      "staleAfter": "300s",
+      "prefs": {
+        "locale": "en-GB",
+        "timeZone": "Europe/London",
+        "hourCycle": "HOUR_CYCLE_H12",
+        "temperature": "TEMPERATURE_UNIT_FAHRENHEIT",
+        "speed": "SPEED_UNIT_MPS",
+        "mass": "MASS_UNIT_LB",
+        "distance": "DISTANCE_UNIT_MI"
+      }
+    }
+  }
+]

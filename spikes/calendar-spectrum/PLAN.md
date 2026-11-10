@@ -32,17 +32,25 @@ has **no auth code at all**.
    - Config: `calendars` (ids, default `primary`), working hours, detail
      level. Calendar ids are typed in for v1; a pick-list via `WithChoices`
      needs `calendarList`, i.e. the broader `calendar.readonly`.
-   - Run: `GET calendars/{id}` once for `timeZone`, then poll
-     `calendars/{id}/events?singleEvents=true&orderBy=startTime&timeMin&timeMax`
-     for the fortnight (Google expands recurrences). Split at local midnight
-     with `time.LoadLocation`, which under wasip1 needs `import _
-     "time/tzdata"`. Snapshot on change (`proto.Equal`) and at midnight.
+   - Run: poll `calendars/{id}/events?singleEvents=true&orderBy=startTime`
+     over a 24-day UTC window: `floor_utc_day(now) − 8d` to `+ 16d`. That covers
+     "this Sunday + 14 days" in any display zone (±14 h), and only moves once
+     a day. Snapshot on change (`proto.Equal`). **No time zones and no
+     midnight logic on the server** (no `time/tzdata` in the WASM): per
+     `docs/board-options.md`, `Run` is shared by every screen and never sees
+     prefs; payloads carry UTC and the view converts.
    - Errors: 401 is handled by the host (account lapses, instance waits);
      `*widget.ScopeError` means a scope is missing from `[[uses]]`.
-   - Table tests against fixture JSON (all-day, cross-midnight, DST,
-     declined, tentative, overlaps).
+   - Table tests against fixture JSON (all-day, declined, tentative,
+     overlaps, window edges).
 3. **Widget view:** port `<cal-day>`, `<cal-detail>` and `<cal-event>` and
-   their defaults; layout and timing as pure functions with bun tests.
+   their defaults; layout and timing as pure functions with bun tests. Days,
+   the Sunday-aligned window, midnight rollover, "now", and every time and
+   date label come from `ctx.prefs` (time_zone, locale, hour_cycle: "9a" vs
+   "09"). DST days are 23 or 25 h; test them in the view.
+   Depends on board options' `ctx.prefs`. Until it lands, read the same
+   shape from a local `detectPrefs()` (Intl), the fallback the SDK will use
+   anyway, and swap to `ctx.prefs` after.
 
 ## Agreed behaviour (summary)
 
@@ -62,19 +70,21 @@ has **no auth code at all**.
 ## API draft
 
 ```proto
+// Everything in UTC; the view cuts it into days in the display's zone.
 message State {
-  int32 first_day = 1;             // days since epoch; a Sunday
-  sint32 utc_offset_minutes = 2;   // the calendar's zone
-  uint32 resolution_minutes = 3;   // 5
-  WorkingHours working_hours = 4;
-  DetailLevel detail = 5;          // BUSY | TITLES | FULL (config)
-  repeated Day days = 6;           // 14
+  int64 window_start = 1;          // unix seconds, a UTC midnight
+  uint32 resolution_minutes = 2;   // 5
+  WorkingHours working_hours = 3;  // wall clock, applied in the display's zone
+  DetailLevel detail = 4;          // BUSY | TITLES | FULL (config)
+  repeated uint32 busy = 5;        // packed [start − prev start, duration], units from window_start
+  repeated uint32 tentative = 6;
+  repeated AllDay all_day = 7;
+  repeated Event events = 8;       // busy then tentative, span order; empty at BUSY
 }
-message Day {
-  repeated uint32 busy = 1;        // packed [start − prev start, duration]
-  repeated uint32 tentative = 2;
-  repeated string all_day = 3;
-  repeated Event events = 4;       // span order; empty at BUSY
+message AllDay {                   // dates, not instants: zone-free
+  int32 first_day = 1;             // days since epoch
+  uint32 days = 2;
+  string title = 3;
 }
 message Event {
   string title = 1;
@@ -86,6 +96,7 @@ message Event {
 ```
 
 Sizes for the fake fortnight: busy ≈ 0.2 KB, titles ≈ 1.2 KB, full ≈ 12 KB.
+The UTC window is 24 days (the past days of this week are kept for the dimmed past), so expect about 1.7× that.
 
 ## Open questions
 
@@ -93,5 +104,9 @@ Sizes for the fake fortnight: busy ≈ 0.2 KB, titles ≈ 1.2 KB, full ≈ 12 KB
   instances. One merged card across two Google accounts isn't possible
   without a host change.
 - Default detail level: suggested TITLES, FULL opt-in.
+- Working hours are config (per instance, shared by screens) but applied in
+  each display's zone. Fine while the display and the calendar share a zone.
+- Event colours stay in the view for now; board options' theming TODO may
+  supply them later as CSS custom properties.
 - Event fields map from the API: summary, location, hangoutLink /
   conferenceData, organizer, description, attendees[] (responseStatus, self).

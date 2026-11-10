@@ -1,6 +1,6 @@
 # widgetd display app (Flutter): plan
 
-Status: planned, not started. Milestone 1 has its own plan: [board-options.md](board-options.md).
+Status: planned, not started. Milestone 1 (done) has its own plan: [board-options.md](board-options.md).
 
 ## Context
 We want a Flutter app on the Play Store and App Store, for phones and tablets, that acts as one more widgetd display. The app keeps a list of "sessions". Opening one shows the board page full screen in a WebView.

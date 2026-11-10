@@ -27,6 +27,12 @@ export type ToFrame =
       stored?: { state: Uint8Array; cursor: Cursor };
       /** The card's typed local value, if it saved one: its type name and bytes. */
       local?: Local;
+      /**
+       * The screen's resolved display preferences: a binary
+       * widgetd.v1.Preferences. Older boards send none; the SDK then detects
+       * them itself.
+       */
+      prefs?: Uint8Array;
     }
   | { t: "snapshot"; typeUrl: string; value: Uint8Array; cursor: Cursor }
   | { t: "delta"; typeUrl: string; value: Uint8Array; cursor: Cursor }

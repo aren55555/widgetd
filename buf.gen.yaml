@@ -7,7 +7,16 @@ plugins:
     out: gen
     opt: paths=source_relative
   # Run through bun explicitly: the plugin's shebang is `#!/usr/bin/env node`.
+  # buf/validate is included so board_pb.ts's import resolves.
   - local: [bun, client/node_modules/.bin/protoc-gen-es]
     out: client/src/gen
+    include_imports: true
+    opt:
+      - target=ts
+  # Only Preferences for the web SDK (ctx.prefs): it has no imports.
+  - local: [bun, client/node_modules/.bin/protoc-gen-es]
+    out: sdk/web/src/gen
+    types:
+      - widgetd.v1.Preferences
     opt:
       - target=ts

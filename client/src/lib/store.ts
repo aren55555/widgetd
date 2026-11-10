@@ -2,7 +2,8 @@
 // last state its view accepted and the cursor it was accepted at (so the
 // next visit draws instantly and asks the server only for what changed), and
 // a small space the view can use for its own preferences: string keys, and
-// one typed local value kept as its type name next to its bytes.
+// one typed local value kept as its type name next to its bytes. Also, for the
+// whole screen, when it last heard from the server (the offline badge).
 //
 // Each card's entries are namespaced by card id. Its state is tagged with the
 // widget build's digest and state type, so a new build of a widget never
@@ -23,6 +24,9 @@ export type KVBackend = Pick<Storage, "getItem" | "setItem" | "removeItem" | "ke
 
 /** Characters a card's preferences (keys, values and local value) may hold. */
 export const VIEW_QUOTA = 64 * 1024;
+
+/** How often, at most, `markLive` writes. */
+export const LIVE_EVERY = 10_000;
 
 const b64 = (b: Uint8Array) => {
   let s = "";
@@ -136,6 +140,32 @@ export class CardStore {
     }
     if (this.used(cardId, k) + key.length + value.length > VIEW_QUOTA) throw new Error(`storage quota of ${VIEW_QUOTA} bytes exceeded`);
     this.ls.setItem(k, value);
+  }
+
+  /** When this screen last heard from the server (ms since the epoch), as of the last write. */
+  lastLive(): number | undefined {
+    const v = Number(this.ls.getItem(this.liveKey));
+    return v > 0 ? v : undefined;
+  }
+
+  /**
+   * Note that the stream is live at `now`. Written at most once every
+   * LIVE_EVERY ms, so keepalives don't wear on storage; the offline badge
+   * only needs to be about right.
+   */
+  markLive(now: number): void {
+    if (now - this.liveWritten < LIVE_EVERY) return;
+    this.liveWritten = now;
+    try {
+      this.ls.setItem(this.liveKey, String(now));
+    } catch {
+      /* quota exceeded */
+    }
+  }
+
+  private liveWritten = -Infinity;
+  private get liveKey() {
+    return `${this.prefix}lastLive`;
   }
 
   private keys(): string[] {

@@ -7,9 +7,19 @@
 import { create, toBinary, fromBinary, type DescMessage, type Message, type MessageShape } from "@bufbuild/protobuf";
 import type { Cursor, FromFrame, Local as LocalBytes, ToFrame } from "./bridge.ts";
 import { decodeChecked, typeUrlOf, validated } from "./checks.ts";
+import { browserEnv, PreferencesSchema, resolvePrefs, type DisplayPrefs } from "./prefs.ts";
 
 export { decodeChecked, validated, typeUrlOf } from "./checks.ts";
 export type { Cursor } from "./bridge.ts";
+export {
+  DistanceUnit,
+  HourCycle,
+  MassUnit,
+  SpeedUnit,
+  TemperatureUnit,
+  type DisplayPrefs,
+  type Preferences,
+} from "./prefs.ts";
 
 export type WidgetStorage = {
   /** A value this card stored earlier, e.g. a chosen zoom level. */
@@ -44,6 +54,12 @@ export type WidgetContext<L = never> = {
   storage: WidgetStorage;
   /** The typed local value. Only usable when the widget declares a `local` type. */
   local: Local<L>;
+  /**
+   * How this screen shows times and quantities: locale, time zone, clock
+   * and units, each set by the screen's URL or detected on the display.
+   * Payloads carry canonical units (°C, m/s, kg, m, UTC); convert with these.
+   */
+  readonly prefs: DisplayPrefs;
   /**
    * Send the widget's server half something the viewer did (a tap, a
    * choice). The message must be the widget's `action` type; it is checked
@@ -85,6 +101,7 @@ export class CardCore<SD extends DescMessage, DD extends DescMessage, LD extends
   private localValue: MessageShape<LD> | undefined;
   /** The card's typed local value, as `ctx.local`. */
   readonly local: Local<MessageShape<LD>>;
+  private resolvedPrefs: DisplayPrefs | undefined;
 
   /**
    * `persist` asks the board to keep (or with null, forget) the local
@@ -93,7 +110,7 @@ export class CardCore<SD extends DescMessage, DD extends DescMessage, LD extends
   constructor(
     private def: WidgetDef<SD, DD, LD>,
     private send: (m: FromFrame) => void,
-    private makeView: (local: Local<MessageShape<LD>>) => View<MessageShape<SD>, MessageShape<DD>>,
+    private makeView: (local: Local<MessageShape<LD>>, prefs: DisplayPrefs) => View<MessageShape<SD>, MessageShape<DD>>,
     private persist: (local: LocalBytes | null) => Promise<void> = async () => {},
   ) {
     const core = this;
@@ -131,6 +148,11 @@ export class CardCore<SD extends DescMessage, DD extends DescMessage, LD extends
     return this.state;
   }
 
+  /** The display preferences, as `ctx.prefs`. Set at `init`. */
+  get prefs(): DisplayPrefs | undefined {
+    return this.resolvedPrefs;
+  }
+
   handle(m: ToFrame): void {
     switch (m.t) {
       case "init":
@@ -166,7 +188,8 @@ export class CardCore<SD extends DescMessage, DD extends DescMessage, LD extends
       return this.fault(`card sends deltas of ${m.deltaType || "nothing"}, view expects ${this.def.delta?.typeName ?? "none"}`);
     }
     if (this.def.local) this.localValue = loadLocal(this.def.local, m.local);
-    this.view = this.makeView(this.local);
+    this.resolvedPrefs = decodePrefs(m.prefs);
+    this.view = this.makeView(this.local, this.resolvedPrefs);
     if (m.stored) {
       // Stored state was checked when it was accepted, but storage is outside
       // our control, so check it again; if it fails, just wait for the server.
@@ -210,6 +233,23 @@ function loadLocal<Desc extends DescMessage>(schema: Desc, saved: LocalBytes | u
     }
   }
   return create(schema);
+}
+
+/**
+ * The board's resolved preferences, with anything missing detected here. An
+ * older board sends none, and bytes that don't decode are ignored, so this
+ * one path always gives every field.
+ */
+function decodePrefs(bytes: Uint8Array | undefined): DisplayPrefs {
+  let sent;
+  if (bytes instanceof Uint8Array) {
+    try {
+      sent = fromBinary(PreferencesSchema, bytes);
+    } catch {
+      /* detect instead */
+    }
+  }
+  return resolvePrefs(sent, browserEnv()).prefs;
 }
 
 /** A deep copy, so `apply` can mutate freely without touching kept state. */
@@ -271,7 +311,7 @@ function start<SD extends DescMessage, DD extends DescMessage, LD extends DescMe
     const r = await call({ t: "local-set", local });
     if (r.error) throw new Error(r.error);
   };
-  const core = new CardCore(def, send, (local) => def.mount({ cardId, root, storage, act, local }), persist);
+  const core = new CardCore(def, send, (local, prefs) => def.mount({ cardId, root, storage, act, local, prefs }), persist);
 
   const applyTheme = (theme: Record<string, string>) => {
     for (const [k, v] of Object.entries(theme)) {

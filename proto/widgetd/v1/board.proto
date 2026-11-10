@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package widgetd.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
+import "widgetd/v1/prefs.proto";
+
+option go_package = "github.com/aren55555/widgetd/gen/widgetd/v1;widgetdv1";
+
+// BoardOptions are a screen's settings, passed to the board page like
+// function arguments: `?o=` + unpadded base64url of the binary message.
+// Fields left unset are not written, so an empty message means no `o`.
+// A value that doesn't decode or breaks a rule is ignored as a whole.
+message BoardOptions {
+  // Maximum grid columns. Unset: the element's cols attribute, otherwise 4.
+  optional uint32 cols = 1 [(buf.validate.field).uint32 = {
+    gte: 1
+    lte: 12
+  }];
+  // How long the stream may be down before the offline badge shows. Unset: 30 s.
+  google.protobuf.Duration stale_after = 2 [(buf.validate.field).duration.gte = {seconds: 5}];
+  Preferences prefs = 3;
+  // TODO: theming (a Theme message carrying THEME_TOKENS, applied as CSS
+  // custom properties on the board), and gap, row_height, padding,
+  // hide_add_tile, hide_titles. Until then these come from the hosting page
+  // and STYLE in board.ts.
+}

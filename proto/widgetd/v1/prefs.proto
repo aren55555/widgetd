@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package widgetd.v1;
+
+option go_package = "github.com/aren55555/widgetd/gen/widgetd/v1;widgetdv1";
+
+// Preferences says how a screen shows times and quantities. It is part of a
+// screen's BoardOptions, and the board hands the resolved value to every
+// card as ctx.prefs. It is its own file because it is also generated into
+// the web SDK.
+//
+// Unset or *_UNSPECIFIED means: detect on the display.
+message Preferences {
+  // BCP 47, e.g. "en-CA".
+  optional string locale = 1;
+  // IANA, e.g. "America/Toronto".
+  optional string time_zone = 2;
+  HourCycle hour_cycle = 3;
+  TemperatureUnit temperature = 4;
+  SpeedUnit speed = 5;
+  MassUnit mass = 6;
+  DistanceUnit distance = 7;
+}
+
+enum HourCycle {
+  HOUR_CYCLE_UNSPECIFIED = 0;
+  HOUR_CYCLE_H12 = 1;
+  HOUR_CYCLE_H24 = 2;
+}
+
+enum TemperatureUnit {
+  TEMPERATURE_UNIT_UNSPECIFIED = 0;
+  TEMPERATURE_UNIT_CELSIUS = 1;
+  TEMPERATURE_UNIT_FAHRENHEIT = 2;
+}
+
+enum SpeedUnit {
+  SPEED_UNIT_UNSPECIFIED = 0;
+  SPEED_UNIT_KPH = 1;
+  SPEED_UNIT_MPH = 2;
+  SPEED_UNIT_MPS = 3;
+}
+
+enum MassUnit {
+  MASS_UNIT_UNSPECIFIED = 0;
+  MASS_UNIT_KG = 1;
+  MASS_UNIT_LB = 2;
+}
+
+enum DistanceUnit {
+  DISTANCE_UNIT_UNSPECIFIED = 0;
+  DISTANCE_UNIT_KM = 1;
+  DISTANCE_UNIT_MI = 2;
+}

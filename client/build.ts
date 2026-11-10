@@ -11,6 +11,8 @@ import solid from "babel-preset-solid";
 import typescript from "@babel/preset-typescript";
 import type { BunPlugin } from "bun";
 
+import pkg from "./package.json" with { type: "json" };
+
 const solidJSX: BunPlugin = {
   name: "solid-jsx",
   setup(build) {
@@ -35,6 +37,8 @@ const result = await Bun.build({
   format: "esm",
   minify: true,
   plugins: [solidJSX],
+  // The settings modal shows it as the board version.
+  define: { __BOARD_VERSION__: JSON.stringify(pkg.version) },
 });
 if (!result.success) {
   for (const log of result.logs) console.error(log);

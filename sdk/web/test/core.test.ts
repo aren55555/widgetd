@@ -4,6 +4,7 @@ import { create, toBinary, type MessageInitShape } from "@bufbuild/protobuf";
 import { CardCore, defineWidget, typeUrlOf, type WidgetDef } from "../src/index.ts";
 import { decodeChecked } from "../src/checks.ts";
 import type { FromFrame, Local as LocalBytes } from "../src/bridge.ts";
+import { HourCycle, PreferencesSchema, SpeedUnit, TemperatureUnit, type DisplayPrefs } from "../src/prefs.ts";
 import {
   ActionSchema,
   ConfigSchema,
@@ -203,5 +204,38 @@ describe("typed local value", () => {
     const core = new CardCore(def, () => {}, () => def.mount({} as never));
     expect(() => core.local.value).toThrow("declares no local type");
     await expect(core.local.set(create(StateSchema, {}))).rejects.toThrow("declares no local type");
+  });
+});
+
+describe("display preferences", () => {
+  const init = (prefs?: Uint8Array) => {
+    let seen: DisplayPrefs | undefined;
+    const def = defineWidget({ state: StateSchema, mount: () => ({ update: () => {} }) });
+    const core = new CardCore(def, () => {}, (_local, prefs) => {
+      seen = prefs;
+      return def.mount({} as never);
+    });
+    core.handle({ t: "init", cardId: "a/b", stateType: "testwidget.v1.State", deltaType: "", theme: {}, prefs });
+    return { core, seen };
+  };
+
+  test("the board's prefs reach mount, filled in", () => {
+    const sent = create(PreferencesSchema, { locale: "en-GB", timeZone: "Asia/Tokyo", speed: SpeedUnit.MPS });
+    const { core, seen } = init(toBinary(PreferencesSchema, sent));
+    expect(seen).toMatchObject({ locale: "en-GB", timeZone: "Asia/Tokyo", speed: SpeedUnit.MPS, hourCycle: HourCycle.H24 });
+    expect(core.prefs).toBe(seen!);
+  });
+
+  test("an older board sends none: detected here", () => {
+    const { seen } = init();
+    expect(seen?.locale).toBeString();
+    expect(seen?.timeZone).toBeString();
+    expect(seen?.hourCycle).not.toBe(HourCycle.UNSPECIFIED);
+    expect(seen?.temperature).not.toBe(TemperatureUnit.UNSPECIFIED);
+  });
+
+  test("bytes that don't decode: detected here", () => {
+    const { seen } = init(new Uint8Array([0xff, 0xff]));
+    expect(seen?.speed).not.toBe(SpeedUnit.UNSPECIFIED);
   });
 });

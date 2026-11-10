@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./bridge": "./src/bridge.ts",
-    "./checks": "./src/checks.ts"
+    "./checks": "./src/checks.ts",
+    "./prefs": "./src/prefs.ts"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.14.1",

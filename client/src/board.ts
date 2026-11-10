@@ -10,11 +10,15 @@
 //   api    origin of the widgetd server (default: this page's origin)
 //   cols   maximum grid columns (default 4)
 //
+// Options: the page URL's `?o=` carries a widgetd.v1.BoardOptions (see
+// lib/options.ts): columns (over the attribute), when to show the offline
+// badge, and display preferences, which every card gets as ctx.prefs.
+//
 // Theme: set any of THEME_TOKENS as CSS custom properties on the element.
 
 import { Code, ConnectError, createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
-import { create } from "@bufbuild/protobuf";
+import { create, toBinary } from "@bufbuild/protobuf";
 import { renderSVG } from "uqr";
 import { THEME_TOKENS, type FromFrame, type ToFrame } from "@widgetd/sdk/bridge";
 
@@ -31,9 +35,15 @@ import {
 import { CardStore } from "./lib/store.ts";
 import { deltaFollows, gridSpan, instanceOf, placeholderFor, staleCards, toBridgeCursor, usableStored } from "./lib/sync.ts";
 import type { Cursor } from "@widgetd/sdk/bridge";
+import { browserEnv, PreferencesSchema, resolvePrefs, toMessage, type ResolvedPrefs } from "@widgetd/sdk/prefs";
+import { readBoardOptions, resolveLayout, type Layout } from "./lib/options.ts";
+import { appVersion, layoutRows, offlineText, prefsRows, type Row } from "./lib/prefs.ts";
+
+/** The client package's version, stamped in by build.ts. */
+declare const __BOARD_VERSION__: string;
 
 const STYLE = `
-:host { display: block; font-family: var(--wd-font-sans, system-ui, sans-serif); color: var(--wd-ink, #e5e7eb); }
+:host { display: block; position: relative; font-family: var(--wd-font-sans, system-ui, sans-serif); color: var(--wd-ink, #e5e7eb); }
 .grid { display: grid; gap: 12px; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-rows: 180px; }
 .card { position: relative; display: flex; flex-direction: column; min-width: 0; border-radius: var(--wd-radius, 10px);
   border: 1px solid var(--wd-edge, #27272a); background: var(--wd-surface, #18181b); overflow: hidden; }
@@ -48,7 +58,25 @@ const STYLE = `
 .qr { width: 200px; height: 200px; padding: 10px; background: #fff; border-radius: 8px; }
 .qr svg { width: 100%; height: 100%; display: block; }
 .code { font: 600 22px/28px var(--wd-font-mono, ui-monospace, monospace); letter-spacing: 0.1em; color: var(--wd-ink, #e5e7eb); }
-.status { font-size: 12px; color: var(--wd-ink-faint, #71717a); }
+.offline { position: absolute; right: 8px; bottom: 8px; z-index: 4; padding: 2px 10px; border-radius: 999px; font: 12px/18px var(--wd-font-mono, monospace);
+  background: color-mix(in oklab, var(--wd-warn, #f59e0b) 20%, var(--wd-surface, #18181b)); color: var(--wd-warn, #f59e0b); cursor: help; }
+.footer { display: flex; justify-content: flex-end; padding-top: 8px; }
+.icon { display: inline-flex; align-items: center; justify-content: center; padding: 4px; border: 0; border-radius: 6px; background: none;
+  cursor: pointer; color: var(--wd-ink-faint, #71717a); }
+.icon:hover, .icon:focus-visible { color: var(--wd-ink, #e5e7eb); }
+.icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+dialog { width: min(440px, calc(100vw - 32px)); max-height: calc(100vh - 32px); box-sizing: border-box; padding: 0; overflow: auto;
+  border: 1px solid var(--wd-edge, #27272a); border-radius: var(--wd-radius, 10px); background: var(--wd-surface, #18181b); color: var(--wd-ink, #e5e7eb);
+  font: 13px/18px var(--wd-font-mono, ui-monospace, monospace); }
+dialog::backdrop { background: rgb(0 0 0 / 0.6); }
+dialog header { display: flex; align-items: center; gap: 4px; padding: 10px 10px 4px 16px; }
+dialog header h2 { flex: 1; margin: 0; font: 600 14px/20px var(--wd-font-sans, system-ui, sans-serif); }
+dialog section { padding: 4px 16px 12px; }
+dialog h3 { margin: 8px 0 4px; font: 500 11px/16px var(--wd-font-mono, monospace); letter-spacing: 0.05em; text-transform: uppercase; color: var(--wd-ink-faint, #71717a); }
+dialog dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0; }
+dialog dt { color: var(--wd-ink-muted, #a1a1aa); }
+dialog dd { margin: 0; text-align: right; }
+dialog dd small { display: block; font-size: 11px; color: var(--wd-ink-faint, #71717a); }
 .warn { position: absolute; right: 8px; bottom: 6px; z-index: 2; padding: 1px 6px; border-radius: 999px; font: 11px/16px var(--wd-font-mono, monospace);
   background: color-mix(in oklab, var(--wd-warn, #f59e0b) 20%, transparent); color: var(--wd-warn, #f59e0b); cursor: help; }
 .gear { position: absolute; right: 6px; top: 4px; z-index: 2; padding: 0 4px; border: 0; background: none; cursor: pointer;
@@ -82,6 +110,25 @@ const STYLE = `
 .overlay .close { position: absolute; right: 6px; top: 4px; border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--wd-ink-faint, #71717a); }
 `;
 
+// Lucide icons (settings, pencil, x), inline: the board has no icon set.
+const ICONS = {
+  settings:
+    '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
+  pencil:
+    '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+};
+
+function iconButton(icon: keyof typeof ICONS, label: string, onClick: () => void): HTMLButtonElement {
+  const b = document.createElement("button");
+  b.className = "icon";
+  b.title = label;
+  b.setAttribute("aria-label", label);
+  b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[icon]}</svg>`;
+  b.addEventListener("click", onClick);
+  return b;
+}
+
 const RECONNECT_MIN = 1000;
 const RECONNECT_MAX = 30_000;
 
@@ -112,34 +159,70 @@ class WidgetBoard extends HTMLElement {
   /** An instance this screen just added: show its set-up code as soon as it appears. */
   private justAdded = "";
   /**
-   * The full URL of the admin page, from the last GetSession. Empty until then.
-   * @internal Not public API yet; nothing reads it so far.
+   * The full URL of the admin page, from the last GetSession. Empty until
+   * then. The settings modal's Edit button opens it.
+   * @internal Not public API yet.
    */
   adminUrl = "";
   private abort?: AbortController;
   private stopped = true;
 
+  /** Columns and the offline threshold, from `?o=`, the attribute or the defaults. */
+  private layout!: Layout;
+  /** Display preferences, resolved once per page load; every card gets them at init. */
+  private prefs!: ResolvedPrefs;
+  private prefsBytes = new Uint8Array();
+
+  private footer = document.createElement("div");
+  private dialog = document.createElement("dialog");
+  private badge = document.createElement("div");
+  /** When the stream went down; undefined while it is live. */
+  private offlineSince?: number;
+  private offlineTimer?: ReturnType<typeof setTimeout>;
+  /** When this page last heard from the server, if it has. */
+  private liveAt?: number;
+
   connectedCallback() {
+    this.resolveOptions();
     const style = document.createElement("style");
     style.textContent = STYLE;
     this.grid.className = "grid";
-    this.root.replaceChildren(style, this.body);
+    this.footer.className = "footer";
+    this.footer.replaceChildren(iconButton("settings", "Screen settings", () => this.openSettings()));
+    this.badge.className = "offline";
+    this.badge.hidden = true;
+    this.dialog.addEventListener("click", (e) => {
+      if (e.target === this.dialog) this.dialog.close(); // the backdrop
+    });
+    this.root.replaceChildren(style, this.body, this.badge, this.dialog);
     window.addEventListener("message", this.onMessage);
     this.stopped = false;
+    this.wentOffline("connecting");
     void this.start();
   }
 
   disconnectedCallback() {
     this.stopped = true;
     this.abort?.abort();
+    clearTimeout(this.offlineTimer);
+    this.offlineSince = undefined;
     window.removeEventListener("message", this.onMessage);
+  }
+
+  /** Read `?o=` and settle the layout and preferences for this page load. */
+  private resolveOptions() {
+    const { options, error } = readBoardOptions(location.search);
+    if (error) console.warn(`widget-board: ignoring ?o=: ${error}`);
+    this.layout = resolveLayout(options, this.getAttribute("cols"));
+    this.prefs = resolvePrefs(options.prefs, browserEnv());
+    this.prefsBytes = toBinary(PreferencesSchema, toMessage(this.prefs.prefs));
   }
 
   private get api() {
     return this.getAttribute("api") || location.origin;
   }
   private get maxCols() {
-    return Math.max(1, Number(this.getAttribute("cols")) || 4);
+    return this.layout.cols;
   }
   private transport = () => createConnectTransport({ baseUrl: this.api, useBinaryFormat: true });
 
@@ -147,7 +230,7 @@ class WidgetBoard extends HTMLElement {
     const n = document.createElement("div");
     n.className = "notice";
     n.append(...children);
-    this.body.replaceChildren(n);
+    this.body.replaceChildren(n, this.footer);
   }
 
   private async start() {
@@ -156,6 +239,7 @@ class WidgetBoard extends HTMLElement {
     while (!this.stopped) {
       try {
         const session = await auth.getSession({});
+        this.live();
         this.adminUrl = session.adminUrl;
         if (session.role === Role.UNSPECIFIED) {
           await this.pair();
@@ -166,21 +250,63 @@ class WidgetBoard extends HTMLElement {
       } catch (e) {
         if (this.stopped) return;
         if (e instanceof ConnectError && e.code === Code.Unauthenticated) continue; // re-check: show pairing
-        this.setStatus(`reconnectingâ¦ (${e instanceof Error ? e.message : String(e)})`);
+        this.wentOffline(e instanceof Error ? e.message : String(e));
         await sleep(delay);
         delay = Math.min(delay * 2, RECONNECT_MAX);
       }
     }
   }
 
-  private setStatus(text: string) {
-    let s = this.root.querySelector(".status");
-    if (!s) {
-      s = document.createElement("div");
-      s.className = "status";
-      this.body.append(s);
+  // ---- offline badge ----
+
+  /** The server answered: note it, and take the badge down. */
+  private live() {
+    this.liveAt = Date.now();
+    this.store.markLive(this.liveAt);
+    if (this.offlineSince === undefined) return;
+    this.offlineSince = undefined;
+    clearTimeout(this.offlineTimer);
+    this.badge.hidden = true;
+  }
+
+  /** The stream is down. Once it has been for staleAfter, show the badge. */
+  private wentOffline(reason: string) {
+    this.badge.title = reason;
+    if (this.offlineSince !== undefined) return;
+    this.offlineSince = Date.now();
+    clearTimeout(this.offlineTimer);
+    this.offlineTimer = setTimeout(() => {
+      this.badge.textContent = offlineText(this.liveAt ?? this.store.lastLive(), Date.now(), this.prefs.prefs);
+      this.badge.hidden = false;
+    }, this.layout.staleAfterMs);
+  }
+
+  // ---- settings ----
+
+  /** The read-only settings modal: what this screen uses, and where each value came from. */
+  private openSettings() {
+    const header = document.createElement("header");
+    const h2 = document.createElement("h2");
+    h2.textContent = "Screen settings";
+    header.append(h2);
+    if (this.adminUrl) {
+      const url = this.adminUrl;
+      header.append(iconButton("pencil", "Edit", () => void window.open(url, "_blank", "noopener")));
     }
-    s.textContent = text;
+    header.append(iconButton("x", "Close", () => this.dialog.close()));
+
+    const about: Row[] = [{ label: "Board version", value: __BOARD_VERSION__, source: "" }];
+    const app = appVersion(navigator.userAgent);
+    if (app) about.push({ label: "App version", value: app, source: "" });
+
+    const section = document.createElement("section");
+    section.append(
+      ...settingsGroup("Layout", layoutRows(this.layout)),
+      ...settingsGroup("Preferences", prefsRows(this.prefs)),
+      ...settingsGroup("About", about),
+    );
+    this.dialog.replaceChildren(header, section);
+    if (!this.dialog.open) this.dialog.showModal();
   }
 
   /** Show a QR code until an admin approves this screen, then collect the session. */
@@ -225,6 +351,7 @@ class WidgetBoard extends HTMLElement {
     const mountedInBurst = new Set<string>();
     let synced = false;
     for await (const msg of client.streamWidgets({ resume }, { signal: this.abort.signal })) {
+      this.live(); // keepalives included
       const f = msg.frame;
       if (!f) {
         if (!synced) {
@@ -245,7 +372,7 @@ class WidgetBoard extends HTMLElement {
   }
 
   private render() {
-    if (this.grid.parentNode !== this.body) this.body.replaceChildren(this.grid);
+    if (this.grid.parentNode !== this.body) this.body.replaceChildren(this.grid, this.footer);
     this.grid.append(this.addTile); // always last
   }
 
@@ -571,6 +698,7 @@ class WidgetBoard extends HTMLElement {
           theme: this.theme(),
           stored: stored && { state: stored.state, cursor: stored.cursor },
           local: this.store.localGet(card.id),
+          prefs: this.prefsBytes,
         });
         for (const q of card.queue.splice(0)) reply(q);
         return;
@@ -624,6 +752,26 @@ class WidgetBoard extends HTMLElement {
       }
     }
   };
+}
+
+/** A titled list of settings rows, each value over its source. */
+function settingsGroup(title: string, rows: Row[]): HTMLElement[] {
+  const h = document.createElement("h3");
+  h.textContent = title;
+  const dl = document.createElement("dl");
+  for (const r of rows) {
+    const dt = document.createElement("dt");
+    dt.textContent = r.label;
+    const dd = document.createElement("dd");
+    dd.textContent = r.value;
+    if (r.source) {
+      const s = document.createElement("small");
+      s.textContent = r.source;
+      dd.append(s);
+    }
+    dl.append(dt, dd);
+  }
+  return [h, dl];
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
