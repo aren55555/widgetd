@@ -8,7 +8,7 @@ import { defineWidget } from "@widgetd/sdk";
 import { Response, StateSchema, type Event, type State } from "./gen/calendar/v1/calendar_pb.ts";
 import {
   clockLabel, dateOf, dayLabel, detectPrefs, duration, fortnight, hourLabels, lanes, nextTick, overlaps, segments, timeLabel,
-  type Cat, type Day, type Prefs, type Span,
+  type Cat, type Day, type Prefs,
 } from "./model.ts";
 
 const C = {
@@ -752,7 +752,7 @@ defineWidget({
       detail.sel = -1;
       detail.draw();
     };
-    addEventListener("keydown", (ev) => {
+    window.addEventListener("keydown", (ev) => {
       if (ev.key === "Escape") eventView.isOpen ? eventView.close() : detail.close();
     });
 
