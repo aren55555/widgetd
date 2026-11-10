@@ -1,6 +1,6 @@
 # widgetd display app (Flutter): plan
 
-Status: planned, not started.
+Status: planned, not started. Milestone 1 has its own plan: [board-options.md](board-options.md).
 
 ## Context
 We want a Flutter app on the Play Store and App Store, for phones and tablets, that acts as one more widgetd display. The app keeps a list of "sessions". Opening one shows the board page full screen in a WebView.
@@ -23,27 +23,14 @@ The goal is the **simplest** design:
 - **Offline.** The board persists its last-live time. While disconnected, it shows a cached-data badge.
 
 ## Web changes (client/)
-1. **`proto/widgetd/v1/board.proto` (new): the contract.**
-   - Message `BoardOptions { optional uint32 cols = 1; optional google.protobuf.Duration stale_after = 2; }`.
-   - protovalidate rules: `cols` between 1 and 12, `stale_after` at least 5 s.
-   - **TODO (later): theming through the query parameter.** Add a `Theme` message carrying the `THEME_TOKENS` values, which the board applies as CSS custom properties on itself. The same TODO covers the hard-coded presentation values: `gap`, `row_height`, `padding`, `hide_add_tile` and `hide_titles`. Until then, these and the theme stay whatever the hosting page and `STYLE` in `board.ts` set.
-   - Encoded as one query parameter, in the most compact form: `?o=<unpadded base64url(binary BoardOptions)>`. Default values are never written, so an empty message gives no `o` at all. No compression: for messages this small, deflate headers cost more than they save.
-   - `buf.gen.yaml` gains a Dart output (`app/lib/gen`), using `protoc-gen-dart` from the pinned mise toolchain. Go and TS output come for free.
-   - Old boards ignore fields added later (proto unknown fields), so options stay forward-compatible.
-2. **`client/src/lib/options.ts` (new):**
-   - `readBoardOptions(location.search)` decodes and validates with `@bufbuild/protovalidate`, which is already a client dependency.
-   - Invalid input is ignored, so a bad link still renders the default board.
-   - `encodeBoardOptions(opts)` builds the `o` value.
-   - A shared fixture `client/src/lib/options.fixture.json` holds `{o, json}` pairs, where `json` is protojson. The TS and Dart tests both decode each `o` and compare it to `json`, so the two languages stay in step.
-3. **`client/src/board.ts`:**
-   - Merge `readBoardOptions(location.search)` over the attributes. A URL parameter overrides an attribute.
-   - Apply `cols` to the existing `maxCols` getter.
-4. **Stale badge in `board.ts` + `lib/store.ts`:**
-   - On every received frame or keepalive, record `lastLive` in `localStorage` (`widgetd:lastLive`), throttled to once every 10 s.
-   - If the stream has been down for more than `staleAfter`, show a corner badge: "Offline · last update 14:32" (or a date if it was another day).
-   - Remove the badge on the first live frame.
-   - Replace the existing `setStatus("reconnecting…")` text with this badge.
-5. **Tests:** `client/src/lib/options.test.ts` runs the fixture. Then run `just client-build`, because `dist/` is committed.
+See [board-options.md](board-options.md). It covers:
+- the `BoardOptions` and `Preferences` contract
+- defaults detected on the display
+- `ctx.prefs` for widgets
+- the offline badge
+- the read-only settings modal
+
+That is milestone 1. The app adds only the Dart output to `buf.gen.yaml` (`app/lib/gen`) and runs the shared fixture in its own tests.
 
 ## App (new `app/`, Flutter)
 - **Packages:** `webview_flutter`, `wakelock_plus`, `shared_preferences`, `url_launcher`.
@@ -55,6 +42,7 @@ The goal is the **simplest** design:
 - **`lib/ui/session_edit.dart`:**
   - Native form for name and URL (reject a duplicate origin).
   - Columns and the stale threshold. These go into the URL.
+  - Preferences (units, time zone, clock) go into `prefs` only when the user sets them explicitly. Anything left unset is detected by the board.
   - Keep-awake (always, or a time window), orientation, auto-launch. These stay native.
 - **`lib/ui/display.dart`:**
   - Loads `baseUrl + toQuery(options)`, with JS and DOM storage enabled.
@@ -62,6 +50,7 @@ The goal is the **simplest** design:
   - Off-origin navigation opens in the system browser via `url_launcher`.
   - Reloads when the WebView process dies.
   - Android back button or a 2-second long-press in the top-left corner returns to the list.
+- **User agent:** append `widgetd-display/<version>`. The board's settings modal shows this as the app version.
 - **Platform config:**
   - iOS: `NSAllowsArbitraryLoadsInWebContent`, `NSLocalNetworkUsageDescription`, `UIRequiresFullScreen`, `PrivacyInfo.xcprivacy`.
   - Android: allow cleartext traffic (network security config). Call `CookieManager.flush` on pause through a tiny method channel, if the plugin doesn't already flush.
