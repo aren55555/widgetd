@@ -1,0 +1,51 @@
+{
+  "items": [
+    {
+      "iCalUID": "standup@x", "status": "confirmed", "summary": "Standup", "eventType": "default",
+      "start": {"dateTime": "2026-11-10T09:00:00-08:00"}, "end": {"dateTime": "2026-11-10T09:30:00-08:00"},
+      "organizer": {"displayName": "Priya Shah", "email": "priya@example.com"},
+      "hangoutLink": "https://meet.google.com/abc-defg-hij",
+      "attendees": [
+        {"email": "priya@example.com", "displayName": "Priya Shah", "organizer": true, "responseStatus": "accepted"},
+        {"email": "marcus@example.com", "responseStatus": "tentative"},
+        {"email": "me@example.com", "self": true, "responseStatus": "accepted"},
+        {"email": "room-4b@resource.calendar.google.com", "displayName": "Juniper (4B)", "resource": true, "responseStatus": "accepted"}
+      ],
+      "description": "<p>Yesterday / today / blockers.</p><p>Keep it &lt; 15 minutes.</p>"
+    },
+    {
+      "iCalUID": "overlap@x", "status": "confirmed", "summary": "Customer call",
+      "start": {"dateTime": "2026-11-10T17:15:00Z"}, "end": {"dateTime": "2026-11-10T18:00:00Z"}
+    },
+    {
+      "iCalUID": "declined@x", "status": "confirmed", "summary": "Optional all-hands",
+      "start": {"dateTime": "2026-11-10T20:00:00Z"}, "end": {"dateTime": "2026-11-10T21:00:00Z"},
+      "attendees": [{"email": "me@example.com", "self": true, "responseStatus": "declined"}]
+    },
+    {
+      "iCalUID": "unanswered@x", "status": "confirmed", "summary": "Design review",
+      "start": {"dateTime": "2026-11-11T18:00:00Z"}, "end": {"dateTime": "2026-11-11T19:00:00Z"},
+      "attendees": [{"email": "me@example.com", "self": true, "responseStatus": "needsAction"}]
+    },
+    {
+      "iCalUID": "cancelled@x", "status": "cancelled", "summary": "Gone",
+      "start": {"dateTime": "2026-11-12T18:00:00Z"}, "end": {"dateTime": "2026-11-12T19:00:00Z"}
+    },
+    {
+      "iCalUID": "office@x", "status": "confirmed", "summary": "Office", "eventType": "workingLocation",
+      "start": {"date": "2026-11-10"}, "end": {"date": "2026-11-11"}
+    },
+    {
+      "iCalUID": "offgrid@x", "status": "confirmed", "summary": "Off the grid",
+      "start": {"dateTime": "2026-11-12T10:52:00Z"}, "end": {"dateTime": "2026-11-12T11:21:00Z"}
+    },
+    {
+      "iCalUID": "early@x", "status": "confirmed", "summary": "Started before the window",
+      "start": {"dateTime": "2026-11-01T23:00:00Z"}, "end": {"dateTime": "2026-11-02T01:00:00Z"}
+    },
+    {
+      "iCalUID": "offsite@x", "status": "confirmed", "summary": "Team offsite",
+      "start": {"date": "2026-11-16"}, "end": {"date": "2026-11-18"}
+    }
+  ]
+}

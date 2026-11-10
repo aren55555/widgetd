@@ -110,3 +110,26 @@ The UTC window is 24 days (the past days of this week are kept for the dimmed pa
   supply them later as CSS custom properties.
 - Event fields map from the API: summary, location, hangoutLink /
   conferenceData, organizer, description, attendees[] (responseStatus, self).
+
+## Built (worktree-calendar-widget)
+
+`examples/calendar`, as interviewed on 2026-11-10:
+- Calendars: a multi-pick from the account's calendar list (`WithChoices`),
+  so the scope is `calendar.readonly`. Empty means `primary`.
+- Detail: FULL by default; TITLES and BUSY are settings.
+- Declined events are hidden; events marked Free draw as tentative.
+- No sync token: Google refuses one alongside timeMin/timeMax, and without
+  a window the first sync would pull all history. Each poll (1 min)
+  re-reads the 24-day window, trimmed with `fields=`, and snapshots only on
+  change.
+- View: model.ts (zones, days, layout; bun tests) + view.ts (the three
+  components). Prefs come from `detectPrefs()` until board options lands.
+
+## Next: push
+
+You chose push from Google (`events.watch`). The notification only says
+"changed", so it triggers the same window re-read; polling drops to a slow
+fallback (e.g. 15 min). Needs, in the host: an inbound webhook path for
+widgets (a per-instance secret URL, delivered to the widget like actions),
+channel renewal before expiry, and a public HTTPS URL for that path only
+(Tailscale Funnel on `/hooks/`).

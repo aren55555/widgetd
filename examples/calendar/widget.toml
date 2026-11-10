@@ -1,0 +1,17 @@
+# The widget's manifest. widgetc reads it to wire the widget up.
+name    = "calendar"
+version = "0.1.0"
+title   = "Calendar"
+config  = "calendar.v1.Config"
+
+[network]
+hosts   = ["www.googleapis.com"]
+methods = ["GET"]
+why     = "Your Google Calendar events for the coming two weeks"
+
+# The display's Google account, read-only. calendar.readonly rather than
+# calendar.events.readonly, because the settings form lists your calendars
+# to pick from, and the calendar list sits outside calendars/.
+[[uses]]
+provider = "google"
+scopes   = ["https://www.googleapis.com/auth/calendar.readonly"]
