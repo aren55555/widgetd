@@ -19,8 +19,12 @@ has **no auth code at all**.
    Calendar API, publish the consent screen. Sign-in is a QR code to Google's
    consent page; the phone that scans it must be on the tailnet, since
    Google redirects it back to the host.
-1. **Host:** a `Bleed` mount option, and the board (`client/src/board.ts`)
-   skipping its title row for such cards. (Not there yet.)
+1. **Host: nothing.** Full bleed already works: the board adds the title row
+   only `if (m.title)` (`client/src/board.ts`) and the iframe is flush to the
+   card. Mount with an empty `Title`. (The frame's accessible name then
+   falls back to the card id. A re-mount that switches between empty and
+   non-empty titles doesn't add or remove the row, which doesn't matter
+   here.) Board options' screen-wide `hide_titles` would sit beside this.
 2. **Widget server (`examples/calendar-spectrum`), built to WASM (.wpkg):**
    - `widget.toml`: `[network] hosts = ["www.googleapis.com"]`, GET;
      `[[uses]] provider = "google"`, `scopes = [calendar.events.readonly]`
