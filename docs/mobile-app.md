@@ -1,6 +1,6 @@
 # widgetd display app (Flutter): plan
 
-Status: planned, not started. Milestone 1 (done) has its own plan: [board-options.md](board-options.md).
+Status: milestones 1 and 2 done; the app is in `mobile/`. Milestone 1 has its own plan: [board-options.md](board-options.md).
 
 ## Context
 We want a Flutter app on the Play Store and App Store, for phones and tablets, that acts as one more widgetd display. The app keeps a list of "sessions". Opening one shows the board page full screen in a WebView.
@@ -30,9 +30,9 @@ See [board-options.md](board-options.md). It covers:
 - the offline badge
 - the read-only settings modal
 
-That is milestone 1. The app adds only the Dart output to `buf.gen.yaml` (`app/lib/gen`) and runs the shared fixture in its own tests.
+That is milestone 1. The app adds only the Dart output to `buf.gen.yaml` (`mobile/lib/gen`) and runs the shared fixture in its own tests.
 
-## App (new `app/`, Flutter)
+## App (new `mobile/`, Flutter)
 - **Packages:** `webview_flutter`, `wakelock_plus`, `shared_preferences`, `url_launcher`.
 - **`lib/session.dart`:**
   - `Session {id, name, baseUrl, BoardOptions options, keepAwake, awakeFrom/awakeTo?, orientation, autoLaunch}`, stored as JSON in shared_preferences.
@@ -54,7 +54,16 @@ That is milestone 1. The app adds only the Dart output to `buf.gen.yaml` (`app/l
 - **Platform config:**
   - iOS: `NSAllowsArbitraryLoadsInWebContent`, `NSLocalNetworkUsageDescription`, `UIRequiresFullScreen`, `PrivacyInfo.xcprivacy`.
   - Android: allow cleartext traffic (network security config). Call `CookieManager.flush` on pause through a tiny method channel, if the plugin doesn't already flush.
-- **Tooling:** add `flutter` to `mise.toml`, plus `just app-test` and `just app-run` recipes. `app/` is not part of the bun workspace.
+- **Tooling:** add `flutter` to `mise.toml`, plus `just mobile-test` and `just mobile-run` recipes. `mobile/` is not part of the bun workspace.
+
+## As built (milestone 2)
+- **Location and IDs:** `mobile/`, bundle and application ID `io.github.aren55555.widgetd` (based on `aren55555.github.io`; change it before the first store upload if a domain comes). Flutter is pinned in the root `mise.toml`.
+- **Dart codegen:** `buf.gen.yaml` generates `BoardOptions` and what it uses into `mobile/lib/gen`, through `mobile/tool/protoc-gen-dart`, which runs the `protoc_plugin` version `mobile/pubspec.lock` pins.
+- **Canonical encoding:** Dart protobuf writes implicit-presence fields that were set to their default (protojson parsing sets `Duration.nanos = 0`), which protoc and protobuf-es leave out. `canonicalOptions` clears them before encoding, so `o` matches the board's bytes; the shared fixture caught this.
+- **New windows:** neither platform WebView opens `window.open` targets. The app installs a small shim that hands the URL to a JS channel, and opens it in the system browser. The board's Edit pencil (admin page) depends on it.
+- **Cookies (Android):** `MainActivity.onPause` calls `CookieManager.flush()` directly; no method channel needed.
+- **Process death:** iOS reports a crashed web content process through `onWebResourceError`, and the app reloads. `webview_flutter` exposes no hook for Android's renderer crash, so that case is not handled.
+- **Tests:** `just mobile-test` (unit + widget tests, including the shared fixture). `mobile/integration_test` loads a real board on a simulator or emulator and checks `?o=`, the user-agent tag and the shim; it passed on an iPad (iOS simulator) and a Pixel 9a (Android emulator).
 
 ## Known limitation, to verify early
 **Cold start while offline:**
@@ -71,7 +80,7 @@ Test this on both platforms during milestone 1. If iOS won't load the page from 
 
 ## Verification
 - `just test` (Go + TS), including the new `options.test.ts`.
-- `cd app && flutter test`: the Dart options tests against the shared fixture.
+- `cd mobile && flutter test`: the Dart options tests against the shared fixture.
 - Manual:
   1. `just run`, then open `http://localhost:8080/?o=<encoded {cols: 2}>` in a browser (the fixture has an example) and check the layout.
   2. Pair the browser, stop the server, and check the "Offline · last update" badge appears after `staleAfter`.

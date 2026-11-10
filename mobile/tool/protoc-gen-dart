@@ -1,0 +1,4 @@
+#!/bin/sh
+# buf runs this as the Dart protoc plugin (see buf.gen.yaml), at the version
+# mobile/pubspec.lock pins, the way client/node_modules pins protoc-gen-es.
+cd "$(dirname "$0")/.." && exec dart run protoc_plugin:protoc_plugin "$@"

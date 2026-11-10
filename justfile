@@ -9,8 +9,9 @@ setup: generate client-build examples
 install:
     {{mise}} bun install --frozen-lockfile
 
-# Go + TS for widgetd's own protos, and the test widget's
+# Go + TS (+ Dart for the app) for widgetd's own protos, and the test widget's
 generate: install
+    cd mobile && {{mise}} flutter pub get
     {{mise}} buf generate
     cd internal/testwidget && {{mise}} buf generate
 
@@ -35,6 +36,7 @@ test: generate client-build examples
     {{mise}} go vet ./...
     GOOS=wasip1 GOARCH=wasm {{mise}} go vet ./sdk/go/widget ./internal/testwidget/wasm
     {{mise}} go test -race ./...
+    just mobile-test
 
 # Run the standalone server on :8080
 run *ARGS:
@@ -42,3 +44,13 @@ run *ARGS:
 
 build:
     {{mise}} go build -trimpath -o bin/widgetd ./cmd/widgetd
+
+# The display app's tests (Dart analysis + unit tests, including the shared
+# options fixture)
+mobile-test:
+    cd mobile && {{mise}} flutter analyze
+    cd mobile && {{mise}} flutter test
+
+# Run the display app on a connected device or simulator
+mobile-run *ARGS:
+    cd mobile && {{mise}} flutter run {{ARGS}}

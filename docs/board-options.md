@@ -44,7 +44,7 @@ message Preferences {
 
 - **Encoding:** the most compact form, a single `?o=<unpadded base64url(binary BoardOptions)>`. Fields left at their defaults are not written, so an empty message produces no `o` at all. No compression: for messages this small, deflate headers cost more than they save. Example: `{cols: 3, stale_after: 60s}` → `?o=CAMSAgg8`.
 - **Forward compatibility:** older boards ignore fields added later (proto unknown fields).
-- **Codegen:** `buf.gen.yaml` adds `sdk/web/src/gen` for `prefs.proto`. When the app exists, it also adds Dart output (`app/lib/gen`).
+- **Codegen:** `buf.gen.yaml` adds `sdk/web/src/gen` for `prefs.proto`. When the app exists, it also adds Dart output (`mobile/lib/gen`).
 
 ## Reading options (`client/src/lib/options.ts`, new)
 - `readBoardOptions(location.search)` decodes `o` and validates it with `@bufbuild/protovalidate`, which is already a client dependency.

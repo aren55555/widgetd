@@ -20,3 +20,9 @@ plugins:
       - widgetd.v1.Preferences
     opt:
       - target=ts
+  # BoardOptions (and what it uses) for the display app. The plugin is the
+  # version mobile/pubspec.lock pins; `just generate` fetches it first.
+  - local: [mobile/tool/protoc-gen-dart]
+    out: mobile/lib/gen
+    types:
+      - widgetd.v1.BoardOptions
