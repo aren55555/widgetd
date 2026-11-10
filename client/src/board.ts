@@ -564,6 +564,7 @@ class WidgetBoard extends HTMLElement {
           deltaType: card.mounted.deltaType,
           theme: this.theme(),
           stored: stored && { state: stored.state, cursor: stored.cursor },
+          local: this.store.localGet(card.id),
         });
         for (const q of card.queue.splice(0)) reply(q);
         return;
@@ -601,6 +602,20 @@ class WidgetBoard extends HTMLElement {
           reply({ t: "storage", id: m.id, error: (err as Error).message });
         }
         return;
+      case "local-set": {
+        const l = m.local;
+        if (l !== null && !(l && typeof l.type === "string" && l.value instanceof Uint8Array)) {
+          reply({ t: "storage", id: m.id, error: "malformed local value" });
+          return;
+        }
+        try {
+          this.store.localSet(card.id, l);
+          reply({ t: "storage", id: m.id });
+        } catch (err) {
+          reply({ t: "storage", id: m.id, error: (err as Error).message });
+        }
+        return;
+      }
     }
   };
 }

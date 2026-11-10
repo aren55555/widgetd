@@ -9,6 +9,12 @@
 /** A card cursor. Strings, because epoch and seq are uint64. */
 export type Cursor = { epoch: string; seq: string };
 
+/**
+ * A view's typed local value as the board keeps it: the message's full type
+ * name next to its bytes, so a build that declares a different type ignores it.
+ */
+export type Local = { type: string; value: Uint8Array };
+
 /** Board → frame. */
 export type ToFrame =
   | {
@@ -19,6 +25,8 @@ export type ToFrame =
       theme: Record<string, string>;
       /** The last state this frame accepted, from the board's storage. */
       stored?: { state: Uint8Array; cursor: Cursor };
+      /** The card's typed local value, if it saved one: its type name and bytes. */
+      local?: Local;
     }
   | { t: "snapshot"; typeUrl: string; value: Uint8Array; cursor: Cursor }
   | { t: "delta"; typeUrl: string; value: Uint8Array; cursor: Cursor }
@@ -34,6 +42,8 @@ export type FromFrame =
   | { t: "fault"; cursor?: Cursor; message: string }
   | { t: "storage-get"; id: number; key: string }
   | { t: "storage-set"; id: number; key: string; value: string | null }
+  /** Save (or with null, remove) the card's typed local value. Answered with "storage". */
+  | { t: "local-set"; id: number; local: Local | null }
   /** Something the viewer did, for the widget's server half: the card's action type. */
   | { t: "action"; typeUrl: string; value: Uint8Array };
 
