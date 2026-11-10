@@ -288,7 +288,7 @@ type authService struct {
 
 func (s *authService) GetSession(ctx context.Context, req *connect.Request[widgetdv1.GetSessionRequest]) (*connect.Response[widgetdv1.GetSessionResponse], error) {
 	c := s.a.callerOf(req.Header())
-	out := &widgetdv1.GetSessionResponse{Role: c.role, PublicUrl: s.a.publicURL}
+	out := &widgetdv1.GetSessionResponse{Role: c.role, PublicUrl: s.a.publicURL, AdminUrl: s.a.publicURL + s.a.base + "admin"}
 	s.a.mu.Lock()
 	out.NeedsEnrollment = s.a.setupToken != ""
 	s.a.mu.Unlock()

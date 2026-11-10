@@ -59,6 +59,8 @@ message GetSessionResponse {
   // The HTTPS origin admin pages live at. QR codes point here, whatever
   // origin the screen itself was loaded from.
   string public_url = 4;
+  // The full URL of the admin page: <public_url><base path>admin.
+  string admin_url = 5;
 }
 
 message BeginEnrollRequest {

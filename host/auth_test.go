@@ -139,6 +139,9 @@ func TestEnrollNeedsSetupToken(t *testing.T) {
 	if !sess.Msg.GetNeedsEnrollment() || h.srv.SetupURL() == "" {
 		t.Fatal("a fresh host should need enrolment and offer a setup URL")
 	}
+	if got := sess.Msg.GetAdminUrl(); got != "http://localhost/widgetd/admin" {
+		t.Fatalf("admin_url = %q", got)
+	}
 	if _, err := c.BeginEnroll(ctx, connect.NewRequest(&widgetdv1.BeginEnrollRequest{SetupToken: "wrong"})); connect.CodeOf(err) != connect.CodePermissionDenied {
 		t.Fatalf("enroll with a wrong token: %v", err)
 	}

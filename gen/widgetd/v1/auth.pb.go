@@ -168,7 +168,9 @@ type GetSessionResponse struct {
 	NeedsEnrollment bool `protobuf:"varint,3,opt,name=needs_enrollment,json=needsEnrollment,proto3" json:"needs_enrollment,omitempty"`
 	// The HTTPS origin admin pages live at. QR codes point here, whatever
 	// origin the screen itself was loaded from.
-	PublicUrl     string `protobuf:"bytes,4,opt,name=public_url,json=publicUrl,proto3" json:"public_url,omitempty"`
+	PublicUrl string `protobuf:"bytes,4,opt,name=public_url,json=publicUrl,proto3" json:"public_url,omitempty"`
+	// The full URL of the admin page: <public_url><base path>admin.
+	AdminUrl      string `protobuf:"bytes,5,opt,name=admin_url,json=adminUrl,proto3" json:"admin_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -227,6 +229,13 @@ func (x *GetSessionResponse) GetNeedsEnrollment() bool {
 func (x *GetSessionResponse) GetPublicUrl() string {
 	if x != nil {
 		return x.PublicUrl
+	}
+	return ""
+}
+
+func (x *GetSessionResponse) GetAdminUrl() string {
+	if x != nil {
+		return x.AdminUrl
 	}
 	return ""
 }
@@ -1340,14 +1349,15 @@ const file_widgetd_v1_auth_proto_rawDesc = "" +
 	"\n" +
 	"\x15widgetd/v1/auth.proto\x12\n" +
 	"widgetd.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x13\n" +
-	"\x11GetSessionRequest\"\xa5\x01\n" +
+	"\x11GetSessionRequest\"\xc2\x01\n" +
 	"\x12GetSessionResponse\x12$\n" +
 	"\x04role\x18\x01 \x01(\x0e2\x10.widgetd.v1.RoleR\x04role\x12\x1f\n" +
 	"\vdevice_name\x18\x02 \x01(\tR\n" +
 	"deviceName\x12)\n" +
 	"\x10needs_enrollment\x18\x03 \x01(\bR\x0fneedsEnrollment\x12\x1d\n" +
 	"\n" +
-	"public_url\x18\x04 \x01(\tR\tpublicUrl\"5\n" +
+	"public_url\x18\x04 \x01(\tR\tpublicUrl\x12\x1b\n" +
+	"\tadmin_url\x18\x05 \x01(\tR\badminUrl\"5\n" +
 	"\x12BeginEnrollRequest\x12\x1f\n" +
 	"\vsetup_token\x18\x01 \x01(\tR\n" +
 	"setupToken\"Y\n" +

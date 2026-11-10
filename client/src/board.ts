@@ -111,6 +111,11 @@ class WidgetBoard extends HTMLElement {
   private addTile = document.createElement("section");
   /** An instance this screen just added: show its set-up code as soon as it appears. */
   private justAdded = "";
+  /**
+   * The full URL of the admin page, from the last GetSession. Empty until then.
+   * @internal Not public API yet; nothing reads it so far.
+   */
+  adminUrl = "";
   private abort?: AbortController;
   private stopped = true;
 
@@ -151,6 +156,7 @@ class WidgetBoard extends HTMLElement {
     while (!this.stopped) {
       try {
         const session = await auth.getSession({});
+        this.adminUrl = session.adminUrl;
         if (session.role === Role.UNSPECIFIED) {
           await this.pair();
           continue;

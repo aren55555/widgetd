@@ -22,15 +22,79 @@
   /* Mirrors client/src/board.ts .card */
   .card { position: relative; display: flex; flex-direction: column; border-radius: 10px; border: 1px solid var(--edge); background: var(--surface); overflow: hidden; }
   .card h3 { margin: 0; padding: 8px 12px 0; font: 500 12px/16px var(--mono); color: var(--muted); white-space: nowrap; }
-  .body { flex: 1; min-height: 0; padding: 6px 10px 10px; }
+  .body { position: relative; flex: 1; min-height: 0; padding: 6px 10px 10px; }
   .days { display: grid; height: 100%; }
   .day { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
   .day .lbl { font: 10px/12px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; display: flex; justify-content: space-between; gap: 4px; }
-  .day .lbl b { font-weight: 600; color: var(--ink); }
-  .day.today .lbl b { color: var(--accent); }
-  .day.weekend .lbl, .day.weekend .lbl b { color: var(--faint); }
+  /* Day labels: today is lifted (brighter, full opacity); every other day
+     sits back. Each tier keeps the name a step brighter than the number. */
+  .day .lbl b { font-weight: 600; }
+  .day .lbl { color: #52525b; }        .day .lbl b { color: #a1a1aa; }
+  .day.weekend .lbl { color: #3f3f46; } .day.weekend .lbl b { color: #71717a; }
+  .day.today .lbl { color: #d4d4d8; }   .day.today .lbl b { color: #fff; }
   .day.inside .lbl { position: absolute; top: 3px; left: 5px; right: 5px; z-index: 1; pointer-events: none; }
   .day canvas { flex: 1; min-height: 0; width: 100%; display: block; border-radius: 3px; }
+  cal-detail { position: absolute; inset: 0; z-index: 3; display: block; pointer-events: none; }
+  cal-detail.open { pointer-events: auto; }
+  /* Back buttons: a filled pill with a border and a label naming where it
+     goes, so it reads as something to press. */
+  .back { height: 32px; padding: 0 12px 0 6px; display: inline-flex; align-items: center; gap: 4px; flex: none;
+    border: 1px solid #52525b; border-radius: 999px; background: #27272a; color: var(--ink); cursor: pointer;
+    font: 600 12px var(--mono); box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 2px 6px rgba(0,0,0,0.4); }
+  .back:hover { background: #3f3f46; border-color: #71717a; }
+  .back:active { transform: scale(0.96); background: #52525b; }
+  .back svg { width: 18px; height: 18px; }
+  cal-detail .back { position: absolute; left: 8px; top: 5px; opacity: 0; pointer-events: none; }
+
+  /* <cal-event>: the event screen, grown out of its label card. */
+  cal-event { position: absolute; inset: 0; z-index: 4; display: none; }
+  cal-event.open { display: block; }
+  cal-event .ev-panel { position: absolute; inset: 0; background: #18181b; border-radius: 10px; overflow: hidden;
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ev) 60%, transparent); }
+  cal-event .ev-content { height: 100%; display: flex; flex-direction: column; gap: 10px; padding: 4px 16px 14px 6px; box-sizing: border-box;
+    opacity: 0; transition: opacity 160ms; }
+  cal-event.shown .ev-content { opacity: 1; transition-duration: 240ms; }
+  cal-event header { display: flex; align-items: center; gap: 8px; min-height: 40px; }
+  cal-event .ev-head { min-width: 0; flex: 1; border-left: 3px solid var(--ev); padding-left: 10px; }
+  cal-event .ev-title { font: 600 16px/20px var(--mono); color: #f4f4f5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  cal-event .ev-when { font: 12px/16px var(--mono); color: var(--muted); }
+  cal-event .ev-chips { display: flex; gap: 6px; }
+  cal-event .ev-chips span { font: 11px/18px var(--mono); padding: 0 8px; border-radius: 999px; color: var(--chip);
+    background: color-mix(in oklab, var(--chip) 18%, transparent); }
+  cal-event .ev-track { position: relative; height: 8px; margin: 0 0 6px 10px; border-radius: 4px; background: #232327; }
+  cal-event .ev-track i { position: absolute; top: 0; bottom: 0; background: #3f3f46; border-radius: 2px; }
+  cal-event .ev-track i.me { background: var(--ev); }
+  cal-event .ev-track b { position: absolute; top: 10px; font: 400 10px var(--mono); color: var(--faint); }
+  cal-event .ev-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; padding-left: 10px; margin-top: 6px; }
+  cal-event .ev-facts { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; align-content: start; font: 12px/17px var(--mono); overflow: hidden; }
+  cal-event dt { color: var(--faint); }
+  cal-event dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+  cal-event dd.notes { color: var(--muted); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  cal-event dd.none { color: var(--faint); }
+  cal-event .ev-people { min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+  cal-event .ev-people h4 { margin: 0; font: 500 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  cal-event .ev-people ul { margin: 0; padding: 0; list-style: none; columns: 2; column-gap: 14px; font: 12px/20px var(--mono); overflow: hidden; }
+  cal-event li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+  cal-event li .mark { display: inline-block; width: 16px; text-align: center; margin-right: 4px; font-weight: 700; }
+  cal-event li.yes .mark { color: #4ade80; }
+  cal-event li.maybe .mark { color: #fbbf24; }
+  cal-event li.no { color: var(--faint); text-decoration: line-through; }
+  cal-event li.no .mark { color: #f87171; }
+  cal-event li.none .mark { color: var(--faint); }
+  cal-event li em { font-style: normal; font-size: 10px; color: var(--faint); }
+  cal-detail canvas { width: 100%; height: 100%; display: block; }
+  cal-day { cursor: pointer; }
+  /* Full-bleed: days are the card background, text floats over them. */
+  .card.bleed .body { padding: 0; }
+  .card.bleed .day canvas { border-radius: 0; }
+  .card.bleed h3, .day.inside .lbl { opacity: var(--text-op); text-shadow: 0 1px 2px #000, 0 0 6px #000; }
+  .card.bleed h3 { position: absolute; z-index: 2; left: 0; right: 0; top: 0; padding: 6px 10px; pointer-events: none; color: var(--ink); }
+  .card.bleed.no-title h3 { display: none; }
+  .card.bleed.title-bottom h3 { top: auto; bottom: 0; text-align: right; }
+  .day.inside .lbl { font-size: 11px; }
+  .day.today.inside .lbl { opacity: 1; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); }
+  .legend i { display: inline-block; width: 14px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
   .readout { min-height: 18px; color: var(--muted); font-size: 12px; }
 
   .panel { width: 340px; display: flex; flex-direction: column; gap: 14px; }
@@ -59,6 +123,7 @@
       <h3 id="title">Calendar · next 14 days</h3>
       <div class="body"><div class="days" id="days"></div></div>
     </div>
+    <div class="legend" id="legend"></div>
     <div class="readout" id="readout">Hover a day to read times (debug only; a wall screen has no hover).</div>
 
     <h4 style="margin:10px 0 0;color:var(--muted);font-weight:500">Payload (this fake fortnight)</h4>
@@ -73,8 +138,13 @@
       <label>Width px</label><input type="range" data-k="cardW" min="360" max="1400" step="10">
       <label>Board rows tall</label><select data-k="rows"><option>1</option><option>2</option><option>3</option><option>4</option></select>
       <label>Day grid</label><select data-k="layout"><option value="7x2">7 × 2</option><option value="14x1">14 × 1</option><option value="2x7">2 × 7</option></select>
-      <label>Starts on</label><select data-k="align"><option value="today">today</option><option value="monday">this Monday</option></select>
+      <label>Starts on</label><select data-k="align"><option value="sunday">this Sunday</option><option value="today">today</option><option value="monday">this Monday</option></select>
+      <label>Weekend width</label><input type="range" data-k="weekendW" min="0.2" max="1" step="0.05">
+      <label>Shrink empty weekends</label><input type="checkbox" data-k="shrinkEmpty">
       <label>Gap px</label><input type="range" data-k="gap" min="0" max="12">
+      <label>Full bleed</label><input type="checkbox" data-k="bleed">
+      <label>Card title</label><select data-k="titlePos"><option value="top">overlay, top</option><option value="bottom">overlay, bottom right</option><option value="none">none</option></select>
+      <label>Text opacity %</label><input type="range" data-k="textOp" min="10" max="100" step="5">
       <label>Day labels</label><select data-k="labels"><option value="above">above</option><option value="inside">inside</option><option value="none">none</option></select>
     </fieldset>
 
@@ -84,7 +154,8 @@
       <label>Scanline thickness px</label><input type="range" data-k="thick" min="1" max="4">
       <label>Colour</label><select data-k="hue"><option value="#22d3ee">cyan</option><option value="#fbbf24">amber</option><option value="#a78bfa">violet</option><option value="#4ade80">green</option><option value="#f472b6">pink</option><option value="#e5e7eb">white</option></select>
       <label>Glow</label><input type="checkbox" data-k="glow">
-      <label>Overlap brightens</label><input type="checkbox" data-k="additive">
+      <label>Tentative colour</label><select data-k="tentColor"><option value="#a78bfa">violet</option><option value="#71717a">grey</option><option value="#4ade80">green</option><option value="#f472b6">pink</option></select>
+      <label>Double-booked colour</label><select data-k="dblColor"><option value="#fb923c">orange</option><option value="#fbbf24">amber</option><option value="#f87171">red</option><option value="#ffffff">white</option><option value="same">same as busy</option></select>
       <label>Full width (over ticks)</label><input type="checkbox" data-k="fullWidth">
       <label>Show tentative</label><input type="checkbox" data-k="tentative">
     </fieldset>
@@ -94,6 +165,9 @@
       <label>To hour</label><input type="number" data-k="r1" min="1" max="24">
       <label>Dim the past</label><input type="checkbox" data-k="dimPast">
       <label>"Now" line</label><input type="checkbox" data-k="now">
+      <label>Pretend: + days</label><input type="range" data-k="simDays" min="0" max="13">
+      <label>Pretend: + hours</label><input type="range" data-k="simHours" min="0" max="23">
+      <label></label><span class="note" id="simNow"></span>
     </fieldset>
 
     <fieldset><legend>Working hours</legend>
@@ -105,10 +179,17 @@
       <label>Major tick every (min)</label><select data-k="major"><option>60</option><option>120</option><option>240</option></select>
       <label>Tick side</label><select data-k="tickSide"><option value="left">left</option><option value="right">right</option><option value="both">both</option></select>
       <label>Tick length px</label><input type="range" data-k="tickLen" min="2" max="14">
+      <label>Hours at band corners</label><select data-k="corners"><option value="outer">outer corners, weekend side</option><option value="every">every workday</option><option value="none">none</option></select>
+    </fieldset>
+
+    <fieldset><legend>Day detail (tap a day)</legend>
+      <label>Morph ms</label><input type="range" data-k="morphMs" min="150" max="2000" step="50">
+      <label>Close after s (0 = never)</label><input type="number" data-k="autoClose" min="0" max="300">
     </fieldset>
 
     <fieldset><legend>API</legend>
       <label>Resolution (min)</label><select data-k="res"><option>1</option><option>5</option><option>15</option></select>
+      <label>Fake data: quiet weekends</label><input type="checkbox" data-k="quietWeekends">
       <label>Fake-data seed</label><input type="number" data-k="seed" min="1" max="9999">
     </fieldset>
 
@@ -124,11 +205,12 @@
 <script>
 // ---------- settings ----------
 const DEFAULTS = {
-  cardW: 820, rows: 2, layout: "7x2", align: "today", gap: 6, labels: "above",
-  style: "spectrum", pitch: 3, thick: 1, hue: "#22d3ee", glow: true, additive: true, fullWidth: false, tentative: true,
+  cardW: 820, rows: 2, layout: "7x2", align: "sunday", gap: 2, labels: "inside", weekendW: 0.5, shrinkEmpty: true, bleed: true, titlePos: "none", textOp: 70,
+  style: "bands", pitch: 3, thick: 1, hue: "#22d3ee", glow: false, tentColor: "#a78bfa", dblColor: "#fb923c", fullWidth: false, tentative: true,
+  simDays: 0, simHours: 0,
   r0: 0, r1: 24, dimPast: true, now: true,
-  whStart: 9, whEnd: 17.5, whDays: [1, 2, 3, 4, 5], lift: 6, tick: 60, major: 240, tickSide: "left", tickLen: 5,
-  res: 5, seed: 7,
+  whStart: 9, whEnd: 17.5, whDays: [1, 2, 3, 4, 5], lift: 12, tick: 60, major: 240, tickSide: "left", tickLen: 5, corners: "outer",
+  res: 5, seed: 7, quietWeekends: true, morphMs: 450, autoClose: 20,
 };
 const PRESETS = {
   "A · spectrum": { style: "spectrum", pitch: 3, thick: 1, glow: true, r0: 0, r1: 24 },
@@ -138,14 +220,18 @@ const PRESETS = {
   "E · strip 14×1": { layout: "14x1", rows: 1, cardW: 1200, style: "spectrum", pitch: 2 },
 };
 let S = { ...DEFAULTS };
-try { Object.assign(S, JSON.parse(localStorage.getItem("calspec") || "{}")); } catch {}
+try { Object.assign(S, JSON.parse(localStorage.getItem("calspec-v12") || "{}")); } catch {}
 
 // ---------- fake calendar ----------
 function rng(seed) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
+// The real clock, moved forward by the "pretend" sliders (not saved).
+function clock() { return new Date(Date.now() + (S.simDays * 24 + S.simHours) * 3600e3); }
+
 function windowStart() {
-  const d = new Date(); d.setHours(0, 0, 0, 0);
+  const d = clock(); d.setHours(0, 0, 0, 0);
   if (S.align === "monday") d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  if (S.align === "sunday") d.setDate(d.getDate() - d.getDay());
   return d;
 }
 
@@ -155,32 +241,39 @@ function fakeFortnight() {
   const r = rng(S.seed), start = windowStart(), days = [];
   for (let i = 0; i < 14; i++) {
     const date = new Date(start); date.setDate(start.getDate() + i);
-    const wd = date.getDay(), ev = [], add = (s, e, k = 0) => ev.push({ s, e: Math.min(e, 1440), k });
+    const wd = date.getDay(), ev = [], add = (s, e, k, t) => ev.push({ s, e: Math.min(e, 1440), k, t });
+    const pick = (xs) => xs[Math.floor(r() * xs.length)];
     if (wd >= 1 && wd <= 5) {
-      add(570, 585);                                     // standup
-      if (wd === 1) add(600, 660);                       // planning
-      if (wd === 2 || wd === 4) add(840, 870);           // 1:1
+      add(570, 585, 0, "Standup");
+      if (wd === 1) add(600, 660, 0, "Sprint planning");
+      if (wd === 2 || wd === 4) add(840, 870, 0, "1:1 with manager");
       const n = 2 + Math.floor(r() * 4);
       for (let j = 0; j < n; j++) {
         const s = 540 + Math.floor(r() * 16) * 30, d = [25, 30, 30, 45, 60, 90][Math.floor(r() * 6)];
-        add(s, Math.min(s + d, 1080), r() < 0.18 ? 1 : 0);
+        const k = r() < 0.18 ? 1 : 0;
+        add(s, Math.min(s + d, 1080), k, pick(k ? ["Vendor demo?", "Optional: tech talk", "Office hours"] :
+          ["Design review", "Interview: backend", "Roadmap sync", "Customer call", "Incident review", "Pairing", "Hiring debrief", "Budget review"]));
       }
-      if (r() < 0.5) add(720, 765);                      // lunch
-      if (r() < 0.25) add(1140, 1260);                   // evening thing
-      if (r() < 0.15) add(450, 480, 1);                  // early tentative
-    } else {
-      if (r() < 0.6) { const s = 600 + 30 * Math.floor(r() * 8); add(s, s + 120); }
-      if (r() < 0.4) add(1080, 1230);
+      if (r() < 0.5) add(720, 765, 0, "Lunch");
+      if (r() < 0.25) add(1140, 1260, 0, pick(["Climbing", "Dinner with friends", "Book club"]));
+      if (r() < 0.15) add(450, 480, 1, "Early sync (EU)");
+    } else if (!S.quietWeekends) {
+      if (r() < 0.6) { const s = 600 + 30 * Math.floor(r() * 8); add(s, s + 120, 0, pick(["Brunch", "Farmers market", "Hike"])); }
+      if (r() < 0.4) add(1080, 1230, 0, pick(["Movie night", "Dinner party"]));
     }
-    days.push({ date, ev, allDay: 0 });
+    days.push({ date, ev, allDayT: [] });
   }
-  days[3].allDay = 1; days[4].allDay = 1;                 // two-day conference
-  days[9].allDay = 2;                                     // birthday + holiday
-  days[5].ev.push({ s: 1350, e: 1440, k: 0 });            // red-eye, split at midnight
-  days[6].ev.push({ s: 0, e: 135, k: 0 });
+  days[3].allDayT = ["Conference"]; days[4].allDayT = ["Conference"];
+  days[9].allDayT = ["Mom's birthday", "Office closed"];
+  if (!S.quietWeekends) {
+    days[5].ev.push({ s: 1350, e: 1440, k: 0, t: "Flight SFO → JFK" });  // red-eye, split at midnight
+    days[6].ev.push({ s: 0, e: 135, k: 0, t: "Flight SFO → JFK" });
+  }
   for (const d of days) {
-    d.ev = d.ev.map(({ s, e, k }) => ({ s: Math.floor(s / S.res) * S.res, e: Math.ceil(e / S.res) * S.res, k }))
+    d.allDay = d.allDayT.length;
+    d.ev = d.ev.map(({ s, e, k, t }) => ({ s: Math.floor(s / S.res) * S.res, e: Math.ceil(e / S.res) * S.res, k, t }))
       .filter((x) => x.e > x.s).sort((a, b) => a.s - b.s || a.e - b.e);
+    for (const e of d.ev) e.d = fakeDetails(e, d.date);
   }
   return days;
 }
@@ -189,7 +282,194 @@ function fakeFortnight() {
 const daysEl = document.getElementById("days");
 let model = [];
 
+// Truncates s with an ellipsis to fit width w in the context's current font.
+function fitText(g, s, w) {
+  if (g.measureText(s).width <= w) return s;
+  let lo = 0, hi = s.length;
+  while (lo < hi) { const m = (lo + hi + 1) >> 1; g.measureText(s.slice(0, m) + "…").width <= w ? (lo = m) : (hi = m - 1); }
+  return lo ? s.slice(0, lo) + "…" : "";
+}
 function rgba(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
+const ampm = (m) => { const h = Math.floor(m / 60) % 24, mm = Math.round(m % 60), h12 = h % 12 || 12; return h12 + (mm ? ":" + String(mm).padStart(2, "0") : "") + (h < 12 ? "a" : "p"); };
+const hm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+
+// Split a day at every event edge; each piece is busy (one busy event,
+// with or without tentative ones), double (two or more busy) or tent
+// (tentative only).
+function segments(evs) {
+  const cuts = [...new Set(evs.flatMap((e) => [e.s, e.e]))].sort((a, b) => a - b), out = [];
+  for (let i = 0; i + 1 < cuts.length; i++) {
+    const a = cuts[i], b = cuts[i + 1];
+    let busy = 0, tent = 0;
+    for (const e of evs) if (e.s <= a && e.e >= b) e.k ? tent++ : busy++;
+    const cat = busy >= 2 ? "double" : busy ? "busy" : tent ? "tent" : null;
+    if (cat) out.push({ s: a, e: b, cat });
+  }
+  return out;
+}
+function colorOf(cat) {
+  if (cat === "double") return S.dblColor === "same" ? S.hue : S.dblColor;
+  return cat === "tent" ? S.tentColor : S.hue;
+}
+function renderLegend() {
+  const sw = (c, t) => `<span><i style="background:${c}"></i>${t}</span>`;
+  document.getElementById("legend").innerHTML = sw(S.hue, "busy") + (S.tentative ? sw(S.tentColor, "tentative") : "") +
+    (S.dblColor !== "same" ? sw(S.dblColor, "double-booked") : "") + sw(`rgba(255,255,255,${0.08 + S.lift / 100})`, "working hours");
+}
+
+const scratch = document.createElement("canvas"), mask = document.createElement("canvas");
+
+// <cal-day>: one day, drawn only from its props and the theme (S). It knows
+// nothing about its neighbours, the grid or the clock; the grid works
+// those out and hands them in.
+//
+//   date        Date      the label ("Thu 12")
+//   spans       [{s,e,k}] minutes from local midnight; k 0 busy, 1 tentative  ← API Day
+//   allDay      number    all-day events, shown as dots                      ← API Day
+//   working     bool      draw the working-hours band and ticks
+//   today       bool      accent the label
+//   weekend     bool      mute the label
+//   pastUntil   minutes   dim [0, pastUntil); 0 = future, 1440 = all past
+//   now         minutes?  the "now" line, or null
+//   hourLabels  ["left"|"right"]  edges to write the working hours on
+class CalDay extends HTMLElement {
+  connectedCallback() {
+    if (this.cv) return;
+    this.lbl = document.createElement("div"); this.lbl.className = "lbl";
+    this.cv = document.createElement("canvas");
+    this.append(this.lbl, this.cv);
+    this.cv.addEventListener("mousemove", (ev) => hover(ev, this));
+    this.cv.addEventListener("mouseleave", () => (readout.textContent = ""));
+    this.addEventListener("click", () => openDay(this));
+    new ResizeObserver(() => this.draw()).observe(this);
+  }
+  set props(p) { this.p = p; this.render(); }
+  render() {
+    const p = this.p;
+    this.className = "day" + (p.today ? " today" : "") + (p.weekend ? " weekend" : "") + (S.labels === "inside" ? " inside" : "");
+    this.lbl.hidden = S.labels === "none";
+    const name = p.date.toLocaleDateString(undefined, { weekday: "short" });
+    this.lbl.innerHTML = `<span><b>${name}</b> ${p.date.getDate()}</span><span>${"•".repeat(p.allDay)}</span>`;
+    this.draw();
+  }
+  draw() {
+    const p = this.p, cv = this.cv;
+    if (!p || !cv) return;
+    const dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+    if (!W || !H) return;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const m0 = S.r0 * 60, m1 = Math.max(S.r1 * 60, m0 + 60), y = (m) => ((m - m0) / (m1 - m0)) * H;
+
+    // Box and working-hours band.
+    g.fillStyle = "#141417"; g.fillRect(0, 0, W, H);
+    if (p.working) {
+      g.fillStyle = `rgba(255,255,255,${S.lift / 100})`;
+      g.fillRect(0, y(S.whStart * 60), W, y(S.whEnd * 60) - y(S.whStart * 60));
+    }
+
+    // Ticks over the working hours.
+    const left = S.tickSide !== "right", right = S.tickSide !== "left";
+    if (p.working) {
+      for (let t = Math.ceil((S.whStart * 60) / S.tick) * S.tick; t <= S.whEnd * 60; t += Number(S.tick)) {
+        const yy = Math.round(y(t)) + 0.5, major = t % S.major === 0, len = major ? S.tickLen * 1.8 : S.tickLen;
+        g.strokeStyle = major ? "#a1a1aa" : "#71717a"; g.lineWidth = 1; g.beginPath();
+        if (left) { g.moveTo(0, yy); g.lineTo(len, yy); }
+        if (right) { g.moveTo(W, yy); g.lineTo(W - len, yy); }
+        g.stroke();
+      }
+    }
+
+    // Events onto a scratch layer, then (spectrum) masked and (glow) blurred onto the box.
+    const gut = S.fullWidth ? 0 : S.tickLen * 1.8 + 2;
+    const x0 = left ? gut : 0, x1 = W - (right ? gut : 0);
+    scratch.width = cv.width; scratch.height = cv.height;
+    const s = scratch.getContext("2d"); s.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Colour comes from the timeline, not from blending: split the day at
+    // every event edge and give each piece one category.
+    const evs = p.spans.filter((e) => e.k === 0 || S.tentative);
+    for (const seg of segments(evs)) {
+      const top = y(seg.s), bot = y(seg.e);
+      if (bot < 0 || top > H) continue;
+      const c = colorOf(seg.cat);
+      if (S.style === "edges") { s.fillStyle = rgba(c, 0.28); s.fillRect(x0, top, x1 - x0, bot - top); }
+      else if (S.style === "bands") { s.fillStyle = c; s.fillRect(x0, top, x1 - x0, Math.max(1, bot - top)); }
+      else { s.fillStyle = c; s.fillRect(x0, top, x1 - x0, Math.max(S.thick, bot - top)); }
+    }
+    if (S.style === "bands" || S.style === "edges") {
+      // A surface-coloured hairline (bands) or a bright one (edges) at every
+      // event edge, so back-to-back meetings stay separate.
+      for (const e of evs) for (const m of [e.s, e.e]) {
+        const yy = y(m);
+        if (S.style === "bands") { s.fillStyle = "#141417"; s.fillRect(x0, yy - 0.5, x1 - x0, 1); }
+        else { s.fillStyle = e.k ? S.tentColor : S.hue; s.fillRect(x0, m === e.s ? yy : yy - 1.5, x1 - x0, 1.5); }
+      }
+    }
+    if (S.style === "spectrum") {
+      // One mask layer, applied once: each destination-in draw clips
+      // everything outside itself, so the lines can't be drawn one by one.
+      mask.width = cv.width; mask.height = cv.height;
+      const mg = mask.getContext("2d"); mg.setTransform(dpr, 0, 0, dpr, 0, 0); mg.fillStyle = "#fff";
+      for (let yy = 0; yy < H; yy += Number(S.pitch)) mg.fillRect(0, yy, W, Number(S.thick));
+      s.setTransform(1, 0, 0, 1, 0, 0);
+      s.globalCompositeOperation = "destination-in"; s.drawImage(mask, 0, 0);
+      s.setTransform(dpr, 0, 0, dpr, 0, 0);
+      s.globalCompositeOperation = "source-over";
+      // A short event that falls between lines still keeps one line.
+      for (const seg of segments(evs)) {
+        const top = y(seg.s), bot = y(seg.e);
+        if (bot - top < S.pitch) { s.fillStyle = colorOf(seg.cat); s.fillRect(x0, Math.round(top), x1 - x0, S.thick); }
+      }
+    }
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    if (S.glow) { g.save(); g.filter = `blur(${3 * dpr}px)`; g.globalAlpha = 0.8; g.globalCompositeOperation = "lighter"; g.drawImage(scratch, 0, 0); g.restore(); }
+    g.drawImage(scratch, 0, 0);
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Past, and now.
+    if (S.dimPast && p.pastUntil > m0) {
+      g.fillStyle = "rgba(24,24,27,0.6)";
+      g.fillRect(0, 0, W, Math.min(H, y(p.pastUntil)));
+    }
+    if (S.now && p.now != null && p.now >= m0 && p.now <= m1) {
+      const yy = Math.round(y(p.now)) + 0.5;
+      g.strokeStyle = "#f87171"; g.lineWidth = 1; g.beginPath(); g.moveTo(0, yy); g.lineTo(W, yy); g.stroke();
+      g.fillStyle = "#f87171"; g.beginPath(); g.moveTo(0, yy - 3); g.lineTo(4, yy); g.lineTo(0, yy + 3); g.fill();
+    }
+
+    // Working hours, written on the edges the grid asked for: start at the
+    // band's top, end at its bottom. Inside a workday they clear the ticks.
+    if (p.hourLabels.length) {
+      const top = y(S.whStart * 60), bot = y(S.whEnd * 60), a = ampm(S.whStart * 60), b = ampm(S.whEnd * 60);
+      const tick = (on) => (p.working && on ? S.tickLen * 1.8 : 0) + 3;
+      g.save();
+      g.globalAlpha = S.textOp / 100; g.fillStyle = "#e5e7eb"; g.font = "600 9px ui-monospace, Menlo, monospace";
+      g.shadowColor = "#000"; g.shadowBlur = 3;
+      for (const edge of p.hourLabels) {
+        const x = edge === "left" ? tick(left) : W - tick(right);
+        g.textAlign = edge;
+        g.textBaseline = "top"; g.fillText(a, x, top + 2);
+        g.textBaseline = "bottom"; g.fillText(b, x, bot - 2);
+      }
+      g.restore();
+    }
+    if (S.labels === "none" && p.allDay) {
+      g.fillStyle = S.hue; for (let j = 0; j < p.allDay; j++) { g.beginPath(); g.arc(W - 5 - j * 7, 5, 2, 0, 7); g.fill(); }
+    }
+  }
+}
+customElements.define("cal-day", CalDay);
+
+// ---------- the grid: everything that needs more than one day ----------
+// The narrowest a day can be and still fit its text.
+function labelWidth() {
+  const g = document.createElement("canvas").getContext("2d");
+  const w = (font, s) => { g.font = font + " ui-monospace, Menlo, monospace"; return g.measureText(s).width; };
+  let need = 6;
+  if (S.labels !== "none") need = Math.max(need, w(`600 ${S.labels === "inside" ? 11 : 10}px`, "Sun 30") + (S.labels === "inside" ? 12 : 2));
+  if (S.corners !== "none") need = Math.max(need, w("600 9px", ampm(S.whEnd * 60)) + 8, w("600 9px", ampm(S.whStart * 60)) + 8);
+  return Math.ceil(need);
+}
 
 function layoutGrid() {
   const [c, r] = S.layout.split("x").map(Number);
@@ -197,139 +477,428 @@ function layoutGrid() {
   card.style.width = S.cardW + "px";
   card.style.height = S.rows * 180 + (S.rows - 1) * 12 + "px";
   card.style.setProperty("--accent", S.hue);
+  card.style.setProperty("--text-op", S.textOp / 100);
+  card.className = "card" + (S.bleed ? " bleed" : "") + (S.titlePos === "none" ? " no-title" : S.titlePos === "bottom" ? " title-bottom" : "");
   document.body.style.setProperty("--accent", S.hue);
-  daysEl.style.gridTemplateColumns = `repeat(${c}, minmax(0,1fr))`;
+  // A column whose days are all Saturday or Sunday gets the narrower width.
+  const weekendCol = (j) => model.every((d, i) => i % c !== j || d.date.getDay() % 6 === 0);
+  // An empty weekend column (nothing shown on any of its days) shrinks to
+  // what its text needs: the day label, or the working-hour labels.
+  const emptyCol = (j) => model.every((d, i) => i % c !== j || (d.allDay === 0 && !d.ev.some((e) => e.k === 0 || S.tentative)));
+  const minW = labelWidth();
+  daysEl.style.gridTemplateColumns = Array.from({ length: c }, (_, j) => !weekendCol(j) ? "minmax(0,1fr)" : S.shrinkEmpty && emptyCol(j) ? `${minW}px` : `minmax(0,${S.weekendW}fr)`).join(" ");
   daysEl.style.gridTemplateRows = `repeat(${r}, minmax(0,1fr))`;
   daysEl.style.gap = S.gap + "px";
+}
+
+// The props for day i: its own data, plus what only the grid knows (the
+// clock, and where the Mon–Fri block's outer corners fall).
+function dayProps(i) {
+  const d = model[i], wd = d.date.getDay(), working = S.whDays.includes(wd);
+  const now = clock(), today = new Date(now); today.setHours(0, 0, 0, 0);
+  const isToday = d.date.getTime() === today.getTime(), nowMin = now.getHours() * 60 + now.getMinutes();
+  const cols = Number(S.layout.split("x")[0]);
+  const isW = (k) => { const dd = new Date(d.date); dd.setDate(dd.getDate() + k); return S.whDays.includes(dd.getDay()); };
+  const sameRow = (k) => { const j = i + k; return j >= 0 && j < model.length && Math.floor(j / cols) === Math.floor(i / cols); };
+  // Outer corners, weekend side: in the weekend box beside the block, or
+  // inside the workday when that neighbour is on another row.
+  const hourLabels = [];
+  if (S.corners === "every") { if (working) hourLabels.push("left", "right"); }
+  else if (S.corners === "outer") {
+    if (working) {
+      if (!isW(-1) && !sameRow(-1)) hourLabels.push("left");
+      if (!isW(1) && !sameRow(1)) hourLabels.push("right");
+    } else {
+      if (isW(1) && sameRow(1)) hourLabels.push("right");
+      if (isW(-1) && sameRow(-1)) hourLabels.push("left");
+    }
+  }
+  return {
+    date: d.date, spans: d.ev, allDay: d.allDay, allDayTitles: d.allDayT, working, weekend: wd === 0 || wd === 6, today: isToday,
+    pastUntil: d.date < today ? 1440 : isToday ? nowMin : 0, now: isToday ? nowMin : null, hourLabels,
+  };
 }
 
 function build() {
   model = fakeFortnight();
   layoutGrid();
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  daysEl.replaceChildren(...model.map((d, i) => {
-    const el = document.createElement("div");
-    const wd = d.date.getDay();
-    el.className = "day" + (d.date.getTime() === today.getTime() ? " today" : "") + (wd === 0 || wd === 6 ? " weekend" : "") + (S.labels === "inside" ? " inside" : "");
-    if (S.labels !== "none") {
-      const l = document.createElement("div"); l.className = "lbl";
-      const name = d.date.toLocaleDateString(undefined, { weekday: "short" });
-      l.innerHTML = `<span><b>${name}</b> ${d.date.getDate()}</span><span>${"•".repeat(d.allDay)}</span>`;
-      el.append(l);
-    }
-    const cv = document.createElement("canvas");
-    cv.dataset.i = i;
-    cv.addEventListener("mousemove", hover); cv.addEventListener("mouseleave", () => (readout.textContent = ""));
-    el.append(cv);
-    return el;
-  }));
-  requestAnimationFrame(drawAll);
+  if (daysEl.children.length !== model.length) daysEl.replaceChildren(...model.map(() => document.createElement("cal-day")));
+  refresh();
+  renderLegend();
   renderPayload();
-  const out = { ...S }; document.getElementById("settings").value = JSON.stringify(out);
-  try { localStorage.setItem("calspec", JSON.stringify(out)); } catch {}
+  const out = { ...S }; delete out.simDays; delete out.simHours; document.getElementById("settings").value = JSON.stringify(out);
+  try { localStorage.setItem("calspec-v12", JSON.stringify(out)); } catch {}
 }
 
-function drawAll() { for (const cv of daysEl.querySelectorAll("canvas")) drawDay(cv, model[cv.dataset.i]); }
-new ResizeObserver(() => drawAll()).observe(daysEl);
-
-const scratch = document.createElement("canvas"), mask = document.createElement("canvas");
-
-function drawDay(cv, d) {
-  const dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
-  if (!W || !H) return;
-  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const m0 = S.r0 * 60, m1 = Math.max(S.r1 * 60, m0 + 60), y = (m) => ((m - m0) / (m1 - m0)) * H;
-  const wd = d.date.getDay(), working = S.whDays.includes(wd);
-
-  // Box and working-hours band.
-  g.fillStyle = "#1d1d21"; g.fillRect(0, 0, W, H);
-  if (working) {
-    g.fillStyle = `rgba(255,255,255,${S.lift / 100})`;
-    g.fillRect(0, y(S.whStart * 60), W, y(S.whEnd * 60) - y(S.whStart * 60));
-  }
-
-  // Ticks over the working hours.
-  const left = S.tickSide !== "right", right = S.tickSide !== "left";
-  if (working) {
-    for (let t = Math.ceil((S.whStart * 60) / S.tick) * S.tick; t <= S.whEnd * 60; t += Number(S.tick)) {
-      const yy = Math.round(y(t)) + 0.5, major = t % S.major === 0, len = major ? S.tickLen * 1.8 : S.tickLen;
-      g.strokeStyle = major ? "#a1a1aa" : "#71717a"; g.lineWidth = 1; g.beginPath();
-      if (left) { g.moveTo(0, yy); g.lineTo(len, yy); }
-      if (right) { g.moveTo(W, yy); g.lineTo(W - len, yy); }
-      g.stroke();
-    }
-  }
-
-  // Events onto a scratch layer, then masked/glowed onto the box.
-  const gut = S.fullWidth ? 0 : S.tickLen * 1.8 + 2;
-  const x0 = left ? gut : 0, x1 = W - (right ? gut : 0);
-  scratch.width = cv.width; scratch.height = cv.height;
-  const s = scratch.getContext("2d"); s.setTransform(dpr, 0, 0, dpr, 0, 0);
-  s.globalCompositeOperation = S.additive ? "lighter" : "source-over";
-  for (const e of d.ev) {
-    if (e.k === 1 && !S.tentative) continue;
-    const a = e.k === 1 ? 0.35 : 0.75, top = y(e.s), bot = y(e.e);
-    if (bot < 0 || top > H) continue;
-    if (S.style === "edges") {
-      s.fillStyle = rgba(S.hue, a * 0.25); s.fillRect(x0, top, x1 - x0, bot - top);
-      s.fillStyle = rgba(S.hue, e.k ? 0.5 : 1);
-      s.fillRect(x0, top, x1 - x0, 1.5); s.fillRect(x0, bot - 1.5, x1 - x0, 1.5);
-    } else if (S.style === "bands") {
-      s.fillStyle = rgba(S.hue, a); s.fillRect(x0, top + 0.5, x1 - x0, Math.max(1, bot - top - 1));
-    } else {
-      s.fillStyle = rgba(S.hue, a); s.fillRect(x0, top, x1 - x0, Math.max(S.thick, bot - top));
-    }
-  }
-  if (S.style === "spectrum") {
-    // Keep only every pitch-th row: the scanline look. A short event that
-    // falls between lines still keeps one line, so nothing disappears.
-    // One mask layer, applied once: each destination-in draw clips
-    // everything outside itself, so the lines can't be drawn one by one.
-    mask.width = cv.width; mask.height = cv.height;
-    const mg = mask.getContext("2d"); mg.setTransform(dpr, 0, 0, dpr, 0, 0); mg.fillStyle = "#fff";
-    for (let yy = 0; yy < H; yy += Number(S.pitch)) mg.fillRect(0, yy, W, Number(S.thick));
-    s.setTransform(1, 0, 0, 1, 0, 0);
-    s.globalCompositeOperation = "destination-in"; s.drawImage(mask, 0, 0);
-    s.setTransform(dpr, 0, 0, dpr, 0, 0);
-    s.globalCompositeOperation = "lighter";
-    for (const e of d.ev) {
-      if (e.k === 1 && !S.tentative) continue;
-      const top = y(e.s), bot = y(e.e);
-      if (bot - top < S.pitch) { s.fillStyle = rgba(S.hue, e.k ? 0.35 : 0.75); s.fillRect(x0, Math.round(top), x1 - x0, S.thick); }
-    }
-  }
-  if (S.glow) { g.save(); g.shadowColor = S.hue; g.shadowBlur = 6; g.globalCompositeOperation = "lighter"; }
-  g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(scratch, 0, 0);
-  if (S.glow) g.restore();
-  g.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  // Past, and now.
-  const now = new Date(), today = new Date(now); today.setHours(0, 0, 0, 0);
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  if (S.dimPast) {
-    g.fillStyle = "rgba(24,24,27,0.6)";
-    if (d.date < today) g.fillRect(0, 0, W, H);
-    else if (d.date.getTime() === today.getTime()) g.fillRect(0, 0, W, Math.max(0, Math.min(H, y(nowMin))));
-  }
-  if (S.now && d.date.getTime() === today.getTime() && nowMin >= m0 && nowMin <= m1) {
-    const yy = Math.round(y(nowMin)) + 0.5;
-    g.strokeStyle = "#f87171"; g.lineWidth = 1; g.beginPath(); g.moveTo(0, yy); g.lineTo(W, yy); g.stroke();
-    g.fillStyle = "#f87171"; g.beginPath(); g.moveTo(0, yy - 3); g.lineTo(4, yy); g.lineTo(0, yy + 3); g.fill();
-  }
-  if (S.labels === "none" && d.allDay) {
-    g.fillStyle = S.hue; for (let j = 0; j < d.allDay; j++) { g.beginPath(); g.arc(W - 5 - j * 7, 5, 2, 0, 7); g.fill(); }
-  }
+// Re-derive every day's props (the clock moved, or a setting changed).
+function refresh() {
+  [...daysEl.children].forEach((el, i) => { el.props = dayProps(i); detail.update(el.props); });
+  document.getElementById("simNow").textContent = clock().toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
 }
 
 // ---------- hover readout (debug) ----------
 const readout = document.getElementById("readout");
-const hm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
-function hover(ev) {
-  const cv = ev.currentTarget, d = model[cv.dataset.i], r = cv.getBoundingClientRect();
+function hover(ev, day) {
+  const p = day.p, r = ev.currentTarget.getBoundingClientRect();
   const m0 = S.r0 * 60, m1 = S.r1 * 60, m = Math.round(m0 + ((ev.clientY - r.top) / r.height) * (m1 - m0));
-  const hits = d.ev.filter((e) => e.s <= m && m < e.e).map((e) => `${hm(e.s)}–${hm(e.e)}${e.k ? " (tentative)" : ""}`);
-  readout.textContent = `${d.date.toDateString()} · ${hm(m)} · ${hits.length ? hits.join(", ") : "free"}`;
+  const hits = p.spans.filter((e) => e.s <= m && m < e.e).map((e) => `${hm(e.s)}–${hm(e.e)}${e.k ? " (tentative)" : ""}`);
+  readout.textContent = `${p.date.toDateString()} · ${hm(m)} · ${hits.length ? hits.join(", ") : "free"}`;
+}
+
+// ---------- <cal-detail>: one day, opened ----------
+// Tapping a day morphs its vertical strip into a horizontal timeline that
+// fills the card: time runs left to right, overlapping events take
+// separate lanes, and each event shows its title. Every piece (the box,
+// the working band, each event, the past, the now line) is laid out twice,
+// once as the strip it starts as and once as the timeline, and drawn
+// in between by the eased progress. The back arrow (or Escape, or waiting) folds it back.
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const lerp = (a, b, t) => a + (b - a) * t;
+const lerpR = (a, b, t) => ({ x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t), w: lerp(a.w, b.w, t), h: lerp(a.h, b.h, t) });
+
+// Text width in the detail's fonts.
+const measureCtx = document.createElement("canvas").getContext("2d");
+function measure(font, s) { measureCtx.font = font + " ui-monospace, Menlo, monospace"; return measureCtx.measureText(s).width; }
+
+// Lanes: each event takes the first lane that's free when it starts.
+function lanes(evs) {
+  const ends = [], out = [];
+  for (const e of evs) {
+    let l = ends.findIndex((end) => end <= e.s);
+    if (l < 0) { l = ends.length; ends.push(0); }
+    ends[l] = e.e; out.push(l);
+  }
+  return { lane: out, count: Math.max(1, ends.length) };
+}
+
+class CalDetail extends HTMLElement {
+  connectedCallback() {
+    if (this.cv) return;
+    this.cv = document.createElement("canvas");
+    this.append(this.cv);
+    this.t = 0; this.way = 0; this.raf = 0; this.sel = -1;
+    // Tap a bar: the event screen dissolves in from the bar's centre.
+    this.cv.addEventListener("click", (ev) => {
+      if (this.t < 1) return;
+      this.arm();
+      const j = this.hit(ev);
+      if (j < 0) return;
+      const evs = this.p.spans.filter((e) => e.k === 0 || S.tentative), e = evs[j], r = this.hz.ev[j];
+      const others = e.k ? [] : evs.filter((f) => f !== e && f.k === 0 && f.s < e.e && e.s < f.e).map((f) => f.t);
+      const c = colorOf(e.k ? "tent" : others.length ? "double" : "busy");
+      this.sel = j; this.draw();
+      eventView.open(e, this.p, { x: r.x + r.w / 2, y: r.y + r.h / 2 }, c, others);
+    });
+    this.cv.addEventListener("mousemove", (ev) => (this.cv.style.cursor = this.t === 1 && this.hit(ev) >= 0 ? "pointer" : "default"));
+    this.back = document.createElement("button");
+    this.back.className = "back"; this.back.setAttribute("aria-label", "Back to two weeks");
+    this.back.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span>2 weeks</span>`;
+    this.back.addEventListener("click", (ev) => { ev.stopPropagation(); this.close(); });
+    this.append(this.back);
+    addEventListener("keydown", (ev) => { if (ev.key === "Escape") eventView.isOpen ? eventView.close() : this.close(); });
+    new ResizeObserver(() => this.draw()).observe(this);
+  }
+  get isOpen() { return !!this.p; }
+  // p: the day's props (as for <cal-day>, plus titles); from: the day's
+  // rectangle in this element's coordinates.
+  // The bar under a pointer event (narrow bars get a 16px-wide target), or -1.
+  hit(ev) {
+    if (!this.hz) return -1;
+    const b = this.cv.getBoundingClientRect(), x = ev.clientX - b.left, y = ev.clientY - b.top;
+    for (let j = this.hz.ev.length - 1; j >= 0; j--) {
+      const r = this.hz.ev[j], pad = Math.max(0, (16 - r.w) / 2);
+      if (x >= r.x - pad && x <= r.x + r.w + pad && y >= r.y && y <= r.y + r.h) return j;
+    }
+    return -1;
+  }
+  open(p, from) { this.sel = -1; this.p = p; this.from = from; this.way = 1; this.classList.add("open"); this.run(); this.arm(); }
+  close() { if (!this.p) return; clearTimeout(this.timer); eventView.close(); this.way = -1; this.run(); }
+  update(p) { if (this.p && p.date.getTime() === this.p.date.getTime()) { this.p = p; this.draw(); } }
+  arm() { clearTimeout(this.timer); if (S.autoClose > 0) this.timer = setTimeout(() => this.close(), S.autoClose * 1000); }
+  run() {
+    if (this.raf) return;
+    let last = performance.now();
+    const step = (now) => {
+      this.t = Math.min(1, Math.max(0, this.t + (this.way * (now - last)) / S.morphMs)); last = now;
+      this.draw();
+      if ((this.way > 0 && this.t < 1) || (this.way < 0 && this.t > 0)) this.raf = requestAnimationFrame(step);
+      else { this.raf = 0; if (this.t === 0) { this.classList.remove("open"); this.p = null; this.back.style.opacity = 0; this.back.style.pointerEvents = "none"; this.draw(); } }
+    };
+    this.raf = requestAnimationFrame(step);
+  }
+
+  // The strip, as <cal-day> draws it, inside rectangle A.
+  strip(p, A, evs) {
+    const m0 = S.r0 * 60, m1 = Math.max(S.r1 * 60, m0 + 60), yv = (m) => A.y + ((Math.min(Math.max(m, m0), m1) - m0) / (m1 - m0)) * A.h;
+    const left = S.tickSide !== "right", right = S.tickSide !== "left", gut = S.fullWidth ? 0 : S.tickLen * 1.8 + 2;
+    const x0 = A.x + (left ? gut : 0), x1 = A.x + A.w - (right ? gut : 0);
+    return {
+      box: A,
+      band: { x: A.x, y: yv(S.whStart * 60), w: A.w, h: yv(S.whEnd * 60) - yv(S.whStart * 60) },
+      ev: evs.map((e) => ({ x: x0, y: yv(e.s), w: x1 - x0, h: Math.max(1, yv(e.e) - yv(e.s)) })),
+      past: { x: A.x, y: A.y, w: A.w, h: yv(p.pastUntil) - A.y },
+      now: p.now == null ? null : { x: A.x, y: yv(p.now), w: A.w, h: 1 },
+    };
+  }
+
+  // The timeline, filling rectangle B.
+  timeline(p, B, evs) {
+    const pad = 12, headH = 40, allH = p.allDayTitles.length ? 22 : 0, axisH = 16, top = B.y + headH + allH + axisH;
+    let lo = p.working ? S.whStart * 60 : 8 * 60, hi = p.working ? S.whEnd * 60 : 20 * 60;
+    for (const e of evs) { lo = Math.min(lo, e.s); hi = Math.max(hi, e.e); }
+    if (p.now != null) { lo = Math.min(lo, p.now); hi = Math.max(hi, p.now + 30); }
+    lo = Math.floor(lo / 60) * 60; hi = Math.ceil(hi / 60) * 60;
+    const xh = (m) => B.x + pad + ((Math.min(Math.max(m, lo), hi) - lo) / (hi - lo)) * (B.w - 2 * pad);
+    // No labels until an event is tapped, so the lanes share all the height.
+    const { lane, count } = lanes(evs), gap = 4, avail = B.y + B.h - pad - top;
+    const laneH = Math.max(14, (avail - gap * (count - 1)) / count);
+    const ev = evs.map((e, j) => ({ x: xh(e.s), y: top + lane[j] * (laneH + gap), w: Math.max(2, xh(e.e) - xh(e.s)), h: laneH }));
+    return {
+      box: B, lo, hi, xh, pad, headH, allH, axisTop: B.y + headH + allH, laneH,
+      band: { x: xh(S.whStart * 60), y: B.y + headH + allH, w: xh(S.whEnd * 60) - xh(S.whStart * 60), h: B.h - headH - allH },
+      ev,
+      past: { x: B.x, y: B.y, w: p.pastUntil >= 1440 ? B.w : Math.max(0, xh(p.pastUntil) - B.x), h: B.h },
+      now: p.now == null ? null : { x: xh(p.now), y: B.y + headH + allH, w: 1, h: B.h - headH - allH },
+    };
+  }
+
+  draw() {
+    const cv = this.cv, dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+    if (!W || !H) return;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const p = this.p;
+    if (!p) return;
+    const t = ease(this.t), evs = p.spans.filter((e) => e.k === 0 || S.tentative);
+    const V = this.strip(p, this.from, evs), Hz = this.timeline(p, { x: 0, y: 0, w: W, h: H }, evs);
+    this.hz = Hz;
+    const box = lerpR(V.box, Hz.box, t);
+    g.save(); g.beginPath(); g.rect(box.x, box.y, box.w, box.h); g.clip();
+
+    g.fillStyle = "#141417"; g.fillRect(box.x, box.y, box.w, box.h);
+    if (p.working) { const r = lerpR(V.band, Hz.band, t); g.fillStyle = `rgba(255,255,255,${S.lift / 100})`; g.fillRect(r.x, r.y, r.w, r.h); }
+
+    const ta = Math.max(0, (this.t - 0.55) / 0.45);   // text and axis fade in late
+    this.back.style.opacity = ta; this.back.style.pointerEvents = this.way > 0 && ta > 0 ? "auto" : "none";
+    // Hour grid and labels along the top of the timeline.
+    if (ta > 0) {
+      g.save(); g.globalAlpha = ta;
+      for (let m = Hz.lo; m <= Hz.hi; m += 60) {
+        const x = Math.round(Hz.xh(m)) + 0.5;
+        g.strokeStyle = "rgba(255,255,255,0.06)"; g.beginPath(); g.moveTo(x, Hz.axisTop + 14); g.lineTo(x, H); g.stroke();
+        g.fillStyle = "#a1a1aa"; g.font = "10px ui-monospace, Menlo, monospace"; g.textBaseline = "top";
+        g.textAlign = m === Hz.lo ? "left" : m === Hz.hi ? "right" : "center";
+        g.fillText(ampm(m), x, Hz.axisTop + 1);
+      }
+      g.restore();
+    }
+
+    // Events: solid strips that become translucent chips with an accent edge.
+    const double = evs.map((e) => e.k === 0 && evs.some((f) => f !== e && f.k === 0 && f.s < e.e && e.s < f.e));
+    evs.forEach((e, j) => {
+      let r = lerpR(V.ev[j], Hz.ev[j], t);
+      const c = e.k ? S.tentColor : double[j] && S.dblColor !== "same" ? S.dblColor : S.hue;
+      // Once one is tapped, it brightens and the rest step back.
+      const sel = this.sel === j, dim = this.sel >= 0 && !sel;
+      // Solid colour, so the title and time can sit on the bar itself.
+      g.fillStyle = rgba(c, lerp(1, dim ? 0.3 : 0.9, t)); g.fillRect(r.x, r.y, r.w, r.h);
+      if (sel) { g.strokeStyle = "#fff"; g.lineWidth = 1.5; g.strokeRect(r.x + 0.75, r.y + 0.75, r.w - 1.5, r.h - 1.5); }
+      if (S.style === "bands" && t < 0.5) { g.fillStyle = "#141417"; g.fillRect(r.x, r.y - 0.5, r.w, 1); }
+      // Labels fade in over the last part of the morph; dark ink on the
+      // bright fill. Title on the first line, time below when it fits.
+      const la = Math.max(0, (t - 0.6) / 0.4);
+      if (la > 0 && Math.max(r.w, r.h) >= 22 && Math.min(r.w, r.h) >= 10) {
+        g.save(); g.beginPath(); g.rect(r.x, r.y, r.w, r.h); g.clip();
+        g.globalAlpha = la * (dim ? 0.45 : 1); g.fillStyle = "#0c0c0e"; g.textAlign = "left"; g.textBaseline = "top";
+        // A tall, narrow bar whose title won't fit across reads sideways
+        // instead: rotate so the bar's height becomes the line length.
+        g.font = `600 11px ui-monospace, Menlo, monospace`;
+        if (r.h > r.w * 1.5 && g.measureText(e.t).width > r.w - 9) {
+          g.translate(r.x, r.y + r.h); g.rotate(-Math.PI / 2);
+          r = { x: 0, y: 0, w: r.h, h: r.w };
+        }
+        const fs = Math.min(13, Math.max(9, Math.floor(Math.min(r.h / 2.6, 13)))), px = r.x + 5, pw = r.w - 9;
+        const two = r.h >= fs * 2 + 8, y0 = two ? r.y + (r.h - (fs * 2 + 3)) / 2 : r.y + (r.h - fs) / 2;
+        const when = `${ampm(e.s)}–${ampm(e.e)}`;
+        g.font = `600 ${fs}px ui-monospace, Menlo, monospace`;
+        if (two) {
+          g.fillText(fitText(g, e.t, pw), px, y0);
+          g.font = `${fs - 1}px ui-monospace, Menlo, monospace`; g.globalAlpha *= 0.75;
+          g.fillText(fitText(g, when, pw), px, y0 + fs + 3);
+        } else {
+          // One line: title, then the time if there's room for both.
+          const both = `${e.t} · ${when}`;
+          g.fillText(fitText(g, g.measureText(both).width <= pw ? both : e.t, pw), px, y0);
+        }
+        g.restore();
+      }
+    });
+
+    // The past, and now.
+    if (S.dimPast) { const r = lerpR(V.past, Hz.past, t); if (r.w > 0 && r.h > 0) { g.fillStyle = "rgba(24,24,27,0.6)"; g.fillRect(r.x, r.y, r.w, r.h); } }
+    if (S.now && V.now) { const r = lerpR(V.now, Hz.now, t); g.fillStyle = "#f87171"; g.fillRect(r.x, r.y, Math.max(1, r.w), Math.max(1, r.h)); }
+
+    if (ta > 0) {
+      g.save(); g.globalAlpha = ta; g.shadowColor = "#000"; g.shadowBlur = 3;
+      // Header: the date, and a summary.
+      const busy = evs.filter((e) => e.k === 0).reduce((n, e) => n + (e.e - e.s), 0);
+      g.textBaseline = "middle"; g.textAlign = "left"; g.fillStyle = "#e5e7eb"; g.font = "600 13px ui-monospace, Menlo, monospace";
+      g.fillText(p.date.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" }), this.back.offsetWidth + 18, Hz.headH / 2 + 2);
+      g.textAlign = "right"; g.fillStyle = "#a1a1aa"; g.font = "11px ui-monospace, Menlo, monospace";
+      g.fillText(`${evs.length} event${evs.length === 1 ? "" : "s"} · ${Math.floor(busy / 60)}h${busy % 60 ? ` ${busy % 60}m` : ""} busy`, W - Hz.pad, Hz.headH / 2 + 2);
+      // All-day chips.
+      let cx = Hz.pad;
+      for (const title of p.allDayTitles) {
+        g.font = "11px ui-monospace, Menlo, monospace"; const w = g.measureText(title).width + 14;
+        g.shadowBlur = 0; g.fillStyle = rgba(S.hue, 0.18); g.beginPath(); g.roundRect(cx, Hz.headH, w, 17, 4); g.fill();
+        g.fillStyle = "#e5e7eb"; g.textAlign = "left"; g.fillText(title, cx + 7, Hz.headH + 9); cx += w + 6;
+      }
+      g.shadowBlur = 3;
+      g.restore();
+    }
+    g.restore();
+  }
+}
+customElements.define("cal-detail", CalDetail);
+
+const detail = document.createElement("cal-detail");
+document.querySelector("#card .body").append(detail);
+function openDay(day) {
+  if (detail.isOpen) return detail.close();
+  const i = [...daysEl.children].indexOf(day), b = detail.getBoundingClientRect(), r = day.cv.getBoundingClientRect();
+  detail.open(dayProps(i), { x: r.left - b.left, y: r.top - b.top, w: r.width, h: r.height });
+}
+
+// ---------- <cal-event>: one event, opened from its label ----------
+// The screen dissolves in radially from the tapped event's bar, then the
+// details fade in: when, where, video,
+// organizer, your response, overlaps, notes, and the guest list. The
+// back button dissolves it back into the bar.
+class CalEvent extends HTMLElement {
+  connectedCallback() {
+    if (this.panel) return;
+    this.innerHTML = `<div class="ev-panel"><div class="ev-content">
+      <header><button class="back" aria-label="Back to the day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span class="ev-back"></span></button>
+        <div class="ev-head"><div class="ev-title"></div><div class="ev-when"></div></div><div class="ev-chips"></div></header>
+      <div class="ev-track"></div>
+      <div class="ev-body"><dl class="ev-facts"></dl><section class="ev-people"><h4></h4><ul></ul></section></div>
+    </div></div>`;
+    this.panel = this.querySelector(".ev-panel");
+    this.querySelector(".back").addEventListener("click", (ev) => { ev.stopPropagation(); this.close(); });
+    this.addEventListener("pointerdown", () => detail.arm());
+  }
+  get isOpen() { return this.classList.contains("open"); }
+  // e: the event (with e.d, its details); day: the day's props; c: its colour.
+  // at: the centre of the tapped event's bar, in this element's coordinates.
+  // The screen dissolves in as a soft-edged circle growing from there until
+  // it covers the card, and dissolves back into the same point on close.
+  open(e, day, at, c, overlaps) {
+    this.at = at;
+    this.fill(e, day, c, overlaps);
+    this.classList.add("open"); this.classList.remove("shown");
+    this.animate(1);
+  }
+  close() {
+    if (!this.isOpen) return;
+    this.classList.remove("shown");
+    detail.sel = -1; detail.draw();                 // the bar loses its outline as the screen dissolves away
+    this.animate(-1);
+  }
+  animate(way) {
+    this.way = way;
+    if (this.raf) return;
+    this.k ??= 0;
+    let last = performance.now();
+    const step = (now) => {
+      this.k = Math.min(1, Math.max(0, this.k + (this.way * Math.max(0, now - last)) / S.morphMs)); last = now;
+      this.paint();
+      if ((this.way > 0 && this.k < 1) || (this.way < 0 && this.k > 0)) this.raf = requestAnimationFrame(step);
+      else { this.raf = 0; if (this.k === 0) this.classList.remove("open"); }
+    };
+    this.raf = requestAnimationFrame(step);
+  }
+  paint() {
+    const W = this.clientWidth, H = this.clientHeight, { x, y } = this.at, feather = 90;
+    const far = Math.max(Math.hypot(x, y), Math.hypot(W - x, y), Math.hypot(x, H - y), Math.hypot(W - x, H - y));
+    const t = ease(this.k), r = t * (far + feather);
+    // The text arrives once the circle has covered most of the card.
+    this.classList.toggle("shown", this.way > 0 && this.k > 0.45);
+    const mask = this.k >= 1 ? "none" : `radial-gradient(circle at ${x}px ${y}px, #000 ${Math.max(0, r - feather)}px, transparent ${r}px)`;
+    this.panel.style.maskImage = this.panel.style.webkitMaskImage = mask;
+    this.panel.style.opacity = Math.min(1, this.k * 2.5);
+  }
+  fill(e, day, c, overlaps) {
+    const d = e.d, dur = e.e - e.s, len = dur >= 60 ? `${Math.floor(dur / 60)}h${dur % 60 ? ` ${dur % 60}m` : ""}` : `${dur}m`;
+    const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
+    this.style.setProperty("--ev", c);
+    this.querySelector(".ev-title").textContent = e.t;
+    this.querySelector(".ev-back").textContent = `${day.date.toLocaleDateString(undefined, { weekday: "short" })} ${day.date.getDate()}`;
+    this.querySelector(".ev-when").textContent = `${day.date.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })} · ${ampm(e.s)}–${ampm(e.e)} · ${len}`;
+    const chips = [];
+    if (e.k) chips.push(["tentative", S.tentColor]);
+    if (overlaps.length) chips.push(["double-booked", S.dblColor === "same" ? S.hue : S.dblColor]);
+    this.querySelector(".ev-chips").innerHTML = chips.map(([t, col]) => `<span style="--chip:${col}">${t}</span>`).join("");
+    // Where this event sits in its day.
+    const lo = Math.min(e.s, ...day.spans.map((f) => f.s)), hi = Math.max(e.e, ...day.spans.map((f) => f.e));
+    const pos = (m) => ((m - lo) / Math.max(1, hi - lo)) * 100;
+    this.querySelector(".ev-track").innerHTML = day.spans.map((f) =>
+      `<i class="${f === e ? "me" : ""}" style="left:${pos(f.s)}%;width:${Math.max(0.6, pos(f.e) - pos(f.s))}%"></i>`).join("") +
+      `<b style="left:0">${ampm(lo)}</b><b style="right:0">${ampm(hi)}</b>`;
+    const RSVP = { yes: "accepted", maybe: "maybe", no: "declined", none: "not answered" };
+    const facts = [
+      ["Where", d.where], ["Video", d.video], ["Organizer", d.organizer],
+      ["You", d.you ? RSVP[d.you] : ""], ["Overlaps", overlaps.join(", ")], ["Notes", d.notes],
+    ].filter(([, v]) => v);
+    this.querySelector(".ev-facts").innerHTML = facts.length
+      ? facts.map(([k, v]) => `<dt>${k}</dt><dd class="${k === "Notes" ? "notes" : ""}">${esc(v)}</dd>`).join("")
+      : `<dt></dt><dd class="none">No other details.</dd>`;
+    const people = this.querySelector(".ev-people");
+    people.hidden = !d.guests.length;
+    const n = (st) => d.guests.filter((g) => g.st === st).length;
+    people.querySelector("h4").textContent = `${d.guests.length} guests · ${n("yes")} yes${n("maybe") ? ` · ${n("maybe")} maybe` : ""}${n("no") ? ` · ${n("no")} no` : ""}${n("none") ? ` · ${n("none")} awaiting` : ""}`;
+    const MARK = { yes: "✓", maybe: "?", no: "✕", none: "·" };
+    people.querySelector("ul").innerHTML = d.guests.map((g) =>
+      `<li class="${g.st}"><span class="mark">${MARK[g.st]}</span>${esc(g.name)}${g.org ? ` <em>organizer</em>` : ""}</li>`).join("");
+  }
+}
+customElements.define("cal-event", CalEvent);
+const eventView = document.createElement("cal-event");
+document.querySelector("#card .body").append(eventView);
+
+// ---------- fake event details ----------
+// What the iCal feed carries per event, roughly: ATTENDEE (name, PARTSTAT),
+// ORGANIZER, LOCATION, DESCRIPTION (where Google puts the Meet link).
+const PEOPLE = ["Priya Shah", "Marcus Lee", "Ana Gomez", "Tom Becker", "Yuki Tanaka", "Sam Okafor", "Lena Novak", "Diego Ruiz",
+  "Fatima Khan", "Noah Kim", "Ines Duarte", "Omar Haddad", "Grace Liu", "Ravi Iyer", "Hannah Weiss", "Jonas Berg", "Chloe Martin", "Kofi Mensah"];
+const PERSONAL = { "Lunch": ["", ""], "Climbing": ["Mission Cliffs", ""], "Dinner with friends": ["Nopa, 560 Divisadero St", "Table for 4 at 7."],
+  "Book club": ["Lena's place", "This month: The Left Hand of Darkness."], "Brunch": ["Plow, Potrero Hill", ""], "Farmers market": ["Ferry Building", ""],
+  "Hike": ["Lands End trailhead", "Bring water."], "Movie night": ["Roxie Theater", ""], "Dinner party": ["Home", "Bring dessert."],
+  "Flight SFO → JFK": ["SFO Terminal 2, gate 54", "Confirmation K7Q2ZP. Seat 14C."] };
+const NOTES = {
+  "Standup": "Yesterday / today / blockers. Keep it under 15 minutes.",
+  "Sprint planning": "Review the backlog before the meeting. Capacity: 34 points.",
+  "1:1 with manager": "Agenda in the shared doc: promo packet, Q1 goals.",
+  "Interview: backend": "Systems design round. Scorecard due by end of day.",
+  "Customer call": "Acme renewal. Pricing questions; bring the usage report.",
+  "Incident review": "Postmortem for the Tuesday outage. Blameless format.",
+};
+function fakeDetails(e, date) {
+  let h = S.seed; for (const ch of e.t + e.s + date.toDateString()) h = (Math.imul(h, 31) + ch.charCodeAt(0)) | 0;
+  const r = rng(h), pick = (xs) => xs[Math.floor(r() * xs.length)];
+  if (PERSONAL[e.t]) { const [where, notes] = PERSONAL[e.t]; return { where, notes, video: "", organizer: "", you: "", guests: [] }; }
+  const size = { "Standup": 8, "Sprint planning": 9, "1:1 with manager": 2, "Interview: backend": 3, "Customer call": 6, "Early sync (EU)": 5 }[e.t] ?? 3 + Math.floor(r() * 9);
+  const pool = [...PEOPLE].sort(() => r() - 0.5).slice(0, size - 1);
+  const st = () => { const x = r(); return x < 0.65 ? "yes" : x < 0.75 ? "maybe" : x < 0.85 ? "no" : "none"; };
+  const you = e.k ? pick(["maybe", "none"]) : "yes";
+  const orgIdx = e.t === "1:1 with manager" || r() < 0.6 ? 0 : -1;
+  const guests = [{ name: "You", st: you, org: orgIdx < 0 }, ...pool.map((name, i) => ({ name, st: i === orgIdx ? "yes" : st(), org: i === orgIdx }))];
+  const room = pick(["Juniper (4B)", "Redwood (2A)", "Cypress (3C)", ""]);
+  const video = r() < 0.7 ? `meet.google.com/${pick(["abc", "kqv", "zxt", "mpr"])}-${pick(["defg", "wnra", "hbto"])}-${pick(["hij", "upo", "yde"])}` : "";
+  return {
+    where: room, video, organizer: orgIdx < 0 ? "You" : pool[orgIdx], you,
+    notes: NOTES[e.t] ?? pick(["", "Agenda to follow.", "Pre-read linked in the invite.", "Decision needed on the Q1 scope."]),
+    guests,
+  };
 }
 
 // ---------- payload sizes ----------
@@ -360,10 +929,19 @@ function renderPayload() {
   }
   // 4. Fixed bitmap: 2 bits (free/tentative/busy/double) per slot.
   const bitmap = 14 * field(Math.ceil(((1440 / res) * 2) / 8)) + 6;
+  // Titles: one repeated string per day, in span order, plus all-day titles.
+  const enc = new TextEncoder();
+  const titles = model.reduce((n, d) => n + d.ev.reduce((m, e) => m + field(enc.encode(e.t).length), 0) + d.allDayT.reduce((m, t) => m + field(enc.encode(t).length), 0), 0);
+  // Details: guests (name + response), organizer, location, video, notes.
+  const str = (s) => (s ? field(enc.encode(s).length) : 0);
+  const details = model.reduce((n, d) => n + d.ev.reduce((m, e) => m + field(str(e.d.where) + str(e.d.video) + str(e.d.organizer) + str(e.d.notes) + (e.d.you ? 2 : 0) +
+    e.d.guests.reduce((q, g) => q + field(str(g.name) + 2 + (g.org ? 2 : 0)), 0)), 0), 0);
   const rows = [
     ["JSON (readable)", verbose],
     ["Proto, Span messages, minutes", naive],
     [`Proto, packed deltas, ${res}-min units`, packed],
+    [`  … with event titles (for the day detail)`, packed + titles],
+    [`  … with titles and event details (guests, notes)`, packed + titles + details],
     [`Bitmap, 2 bits × ${1440 / res} slots/day`, bitmap],
   ];
   const best = Math.min(...rows.map((r) => r[1]));
@@ -403,7 +981,7 @@ document.getElementById("copy").onclick = async () => {
   const t = document.getElementById("settings").value, msg = document.getElementById("copied");
   try { await navigator.clipboard.writeText(t); msg.textContent = "copied"; } catch { document.getElementById("settings").select(); msg.textContent = "select and copy below"; }
 };
-setInterval(drawAll, 60_000);
+setInterval(refresh, 60_000);
 syncInputs(); build();
 </script>
 </body>

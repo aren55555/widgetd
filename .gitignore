@@ -4,3 +4,4 @@ node_modules/
 .DS_Store
 widgetd.toml
 /examples/.widgetc/
+.claude/worktrees/
