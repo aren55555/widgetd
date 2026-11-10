@@ -52,6 +52,12 @@ type instance struct {
 	configured bool
 	state      widgetdv1.InstanceStatus_State
 	message    string
+	// With STATE_NEEDS_SIGN_IN: the provider, and the account (if one is
+	// bound) it waits for.
+	waitProvider, waitAccount, waitLabel string
+	bindings   map[string]string // provider → account id (see accounts.go)
+	warning    string // something wrong that doesn't stop it
+	quarantine string // set: stopped, and out of its accounts' grants (see accounts.go)
 
 	// Set while running; guarded by srv.mu.
 	cancel context.CancelFunc
@@ -184,19 +190,32 @@ func (h *runHost) Fetch(req *http.Request) (*http.Response, error) {
 	if err := h.ctx.Err(); err != nil {
 		return nil, err
 	}
-	var auth string
+	var auth, provider, acct string
 	if widget.IsAuthorized(req) {
-		a, err := h.in.srv.authorization(h.ctx, h.in, req.URL)
+		a, p, ac, err := h.in.srv.authorization(h.ctx, h.in, req.Method, req.URL)
 		if err != nil {
+			h.flagScope(err)
 			return nil, err
 		}
-		auth = a
+		auth, provider, acct = a, p, ac
 	}
 	resp, err := h.in.fetcher.do(h.ctx, req, auth)
+	if err == nil && provider != "" {
+		// The API may say the request needed a scope the token lacks: the
+		// widget used one it didn't declare. Fail it, and flag the widget.
+		p := h.in.srv.providers[provider]
+		if missing := p.missingScopes(resp); len(missing) > 0 {
+			resp.Body.Close()
+			se := &widget.ScopeError{Provider: p.Title, Missing: missing, Refused: true}
+			h.flagScope(se)
+			return nil, se
+		}
+	}
 	if err == nil && auth != "" && resp.StatusCode == http.StatusUnauthorized && !h.helper {
-		// The provider stopped accepting the token. Stop and ask for a new
-		// sign-in; from another goroutine, since stopping waits for this run.
-		go h.in.srv.signOut(h.in.id, "The sign-in lapsed. Sign in again.")
+		// The provider stopped accepting the account's token: forget it and
+		// put its widgets back to waiting; from another goroutine, since that
+		// stops this run and stopping waits for it.
+		go h.in.srv.accountLapsed(acct)
 	}
 	return resp, err
 }
@@ -412,4 +431,18 @@ func (r *rawCard) Actions() <-chan []byte {
 	r.h.mu.Lock()
 	defer r.h.mu.Unlock()
 	return r.c.actions
+}
+
+// flagScope warns about a widget using a scope it didn't declare. Other
+// errors pass through untouched.
+func (h *runHost) flagScope(err error) {
+	var se *widget.ScopeError
+	if !errors.As(err, &se) || h.helper {
+		return
+	}
+	what := "used a " + se.Provider + " scope it didn't declare"
+	if len(se.Missing) > 0 {
+		what += ": " + strings.Join(se.Missing, " or ")
+	}
+	h.in.warn(what)
 }

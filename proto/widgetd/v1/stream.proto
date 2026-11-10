@@ -97,6 +97,15 @@ message InstanceStatus {
   string title = 3;
   string message = 4;
   bool removed = 5;
+  // For STATE_NEEDS_SIGN_IN: which account (provider) to sign in.
+  string provider = 6;
+  // Something wrong that doesn't stop it, e.g. it used a scope it didn't
+  // declare. Screens badge its cards.
+  string warning = 7;
+  // For STATE_NEEDS_SIGN_IN: the account bound to it (empty: none chosen
+  // yet, which only an admin can do) and that account's name.
+  string account = 8;
+  string account_label = 9;
 }
 
 message WidgetRef {

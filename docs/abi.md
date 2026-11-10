@@ -123,11 +123,44 @@ out), the save is refused with that reason, so it can be retried.
   fields (top-level strings) that are write-only. They're stored sealed, apart
   from the rest of the config, and never sent back to a settings form. The
   module sees them in `ConfigGet` like any other field.
-- **Sign-in.** A `[sign_in]` block (provider, `device_url`, `token_url`,
-  `scopes`, `api_hosts`) makes the host run an OAuth 2.0 device flow for each
-  instance and keep the token. The module never gets the token. It sets
-  `authorize` on a `Fetch` to one of the `api_hosts`, which must also be in its
-  network request, and the host adds `Authorization` to that request. A 401
-  reply puts the instance back to "needs sign-in". Whoever runs the host
-  registers an OAuth app with the provider and enters its client ID on the
-  admin page.
+- **Accounts.** A widget declares the accounts it uses:
+  ```toml
+  [[uses]]
+  provider = "google"   # a provider the host has a package for
+  scopes   = ["https://www.googleapis.com/auth/calendar.readonly"]
+  ```
+  Each scope must be one the provider's package lists (see **Providers**
+  below); a widget declaring any other is refused when it loads.
+
+  The display can have several accounts with one provider ("Google: Work",
+  "Google: Personal"). An admin binds each instance to one of them on the
+  admin page, or signs a new one in from there; a new account can't be used
+  until the admin names it. The widget never learns which account it has.
+  Each account's grant is kept to exactly the union of the scopes of the
+  instances bound to it: binding one that needs more asks for a sign-in to
+  the larger set, and removing or rebinding one revokes the grant at once and
+  asks for the smaller set. An account no instance uses is revoked, but kept,
+  named and signed out. When the provider says who signed in, signing an
+  account back in must be the same person, and one person can't be two
+  accounts.
+
+  The module never gets a token. It sets `authorize` on a `Fetch`, and the
+  host adds `Authorization` with the instance's account, **only** if one of
+  the scopes this widget declared covers the request, by the provider's
+  table. Sharing an account with a Gmail widget doesn't let a calendar widget
+  read mail. A request no declared scope covers, or one the API refuses for
+  a missing scope, fails with a scope error (`widget.ScopeError` in Go)
+  naming the scope, and the instance shows a warning: the fix is to declare
+  it. A 401 reply signs the account out and puts its widgets back to waiting.
+
+- **Providers.** A provider is a package of data, never code: a TOML
+  manifest with its sign-in endpoints and flow (`browser`: authorization
+  code with PKCE, a QR code to the consent page on a phone; `device`: a code
+  to enter on its site), how it revokes (`rfc7009` or `github-grant`), how
+  its APIs report a missing scope (`rfc6750`'s `WWW-Authenticate`, or
+  named `headers`), how to tell who signed in (`[identity]`), and
+  `[scopes.covers]`: what each scope unlocks, as URL prefixes optionally
+  led by a method. The table is strict: an unlisted scope doesn't exist.
+  Google and GitHub ship built in (`host/providers/`). Whoever runs the host
+  registers an OAuth client with each provider and enters it under Accounts
+  on the admin page.

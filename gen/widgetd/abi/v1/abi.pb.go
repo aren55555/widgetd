@@ -417,6 +417,8 @@ type Result struct {
 	Error string `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
 	// Set when the network policy refused a fetch: the rule it broke.
 	DeniedRule string `protobuf:"bytes,2,opt,name=denied_rule,json=deniedRule,proto3" json:"denied_rule,omitempty"`
+	// Set when a signed fetch needed a scope the widget didn't declare.
+	Scope *ScopeProblem `protobuf:"bytes,8,opt,name=scope,proto3" json:"scope,omitempty"`
 	// Types that are valid to be assigned to Value:
 	//
 	//	*Result_Config
@@ -471,6 +473,13 @@ func (x *Result) GetDeniedRule() string {
 		return x.DeniedRule
 	}
 	return ""
+}
+
+func (x *Result) GetScope() *ScopeProblem {
+	if x != nil {
+		return x.Scope
+	}
+	return nil
 }
 
 func (x *Result) GetValue() isResult_Value {
@@ -1748,6 +1757,68 @@ func (x *Violation) GetMessage() string {
 	return ""
 }
 
+// ScopeProblem: the host wouldn't sign a fetch (no scope the widget declared
+// covers it), or the API refused it for want of a scope.
+type ScopeProblem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Provider      string                 `protobuf:"bytes,1,opt,name=provider,proto3" json:"provider,omitempty"`
+	Missing       []string               `protobuf:"bytes,2,rep,name=missing,proto3" json:"missing,omitempty"`
+	Refused       bool                   `protobuf:"varint,3,opt,name=refused,proto3" json:"refused,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScopeProblem) Reset() {
+	*x = ScopeProblem{}
+	mi := &file_widgetd_abi_v1_abi_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScopeProblem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScopeProblem) ProtoMessage() {}
+
+func (x *ScopeProblem) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_abi_v1_abi_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScopeProblem.ProtoReflect.Descriptor instead.
+func (*ScopeProblem) Descriptor() ([]byte, []int) {
+	return file_widgetd_abi_v1_abi_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *ScopeProblem) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
+}
+
+func (x *ScopeProblem) GetMissing() []string {
+	if x != nil {
+		return x.Missing
+	}
+	return nil
+}
+
+func (x *ScopeProblem) GetRefused() bool {
+	if x != nil {
+		return x.Refused
+	}
+	return false
+}
+
 var File_widgetd_abi_v1_abi_proto protoreflect.FileDescriptor
 
 const file_widgetd_abi_v1_abi_proto_rawDesc = "" +
@@ -1769,11 +1840,12 @@ const file_widgetd_abi_v1_abi_proto_rawDesc = "" +
 	"\x04exit\x18\v \x01(\v2\x14.widgetd.abi.v1.ExitH\x00R\x04exit\x123\n" +
 	"\achoices\x18\f \x01(\v2\x17.widgetd.abi.v1.ChoicesH\x00R\achoices\x123\n" +
 	"\averdict\x18\r \x01(\v2\x17.widgetd.abi.v1.VerdictH\x00R\averdictB\x04\n" +
-	"\x02op\"\xab\x02\n" +
+	"\x02op\"\xdf\x02\n" +
 	"\x06Result\x12\x14\n" +
 	"\x05error\x18\x01 \x01(\tR\x05error\x12\x1f\n" +
 	"\vdenied_rule\x18\x02 \x01(\tR\n" +
-	"deniedRule\x12\x18\n" +
+	"deniedRule\x122\n" +
+	"\x05scope\x18\b \x01(\v2\x1c.widgetd.abi.v1.ScopeProblemR\x05scope\x12\x18\n" +
 	"\x06config\x18\x03 \x01(\fH\x00R\x06config\x125\n" +
 	"\x05fetch\x18\x04 \x01(\v2\x1d.widgetd.abi.v1.FetchResponseH\x00R\x05fetch\x12)\n" +
 	"\x02kv\x18\x05 \x01(\v2\x17.widgetd.abi.v1.KvValueH\x00R\x02kv\x120\n" +
@@ -1867,7 +1939,11 @@ const file_widgetd_abi_v1_abi_proto_rawDesc = "" +
 	"\x06config\x18\x02 \x01(\fR\x06config\";\n" +
 	"\tViolation\x12\x14\n" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessageB7Z5github.com/aren55555/widgetd/gen/widgetd/abi/v1;abiv1b\x06proto3"
+	"\amessage\x18\x02 \x01(\tR\amessage\"^\n" +
+	"\fScopeProblem\x12\x1a\n" +
+	"\bprovider\x18\x01 \x01(\tR\bprovider\x12\x18\n" +
+	"\amissing\x18\x02 \x03(\tR\amissing\x12\x18\n" +
+	"\arefused\x18\x03 \x01(\bR\arefusedB7Z5github.com/aren55555/widgetd/gen/widgetd/abi/v1;abiv1b\x06proto3"
 
 var (
 	file_widgetd_abi_v1_abi_proto_rawDescOnce sync.Once
@@ -1882,7 +1958,7 @@ func file_widgetd_abi_v1_abi_proto_rawDescGZIP() []byte {
 }
 
 var file_widgetd_abi_v1_abi_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_widgetd_abi_v1_abi_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_widgetd_abi_v1_abi_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_widgetd_abi_v1_abi_proto_goTypes = []any{
 	(Emit_Kind)(0),        // 0: widgetd.abi.v1.Emit.Kind
 	(Log_Level)(0),        // 1: widgetd.abi.v1.Log.Level
@@ -1910,6 +1986,7 @@ var file_widgetd_abi_v1_abi_proto_goTypes = []any{
 	(*Choice)(nil),        // 23: widgetd.abi.v1.Choice
 	(*Verdict)(nil),       // 24: widgetd.abi.v1.Verdict
 	(*Violation)(nil),     // 25: widgetd.abi.v1.Violation
+	(*ScopeProblem)(nil),  // 26: widgetd.abi.v1.ScopeProblem
 }
 var file_widgetd_abi_v1_abi_proto_depIdxs = []int32{
 	4,  // 0: widgetd.abi.v1.Call.config_get:type_name -> widgetd.abi.v1.ConfigGet
@@ -1925,24 +2002,25 @@ var file_widgetd_abi_v1_abi_proto_depIdxs = []int32{
 	20, // 10: widgetd.abi.v1.Call.exit:type_name -> widgetd.abi.v1.Exit
 	21, // 11: widgetd.abi.v1.Call.choices:type_name -> widgetd.abi.v1.Choices
 	24, // 12: widgetd.abi.v1.Call.verdict:type_name -> widgetd.abi.v1.Verdict
-	7,  // 13: widgetd.abi.v1.Result.fetch:type_name -> widgetd.abi.v1.FetchResponse
-	9,  // 14: widgetd.abi.v1.Result.kv:type_name -> widgetd.abi.v1.KvValue
-	15, // 15: widgetd.abi.v1.Result.emit:type_name -> widgetd.abi.v1.EmitResult
-	18, // 16: widgetd.abi.v1.Result.actions:type_name -> widgetd.abi.v1.Actions
-	5,  // 17: widgetd.abi.v1.Fetch.headers:type_name -> widgetd.abi.v1.Header
-	5,  // 18: widgetd.abi.v1.FetchResponse.headers:type_name -> widgetd.abi.v1.Header
-	0,  // 19: widgetd.abi.v1.Emit.kind:type_name -> widgetd.abi.v1.Emit.Kind
-	1,  // 20: widgetd.abi.v1.Log.level:type_name -> widgetd.abi.v1.Log.Level
-	5,  // 21: widgetd.abi.v1.Log.attrs:type_name -> widgetd.abi.v1.Header
-	19, // 22: widgetd.abi.v1.Actions.actions:type_name -> widgetd.abi.v1.CardAction
-	22, // 23: widgetd.abi.v1.Choices.fields:type_name -> widgetd.abi.v1.FieldChoices
-	23, // 24: widgetd.abi.v1.FieldChoices.choices:type_name -> widgetd.abi.v1.Choice
-	25, // 25: widgetd.abi.v1.Verdict.violations:type_name -> widgetd.abi.v1.Violation
-	26, // [26:26] is the sub-list for method output_type
-	26, // [26:26] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	26, // 13: widgetd.abi.v1.Result.scope:type_name -> widgetd.abi.v1.ScopeProblem
+	7,  // 14: widgetd.abi.v1.Result.fetch:type_name -> widgetd.abi.v1.FetchResponse
+	9,  // 15: widgetd.abi.v1.Result.kv:type_name -> widgetd.abi.v1.KvValue
+	15, // 16: widgetd.abi.v1.Result.emit:type_name -> widgetd.abi.v1.EmitResult
+	18, // 17: widgetd.abi.v1.Result.actions:type_name -> widgetd.abi.v1.Actions
+	5,  // 18: widgetd.abi.v1.Fetch.headers:type_name -> widgetd.abi.v1.Header
+	5,  // 19: widgetd.abi.v1.FetchResponse.headers:type_name -> widgetd.abi.v1.Header
+	0,  // 20: widgetd.abi.v1.Emit.kind:type_name -> widgetd.abi.v1.Emit.Kind
+	1,  // 21: widgetd.abi.v1.Log.level:type_name -> widgetd.abi.v1.Log.Level
+	5,  // 22: widgetd.abi.v1.Log.attrs:type_name -> widgetd.abi.v1.Header
+	19, // 23: widgetd.abi.v1.Actions.actions:type_name -> widgetd.abi.v1.CardAction
+	22, // 24: widgetd.abi.v1.Choices.fields:type_name -> widgetd.abi.v1.FieldChoices
+	23, // 25: widgetd.abi.v1.FieldChoices.choices:type_name -> widgetd.abi.v1.Choice
+	25, // 26: widgetd.abi.v1.Verdict.violations:type_name -> widgetd.abi.v1.Violation
+	27, // [27:27] is the sub-list for method output_type
+	27, // [27:27] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_widgetd_abi_v1_abi_proto_init() }
@@ -1978,7 +2056,7 @@ func file_widgetd_abi_v1_abi_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_widgetd_abi_v1_abi_proto_rawDesc), len(file_widgetd_abi_v1_abi_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   24,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -63,6 +63,29 @@ CREATE TABLE IF NOT EXISTS tokens (
 	instance TEXT PRIMARY KEY,
 	value    BLOB NOT NULL          -- sealed JSON: see signin.go
 );
+CREATE TABLE IF NOT EXISTS provider_clients (
+	provider      TEXT PRIMARY KEY,
+	client_id     TEXT NOT NULL,
+	client_secret BLOB              -- sealed; NULL if none
+);
+CREATE TABLE IF NOT EXISTS identities (
+	id       TEXT PRIMARY KEY,
+	provider TEXT NOT NULL,
+	label    TEXT NOT NULL DEFAULT '', -- '' until an admin names it
+	subject  TEXT NOT NULL DEFAULT '', -- who it is, if the provider says
+	value    BLOB,                     -- sealed token JSON; NULL when signed out
+	created  INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS bindings (
+	instance TEXT NOT NULL,
+	provider TEXT NOT NULL,
+	account  TEXT NOT NULL,
+	PRIMARY KEY (instance, provider)
+);
+CREATE TABLE IF NOT EXISTS quarantine (
+	instance TEXT PRIMARY KEY,
+	reason   TEXT NOT NULL          -- shown on its tile; cleared by saving its settings
+);
 CREATE TABLE IF NOT EXISTS grants (
 	widget   TEXT PRIMARY KEY,
 	disabled INTEGER NOT NULL DEFAULT 0,

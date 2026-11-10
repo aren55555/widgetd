@@ -43,8 +43,8 @@ type Manifest struct {
 	Modes []string `json:"modes,omitempty"`
 	// Secrets are the Config fields that are write-only.
 	Secrets []string `json:"secrets,omitempty"`
-	// SignIn, if the widget uses an account.
-	SignIn *widget.SignIn `json:"sign_in,omitempty"`
+	// Uses are the accounts it uses, and with what scopes.
+	Uses []widget.Use `json:"uses,omitempty"`
 	// Protos are the widget's own files within the descriptor set (the rest
 	// are their imports).
 	Protos []string `json:"protos"`
@@ -141,7 +141,7 @@ func LoadPackage(b []byte) (widget.Spec, error) {
 		Title:   m.Title,
 		Modes:   m.Modes,
 		Secrets: m.Secrets,
-		SignIn:  m.SignIn,
+		Uses:    m.Uses,
 		Files:   own,
 		Config:  cfg,
 		Wasm:    wasm,

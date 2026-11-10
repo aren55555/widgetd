@@ -57,13 +57,7 @@ type manifest struct {
 		Methods []string `toml:"methods"`
 		Why     string   `toml:"why"`
 	} `toml:"network"`
-	SignIn *struct {
-		Provider  string   `toml:"provider"`
-		DeviceURL string   `toml:"device_url"`
-		TokenURL  string   `toml:"token_url"`
-		Scopes    []string `toml:"scopes"`
-		APIHosts  []string `toml:"api_hosts"`
-	} `toml:"sign_in"`
+	Uses []widget.Use `toml:"uses"`
 }
 
 var nameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)
@@ -338,9 +332,7 @@ func pack(dir, importPath string, m manifest, protos []string) error {
 		Name: m.Name, Version: m.Version, Title: m.Title, Config: m.Config, Modes: modes, Secrets: m.Secrets,
 		Network: widget.NetworkRequest{Hosts: m.Network.Hosts, Methods: m.Network.Methods, Why: m.Network.Why},
 	}
-	if s := m.SignIn; s != nil {
-		man.SignIn = &widget.SignIn{Provider: s.Provider, DeviceURL: s.DeviceURL, TokenURL: s.TokenURL, Scopes: s.Scopes, APIHosts: s.APIHosts}
-	}
+	man.Uses = m.Uses
 	if err := host.WritePackage(out, man, own, wasm, os.DirFS(filepath.Join(dir, "dist"))); err != nil {
 		return err
 	}

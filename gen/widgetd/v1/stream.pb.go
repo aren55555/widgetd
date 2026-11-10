@@ -566,9 +566,18 @@ type InstanceStatus struct {
 	State  InstanceStatus_State   `protobuf:"varint,1,opt,name=state,proto3,enum=widgetd.v1.InstanceStatus_State" json:"state,omitempty"`
 	Widget string                 `protobuf:"bytes,2,opt,name=widget,proto3" json:"widget,omitempty"`
 	// What the instance is called: its label, else the widget's title.
-	Title         string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Message       string `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
-	Removed       bool   `protobuf:"varint,5,opt,name=removed,proto3" json:"removed,omitempty"`
+	Title   string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Message string `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	Removed bool   `protobuf:"varint,5,opt,name=removed,proto3" json:"removed,omitempty"`
+	// For STATE_NEEDS_SIGN_IN: which account (provider) to sign in.
+	Provider string `protobuf:"bytes,6,opt,name=provider,proto3" json:"provider,omitempty"`
+	// Something wrong that doesn't stop it, e.g. it used a scope it didn't
+	// declare. Screens badge its cards.
+	Warning string `protobuf:"bytes,7,opt,name=warning,proto3" json:"warning,omitempty"`
+	// For STATE_NEEDS_SIGN_IN: the account bound to it (empty: none chosen
+	// yet, which only an admin can do) and that account's name.
+	Account       string `protobuf:"bytes,8,opt,name=account,proto3" json:"account,omitempty"`
+	AccountLabel  string `protobuf:"bytes,9,opt,name=account_label,json=accountLabel,proto3" json:"account_label,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -636,6 +645,34 @@ func (x *InstanceStatus) GetRemoved() bool {
 		return x.Removed
 	}
 	return false
+}
+
+func (x *InstanceStatus) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
+}
+
+func (x *InstanceStatus) GetWarning() string {
+	if x != nil {
+		return x.Warning
+	}
+	return ""
+}
+
+func (x *InstanceStatus) GetAccount() string {
+	if x != nil {
+		return x.Account
+	}
+	return ""
+}
+
+func (x *InstanceStatus) GetAccountLabel() string {
+	if x != nil {
+		return x.AccountLabel
+	}
+	return ""
 }
 
 type WidgetRef struct {
@@ -1052,13 +1089,17 @@ const file_widgetd_v1_stream_proto_rawDesc = "" +
 	"\tunmounted\x18\x06 \x01(\v2\x15.widgetd.v1.UnmountedH\x00R\tunmounted\x12)\n" +
 	"\x05fault\x18\a \x01(\v2\x11.widgetd.v1.FaultH\x00R\x05fault\x128\n" +
 	"\binstance\x18\b \x01(\v2\x1a.widgetd.v1.InstanceStatusH\x00R\binstanceB\x06\n" +
-	"\x04body\"\xbc\x02\n" +
+	"\x04body\"\xb1\x03\n" +
 	"\x0eInstanceStatus\x126\n" +
 	"\x05state\x18\x01 \x01(\x0e2 .widgetd.v1.InstanceStatus.StateR\x05state\x12\x16\n" +
 	"\x06widget\x18\x02 \x01(\tR\x06widget\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x18\n" +
 	"\amessage\x18\x04 \x01(\tR\amessage\x12\x18\n" +
-	"\aremoved\x18\x05 \x01(\bR\aremoved\"\x8f\x01\n" +
+	"\aremoved\x18\x05 \x01(\bR\aremoved\x12\x1a\n" +
+	"\bprovider\x18\x06 \x01(\tR\bprovider\x12\x18\n" +
+	"\awarning\x18\a \x01(\tR\awarning\x12\x18\n" +
+	"\aaccount\x18\b \x01(\tR\aaccount\x12#\n" +
+	"\raccount_label\x18\t \x01(\tR\faccountLabel\"\x8f\x01\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12STATE_NEEDS_CONFIG\x10\x01\x12\x11\n" +

@@ -49,6 +49,8 @@ const STYLE = `
 .qr svg { width: 100%; height: 100%; display: block; }
 .code { font: 600 22px/28px var(--wd-font-mono, ui-monospace, monospace); letter-spacing: 0.1em; color: var(--wd-ink, #e5e7eb); }
 .status { font-size: 12px; color: var(--wd-ink-faint, #71717a); }
+.warn { position: absolute; right: 8px; bottom: 6px; z-index: 2; padding: 1px 6px; border-radius: 999px; font: 11px/16px var(--wd-font-mono, monospace);
+  background: color-mix(in oklab, var(--wd-warn, #f59e0b) 20%, transparent); color: var(--wd-warn, #f59e0b); cursor: help; }
 .gear { position: absolute; right: 6px; top: 4px; z-index: 2; padding: 0 4px; border: 0; background: none; cursor: pointer;
   font-size: 14px; line-height: 20px; color: var(--wd-ink-faint, #71717a); opacity: 0; transition: opacity 0.15s; }
 .card:hover .gear, .card:focus-within .gear { opacity: 1; }
@@ -91,6 +93,8 @@ type CardHost = {
   frame: HTMLIFrameElement;
   title: HTMLElement;
   fault: HTMLElement;
+  /** Its instance's warning, e.g. it used a scope it didn't declare. */
+  warn: HTMLElement;
   ready: boolean;
   queue: ToFrame[];
   /** The cursor of the last payload handed to the view. */
@@ -287,6 +291,9 @@ class WidgetBoard extends HTMLElement {
     const fault = document.createElement("span");
     fault.className = "fault";
     fault.hidden = true;
+    const warn = document.createElement("span");
+    warn.className = "warn";
+    this.paintWarning(warn, this.instances.get(instanceOf(id))?.status.warning ?? "");
     const frame = document.createElement("iframe");
     // Scripts only: no allow-same-origin, so the card runs in an opaque
     // origin, apart from this page, its cookies and its storage.
@@ -302,11 +309,11 @@ class WidgetBoard extends HTMLElement {
     gear.textContent = "\u2699";
     gear.addEventListener("click", () => void this.showSetUp(el, instanceOf(id)));
     if (m.title) el.append(title);
-    el.append(gear, fault, frame);
+    el.append(gear, fault, warn, frame);
     Object.assign(el.style, gridSpan(m.layout?.cols ?? 1, m.layout?.rows ?? 1, this.maxCols));
 
     const stored = usableStored(this.store.load(id), m.widget?.digest ?? "", m.stateType);
-    const card: CardHost = { id, mounted: m, el, frame, title, fault, ready: false, queue: [], last: stored?.cursor };
+    const card: CardHost = { id, mounted: m, el, frame, title, fault, warn, ready: false, queue: [], last: stored?.cursor };
     this.cards.set(id, card);
     this.grid.append(el);
   }
@@ -323,7 +330,10 @@ class WidgetBoard extends HTMLElement {
     const entry = known ?? { status: st };
     entry.status = st;
     this.instances.set(id, entry);
-    const p = placeholderFor(st.state, st.message);
+    for (const c of this.cards.values()) if (instanceOf(c.id) === id) this.paintWarning(c.warn, st.warning);
+    // A screen can sign a bound, named account back in; choosing or adding
+    // one happens on the admin page.
+    const p = placeholderFor(st.state, st.message, !!st.account && !!st.accountLabel);
     if (!p.show) {
       entry.tile?.remove();
       entry.tile = undefined;
@@ -347,7 +357,7 @@ class WidgetBoard extends HTMLElement {
       const btn = document.createElement("button");
       btn.className = "action";
       btn.textContent = "Sign in";
-      btn.addEventListener("click", () => void this.showSignIn(tile, id));
+      btn.addEventListener("click", () => void this.showSignIn(tile, st.provider, st.account));
       tile.append(btn);
     }
     if (!entry.tile) {
@@ -384,12 +394,17 @@ class WidgetBoard extends HTMLElement {
    * the provider supports it). The host waits for the approval; the tile
    * turns into the widget when it comes.
    */
-  private async showSignIn(within: HTMLElement, instanceId: string) {
+  private async showSignIn(within: HTMLElement, provider: string, accountId: string) {
     const o = this.codeOverlay(within);
     try {
       const admin = createClient(WidgetAdminService, this.transport());
-      const s = await admin.beginSignIn({ instanceId });
-      o.show(s.verificationUriComplete || s.verificationUri, [`Sign in at ${s.verificationUri.replace(/^https:\/\//, "")}`], s.userCode);
+      const s = await admin.beginSignIn({ provider, accountId });
+      // A device-flow provider gives a code to type at its site; a browser
+      // one, a link that takes the phone to its consent page.
+      const lines = s.userCode
+        ? [`Sign in at ${s.url.replace(/^https:\/\//, "").replace(/\?.*/, "")}`]
+        : [`Scan to sign in to ${s.providerTitle}`];
+      o.show(s.url, lines, s.userCode || undefined);
       o.expireAt(s.expiresAt ? Number(s.expiresAt.seconds) * 1000 : Date.now() + 600_000);
     } catch (e) {
       o.fail(`Couldn't start sign-in: ${e instanceof Error ? e.message : String(e)}`);
@@ -508,6 +523,12 @@ class WidgetBoard extends HTMLElement {
       if (v) out[t] = v;
     }
     return out;
+  }
+
+  private paintWarning(el: HTMLElement, warning: string) {
+    el.hidden = !warning;
+    el.textContent = "warning";
+    el.title = warning;
   }
 
   private showFault(id: string, message: string | undefined) {

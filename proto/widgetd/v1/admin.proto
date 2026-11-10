@@ -47,16 +47,19 @@ service WidgetAdminService {
   rpc SetNetworkGrant(SetNetworkGrantRequest) returns (SetNetworkGrantResponse);
   rpc GetInstanceActivity(GetInstanceActivityRequest) returns (GetInstanceActivityResponse);
 
-  // Sign-in, for widgets that use an account (device flow: a code shown
-  // on the screen, approved on the provider's site from a phone).
-  // BeginSignIn: screen or admin, but a screen only for an instance that
-  // isn't signed in yet; replacing a sign-in needs an admin. The rest:
-  // admin.
+  // Accounts: one per provider (Google, GitHub) for the whole display,
+  // granted exactly the union of the scopes its widgets on the board use.
+  // ListAccounts and BeginSignIn: screen or admin (a screen may only sign
+  // in an account that needs it). The rest: admin.
+  rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
   rpc BeginSignIn(BeginSignInRequest) returns (BeginSignInResponse);
   rpc SignOut(SignOutRequest) returns (SignOutResponse);
-  // The OAuth app a widget signs in with, registered by whoever runs the
-  // host with the provider.
-  rpc SetSignInClient(SetSignInClientRequest) returns (SetSignInClientResponse);
+  rpc LabelAccount(LabelAccountRequest) returns (LabelAccountResponse);
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+  rpc BindAccount(BindAccountRequest) returns (BindAccountResponse);
+  // The OAuth client (app) the display signs in to a provider with,
+  // registered with the provider by whoever runs the host.
+  rpc SetProviderClient(SetProviderClientRequest) returns (SetProviderClientResponse);
 }
 
 message WidgetInfo {
@@ -74,12 +77,10 @@ message WidgetInfo {
   bool network_disabled = 9;
   // Whether it takes a configuration at all.
   bool configurable = 10;
-  // Set if it signs in to an account: the provider's name, and whether a
-  // client (OAuth app) has been registered for it yet.
-  string sign_in_provider = 11;
-  bool sign_in_client_set = 12;
-  // Whether a client secret is stored too (needed to renew expiring tokens).
-  bool sign_in_secret_set = 13;
+  reserved 11, 12, 13;
+  reserved "sign_in_provider", "sign_in_client_set", "sign_in_secret_set";
+  // The accounts it uses, and with what scopes.
+  repeated Use uses = 14;
 }
 
 message ListWidgetsRequest {}
@@ -166,6 +167,13 @@ message InstanceInfo {
   string label = 3;
   InstanceStatus status = 4;
   google.protobuf.Timestamp created_at = 5;
+  // One per provider the widget uses: which account it's bound to.
+  repeated Binding bindings = 6;
+}
+
+message Binding {
+  string provider = 1;
+  string account_id = 2; // empty: none chosen yet
 }
 
 message RenameInstanceRequest {
@@ -234,33 +242,108 @@ message GetConfigChoicesResponse {
   repeated ConfigFieldChoices fields = 1;
 }
 
+message Use {
+  string provider = 1; // "google", "github"
+  repeated string scopes = 2;
+}
+
+// A provider the display's widgets use: its registered client.
+message ProviderInfo {
+  string name = 1;  // "google"
+  string title = 2; // "Google"
+  bool client_set = 3;
+  bool secret_set = 4;
+  // The redirect URI to register with the provider, for browser sign-in.
+  string redirect_uri = 5;
+  // How to register a client with the provider.
+  string client_help = 6;
+  // The last failure signing in a new account, if any.
+  string error = 7;
+}
+
+// An account the display has with a provider ("Google: Work"). Instances
+// are bound to one each; its grant is kept to exactly the union of the
+// scopes the instances bound to it use.
+message Account {
+  string id = 1;
+  string provider = 2;
+  // Its admin-given name. Empty until named: a new sign-in can't be used
+  // until an admin names it.
+  string label = 3;
+  // Who it is, if the provider says (an email, a login).
+  string identity = 4;
+  bool signed_in = 5;
+  repeated string granted = 6;
+  repeated string wanted = 7;
+  // Why it needs attention, if it does.
+  string message = 8;
+  string error = 9;
+  // The instances bound to it.
+  repeated string instances = 10;
+}
+
+message ListAccountsRequest {}
+
+message ListAccountsResponse {
+  repeated ProviderInfo providers = 1;
+  repeated Account accounts = 2;
+}
+
 message BeginSignInRequest {
-  string instance_id = 1;
+  string provider = 1;
+  // Sign an existing account in again; it must be the same identity, when
+  // the provider says who it is.
+  string account_id = 2;
+  // Or: sign in a new account, bound to this instance once it's named.
+  // Admins only.
+  string instance_id = 3;
 }
 
 message BeginSignInResponse {
-  // Show this, and where to enter it.
-  string user_code = 1;
-  string verification_uri = 2;
-  // The same page with the code filled in, if the provider offers one:
-  // what a QR code should open.
-  string verification_uri_complete = 3;
-  google.protobuf.Timestamp expires_at = 4;
-  string provider = 5;
+  // Where to go to sign in: what a QR code should open. For a device-flow
+  // provider, also the code to enter there.
+  string url = 1;
+  string user_code = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  string provider_title = 4;
 }
 
+// Revokes its grant; the account stays, named and signed out.
 message SignOutRequest {
-  string instance_id = 1;
+  string account_id = 1;
 }
 
 message SignOutResponse {}
 
-message SetSignInClientRequest {
-  string widget = 1;
+message LabelAccountRequest {
+  string account_id = 1;
+  string label = 2; // 1–60 characters
+}
+
+message LabelAccountResponse {}
+
+// Revokes its grant and forgets it; its instances wait for another.
+message DeleteAccountRequest {
+  string account_id = 1;
+}
+
+message DeleteAccountResponse {}
+
+message BindAccountRequest {
+  string instance_id = 1;
+  string provider = 2;
+  // Empty unbinds.
+  string account_id = 3;
+}
+
+message BindAccountResponse {}
+
+message SetProviderClientRequest {
+  string provider = 1;
+  // Empty keeps the stored one.
   string client_id = 2;
-  // Optional: device flow itself needs none, but renewing an expiring token
-  // usually does. Write-only; empty keeps the stored one.
+  // Write-only; empty keeps the stored one.
   string client_secret = 3;
 }
 
-message SetSignInClientResponse {}
+message SetProviderClientResponse {}

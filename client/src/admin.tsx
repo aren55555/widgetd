@@ -18,7 +18,7 @@ import { createResource, createSignal, ErrorBoundary, For, Match, onCleanup, Sho
 import { render } from "solid-js/web";
 
 import { AuthService, Role, type Device } from "./gen/widgetd/v1/auth_pb.ts";
-import { WidgetAdminService, type GetConfigFormResponse, type InstanceInfo, type WidgetInfo } from "./gen/widgetd/v1/admin_pb.ts";
+import { WidgetAdminService, type Account, type GetConfigFormResponse, type InstanceInfo, type ProviderInfo, type WidgetInfo } from "./gen/widgetd/v1/admin_pb.ts";
 import { InstanceStatus_State } from "./gen/widgetd/v1/stream_pb.ts";
 import { createConfigForm, type ConfigForm } from "./lib/ConfigForm.tsx";
 import { sameChoices, type Choices, type Secrets } from "./lib/form.ts";
@@ -392,12 +392,20 @@ function NetworkNote(props: { w: WidgetInfo }) {
 
 // ---- admin home ----
 
-type HomeData = { instances: InstanceInfo[]; widgets: WidgetInfo[]; devices: Device[] };
+type HomeData = { instances: InstanceInfo[]; widgets: WidgetInfo[]; devices: Device[]; accounts: Account[]; providers: ProviderInfo[] };
 
 async function loadHome(): Promise<HomeData> {
-  const [{ instances }, { widgets }, { devices }] = await Promise.all([admin.listInstances({}), admin.listWidgets({}), auth.listDevices({})]);
-  return { instances, widgets, devices };
+  const [{ instances }, { widgets }, { devices }, { accounts, providers }] = await Promise.all([
+    admin.listInstances({}),
+    admin.listWidgets({}),
+    auth.listDevices({}),
+    admin.listAccounts({}),
+  ]);
+  return { instances, widgets, devices, accounts, providers };
 }
+
+const accountName = (a: Account, providers: ProviderInfo[]) =>
+  `${providers.find((p) => p.name === a.provider)?.title ?? a.provider}: ${a.label || "(unnamed)"}`;
 
 function AdminHome() {
   const [data, { mutate }] = createResource(loadHome);
@@ -411,17 +419,29 @@ function AdminHome() {
     <Show when={data()}>
       {(d) => (
         <Page title="Widgets">
+          <For each={d().accounts.filter((a) => !a.label)}>{(a) => <NameAccount a={a} d={d()} reload={reload} />}</For>
           <ul class={ui.list}>
             <For each={d().instances} fallback={<li class={`py-3 ${ui.muted}`}>No widgets yet. Add one from a screen.</li>}>
-              {(inst) => <InstanceItem inst={inst} widget={d().widgets.find((w) => w.name === inst.widget)} reload={reload} />}
+              {(inst) => <InstanceItem inst={inst} widget={d().widgets.find((w) => w.name === inst.widget)} d={d()} reload={reload} />}
             </For>
           </ul>
 
-          <Show when={d().widgets.some((w) => w.signInProvider)}>
-            <h2 class={H2}>Sign-in apps</h2>
-            <ul class={ui.list}>
-              <For each={d().widgets.filter((w) => w.signInProvider)}>{(w) => <SignInApp w={w} />}</For>
-            </ul>
+          <Show when={d().providers.length}>
+            <h2 class={H2}>Accounts</h2>
+            <p class={ui.muted}>
+              Sign an account in from a widget above, and choose for each widget which account it uses. Each account is signed in for exactly
+              what the widgets using it need.
+            </p>
+            <For each={d().providers}>
+              {(p) => (
+                <>
+                  <ul class={ui.list}>
+                    <For each={d().accounts.filter((a) => a.provider === p.name && a.label)}>{(a) => <AccountItem a={a} p={p} d={d()} reload={reload} />}</For>
+                  </ul>
+                  <ProviderItem p={p} reload={reload} />
+                </>
+              )}
+            </For>
           </Show>
 
           <h2 class={H2}>Network access</h2>
@@ -455,39 +475,13 @@ function AdminHome() {
 }
 
 type Fetch = Awaited<ReturnType<typeof admin.getInstanceActivity>>["fetches"][number];
-type SignInCode = { userCode: string; link: string; shown: string };
 
-function InstanceItem(props: { inst: InstanceInfo; widget: WidgetInfo | undefined; reload: () => Promise<void> }) {
+function InstanceItem(props: { inst: InstanceInfo; widget: WidgetInfo | undefined; d: HomeData; reload: () => Promise<void> }) {
   const { inst, widget, reload } = props;
   const title = inst.label || widget?.title || inst.widget;
-  const provider = widget?.signInProvider;
   const state = inst.status?.state;
-  const needsSignIn = state === InstanceStatus_State.NEEDS_SIGN_IN;
   const st = createStatus();
   const [log, setLog] = createSignal<Fetch[]>();
-  const [code, setCode] = createSignal<SignInCode>();
-
-  // Signing in from this phone: show the provider's code, then watch for
-  // the instance to leave NEEDS_SIGN_IN.
-  let poll: ReturnType<typeof setTimeout> | undefined;
-  onCleanup(() => clearTimeout(poll));
-  const signInOrOut = st.run(async () => {
-    if (!needsSignIn) {
-      if (!confirm(`Sign ${title} out of ${provider}?`)) return;
-      await admin.signOut({ instanceId: inst.id });
-      return reload();
-    }
-    const s = await admin.beginSignIn({ instanceId: inst.id });
-    setCode({ userCode: s.userCode, link: s.verificationUriComplete || s.verificationUri, shown: s.verificationUri.replace(/^https:\/\//, "") });
-    const until = Date.now() + 10 * 60_000;
-    const check = async () => {
-      const { instances } = await admin.listInstances({});
-      const me = instances.find((i) => i.id === inst.id);
-      if (me && me.status?.state !== InstanceStatus_State.NEEDS_SIGN_IN) return reload();
-      if (Date.now() < until) poll = setTimeout(check, 3000);
-    };
-    poll = setTimeout(check, 3000);
-  });
 
   return (
     <li class={ui.item}>
@@ -497,7 +491,11 @@ function InstanceItem(props: { inst: InstanceInfo; widget: WidgetInfo | undefine
           {" "}
           {inst.widget} · {stateText(state, inst.status?.message)}
         </span>
+        <Show when={inst.status?.warning}>
+          <p class="text-sm text-amber-600">⚠ {inst.status?.warning}</p>
+        </Show>
       </div>
+      <For each={inst.bindings}>{(b) => <BindingPicker inst={inst} provider={b.provider} accountId={b.accountId} d={props.d} reload={reload} />}</For>
       <div class="flex flex-wrap gap-2">
         <button class={ui.btn.small} onClick={() => location.assign(`${base}edit/${encodeURIComponent(inst.id)}`)}>
           {state === InstanceStatus_State.NEEDS_CONFIG ? "Set up" : "Settings"}
@@ -524,11 +522,6 @@ function InstanceItem(props: { inst: InstanceInfo; widget: WidgetInfo | undefine
         >
           Network log
         </button>
-        <Show when={provider}>
-          <button class={ui.btn.small} disabled={st.busy()} onClick={signInOrOut}>
-            {needsSignIn ? `Sign in to ${provider}` : "Sign out"}
-          </button>
-        </Show>
         <button
           class={ui.btn.danger}
           disabled={st.busy()}
@@ -541,17 +534,6 @@ function InstanceItem(props: { inst: InstanceInfo; widget: WidgetInfo | undefine
           Delete
         </button>
       </div>
-      <Show when={code()}>
-        {(c) => (
-          <p class="text-sm">
-            Enter <strong class="font-mono text-[2rem] leading-tight font-semibold tracking-widest">{c().userCode}</strong> at{" "}
-            <a class={ui.link} href={c().link} target="_blank" rel="noopener">
-              {c().shown}
-            </a>
-            . This page updates once you've approved it.
-          </p>
-        )}
-      </Show>
       <Show when={log()}>
         {(l) => (
           <Show when={l().length} fallback={<p class="text-sm">No requests yet.</p>}>
@@ -624,28 +606,282 @@ function ScreenItem(props: { device: Device; reload: () => Promise<void> }) {
 }
 
 /**
- * The OAuth app a widget signs in with: registered once per widget, by
- * whoever runs this, with the provider.
+ * Starting a sign-in from this page: a browser sign-in goes to the
+ * provider's consent page right here (and comes back to name the account,
+ * if it's new); a device sign-in shows the code to enter, and polls until
+ * done(accounts) says it has arrived.
  */
-function SignInApp(props: { w: WidgetInfo }) {
-  const w = props.w;
+function createSignIn(st: ReturnType<typeof createStatus>, reload: () => Promise<void>) {
+  const [code, setCode] = createSignal<{ userCode: string; url: string }>();
+  let poll: ReturnType<typeof setTimeout> | undefined;
+  onCleanup(() => clearTimeout(poll));
+  const start = (req: { provider: string; accountId?: string; instanceId?: string }, done: (accounts: Account[]) => boolean) =>
+    st.run(async () => {
+      const s = await admin.beginSignIn(req);
+      if (!s.userCode) {
+        location.assign(s.url);
+        return;
+      }
+      setCode({ userCode: s.userCode, url: s.url });
+      const until = Date.now() + 10 * 60_000;
+      const check = async () => {
+        const { accounts } = await admin.listAccounts({});
+        if (done(accounts)) {
+          setCode(undefined);
+          return reload();
+        }
+        if (Date.now() < until) poll = setTimeout(check, 3000);
+      };
+      poll = setTimeout(check, 3000);
+    });
+  const View = () => (
+    <Show when={code()}>
+      {(c) => (
+        <p class="text-sm">
+          Enter <strong class="font-mono text-[2rem] leading-tight font-semibold tracking-widest">{c().userCode}</strong> at{" "}
+          <a class={ui.link} href={c().url} target="_blank" rel="noopener">
+            {c().url.replace(/^https:\/\//, "").replace(/\?.*/, "")}
+          </a>
+          . This page updates once you've approved it.
+        </p>
+      )}
+    </Show>
+  );
+  return { start, View };
+}
+
+/** Which account an instance uses a provider with; or a new one. */
+function BindingPicker(props: { inst: InstanceInfo; provider: string; accountId: string; d: HomeData; reload: () => Promise<void> }) {
+  const st = createStatus();
+  const signIn = createSignIn(st, props.reload);
+  const p = () => props.d.providers.find((x) => x.name === props.provider);
+  const title = () => p()?.title ?? props.provider;
+  const accounts = () => props.d.accounts.filter((a) => a.provider === props.provider && a.label);
+  const NEW = "\u0000new";
+  const before = new Set(props.d.accounts.map((a) => a.id));
+  return (
+    <div class="w-full">
+      <label class={ui.label}>
+        {title()} account
+        <select
+          class={ui.select}
+          disabled={st.busy()}
+          onChange={(ev) => {
+            const v = ev.currentTarget.value;
+            if (v === NEW) {
+              // A new account arrives unnamed; the page then asks for its name.
+              void signIn.start({ provider: props.provider, instanceId: props.inst.id }, (all) => all.some((a) => !before.has(a.id)))();
+              return;
+            }
+            void st.run(async () => {
+              await admin.bindAccount({ instanceId: props.inst.id, provider: props.provider, accountId: v });
+              await props.reload();
+            })();
+          }}
+        >
+          <option value="" selected={!props.accountId}>
+            None chosen
+          </option>
+          <For each={accounts()}>
+            {(a) => (
+              <option value={a.id} selected={a.id === props.accountId}>
+                {a.label}
+                {a.identity ? ` (${a.identity})` : ""}
+              </option>
+            )}
+          </For>
+          <option value={NEW} disabled={!p()?.clientSet}>
+            + Sign in to another {title()} account{p()?.clientSet ? "" : " (register a client below first)"}
+          </option>
+        </select>
+      </label>
+      <signIn.View />
+      <st.View />
+    </div>
+  );
+}
+
+/** A new account can't be used until it has a name. */
+function NameAccount(props: { a: Account; d: HomeData; reload: () => Promise<void> }) {
+  const [name, setName] = createSignal("");
+  const st = createStatus();
+  const title = () => props.d.providers.find((p) => p.name === props.a.provider)?.title ?? props.a.provider;
+  const forWhat = () =>
+    props.a.instances
+      .map((id) => {
+        const inst = props.d.instances.find((i) => i.id === id);
+        return inst ? inst.label || props.d.widgets.find((w) => w.name === inst.widget)?.title || inst.widget : id;
+      })
+      .join(", ");
+  return (
+    <form
+      class={`${ui.fieldset} w-full`}
+      onSubmit={(ev) => {
+        ev.preventDefault();
+        void st.run(async () => {
+          await admin.labelAccount({ accountId: props.a.id, label: name() });
+          history.replaceState(null, "", location.pathname);
+          await props.reload();
+        })();
+      }}
+    >
+      <p>
+        <strong>Name this {title()} account</strong>
+        {props.a.identity ? ` (${props.a.identity})` : ""}. {forWhat() ? `It's for ${forWhat()}, which starts once it has a name.` : ""}
+      </p>
+      <input
+        class={ui.input}
+        value={name()}
+        onInput={(e) => setName(e.currentTarget.value)}
+        maxLength={60}
+        placeholder="Work, Personal…"
+        required
+        autofocus
+        aria-label="Account name"
+      />
+      <div class="mt-2 flex gap-2">
+        <button class={ui.btn.small} disabled={st.busy() || !name().trim()}>
+          Save name
+        </button>
+        <button
+          type="button"
+          class={ui.btn.secondary}
+          disabled={st.busy()}
+          onClick={st.run(async () => {
+            if (!confirm("Discard this sign-in? It's revoked with the provider.")) return;
+            await admin.deleteAccount({ accountId: props.a.id });
+            await props.reload();
+          })}
+        >
+          Discard
+        </button>
+      </div>
+      <st.View />
+    </form>
+  );
+}
+
+/** One of the display's accounts: its sign-in and the widgets using it. */
+function AccountItem(props: { a: Account; p: ProviderInfo; d: HomeData; reload: () => Promise<void> }) {
+  const { a, p } = props;
+  const st = createStatus();
+  const signIn = createSignIn(st, props.reload);
+  const needs = a.wanted.length > 0 && (!a.signedIn || a.wanted.some((s) => !a.granted.includes(s)));
+  const users = a.instances
+    .map((id) => {
+      const inst = props.d.instances.find((i) => i.id === id);
+      return inst ? inst.label || props.d.widgets.find((w) => w.name === inst.widget)?.title || inst.widget : id;
+    })
+    .join(", ");
+  return (
+    <li class={ui.item}>
+      <div>
+        <strong>{accountName(a, props.d.providers)}</strong>
+        <span class={ui.muted}>
+          {a.identity ? ` ${a.identity} ·` : ""} {a.signedIn ? (needs ? `signed in, but ${a.message.toLowerCase()}` : "signed in") : (a.message || "signed out").toLowerCase()}
+        </span>
+      </div>
+      <p class={ui.muted}>Used by: {users || "nothing"}</p>
+      <Show when={a.wanted.length || a.granted.length}>
+        <p class="font-mono text-xs/snug break-all">
+          <Show when={a.granted.length}>
+            granted: {a.granted.join(" ")}
+            <br />
+          </Show>
+          needs: {a.wanted.join(" ") || "nothing"}
+        </p>
+      </Show>
+      <Show when={a.error}>
+        <p class={`text-sm ${ui.error}`}>{a.error}</p>
+      </Show>
+      <div class="flex flex-wrap gap-2">
+        <Show when={needs}>
+          <button
+            class={ui.btn.small}
+            disabled={st.busy() || !p.clientSet}
+            onClick={signIn.start({ provider: a.provider, accountId: a.id }, (all) => {
+              const me = all.find((x) => x.id === a.id);
+              return !!me?.signedIn && me.wanted.every((s) => me.granted.includes(s));
+            })}
+          >
+            Sign in{a.identity ? ` as ${a.identity}` : ""}
+          </button>
+        </Show>
+        <button
+          class={ui.btn.secondary}
+          disabled={st.busy()}
+          onClick={st.run(async () => {
+            const name = prompt("Name", a.label);
+            if (!name) return;
+            await admin.labelAccount({ accountId: a.id, label: name });
+            await props.reload();
+          })}
+        >
+          Rename
+        </button>
+        <Show when={a.signedIn}>
+          <button
+            class={ui.btn.danger}
+            disabled={st.busy()}
+            onClick={st.run(async () => {
+              if (!confirm(`Sign ${accountName(a, props.d.providers)} out? Widgets using it stop until it's signed in again.`)) return;
+              await admin.signOut({ accountId: a.id });
+              await props.reload();
+            })}
+          >
+            Sign out
+          </button>
+        </Show>
+        <button
+          class={ui.btn.danger}
+          disabled={st.busy()}
+          onClick={st.run(async () => {
+            if (!confirm(`Delete ${accountName(a, props.d.providers)}? It's revoked, and widgets using it wait for another account.`)) return;
+            await admin.deleteAccount({ accountId: a.id });
+            await props.reload();
+          })}
+        >
+          Delete
+        </button>
+      </div>
+      <signIn.View />
+      <st.View />
+    </li>
+  );
+}
+
+/**
+ * A provider's OAuth client: registered once, by whoever runs this, with the
+ * provider, and shared by all its accounts here.
+ */
+function ProviderItem(props: { p: ProviderInfo; reload: () => Promise<void> }) {
+  const p = props.p;
   const [id, setId] = createSignal("");
   const [secret, setSecret] = createSignal("");
   const st = createStatus();
   return (
-    <li class={ui.item}>
-      <strong>{w.title}</strong>
-      <p class={ui.muted}>
-        Signs in to {w.signInProvider}. Register an OAuth app there (with device flow enabled) and enter its client ID. If its tokens expire, add its client secret too, so they can be renewed without signing in
-        again.
-      </p>
+    <details class={`${ui.fieldset} w-full`} open={!p.clientSet}>
+      <summary class="cursor-pointer font-semibold">
+        {p.title} app {p.clientSet ? (p.secretSet ? "· registered" : "· client ID only") : "· not registered yet"}
+      </summary>
+      <Show when={p.error}>
+        <p class={`text-sm ${ui.error}`}>{p.error}</p>
+      </Show>
+      <Show when={p.clientHelp}>
+        <p class={ui.muted}>{p.clientHelp}</p>
+      </Show>
+      <Show when={p.redirectUri}>
+        <p class={ui.muted}>
+          Redirect URI to register with {p.title}: <code class="break-all">{p.redirectUri}</code>
+        </p>
+      </Show>
       <input
         class={ui.input}
         value={id()}
         onInput={(e) => setId(e.currentTarget.value)}
-        placeholder={w.signInClientSet ? "Registered. Enter a new one to replace it." : "Client ID"}
+        placeholder={p.clientSet ? "Client ID registered. Enter a new one to replace it." : "Client ID"}
         autocomplete="off"
-        aria-label={`${w.signInProvider} client ID`}
+        aria-label={`${p.title} client ID`}
       />
       <input
         class={ui.input}
@@ -653,23 +889,24 @@ function SignInApp(props: { w: WidgetInfo }) {
         value={secret()}
         onInput={(e) => setSecret(e.currentTarget.value)}
         autocomplete="new-password"
-        placeholder={w.signInSecretSet ? "Stored. Enter a new one to replace it." : "Client secret (to renew expiring tokens)"}
-        aria-label={`${w.signInProvider} client secret`}
+        placeholder={p.secretSet ? "Client secret stored. Enter a new one to replace it." : "Client secret"}
+        aria-label={`${p.title} client secret`}
       />
       <button
-        class={ui.btn.small}
+        class={`${ui.btn.small} mt-2`}
         disabled={st.busy()}
         onClick={st.run(async (say) => {
-          await admin.setSignInClient({ widget: w.name, clientId: id(), clientSecret: secret() });
+          await admin.setProviderClient({ provider: p.name, clientId: id(), clientSecret: secret() });
           setId("");
           setSecret("");
           say("Saved.");
+          await props.reload();
         })}
       >
-        Save
+        Save client
       </button>
       <st.View />
-    </li>
+    </details>
   );
 }
 

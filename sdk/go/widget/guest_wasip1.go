@@ -95,6 +95,9 @@ func (g *guestHost) call(c *abiv1.Call) (*abiv1.Result, error) {
 	if err := proto.Unmarshal(out, &res); err != nil {
 		return nil, err
 	}
+	if sp := res.GetScope(); sp != nil {
+		return &res, &ScopeError{Provider: sp.GetProvider(), Missing: sp.GetMissing(), Refused: sp.GetRefused()}
+	}
 	if res.GetDeniedRule() != "" {
 		return &res, &PolicyError{Rule: res.GetDeniedRule(), Msg: res.GetError()}
 	}

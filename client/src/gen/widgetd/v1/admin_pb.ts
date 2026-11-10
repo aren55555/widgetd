@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file widgetd/v1/admin.proto.
  */
 export const file_widgetd_v1_admin: GenFile = /*@__PURE__*/
-  fileDesc("ChZ3aWRnZXRkL3YxL2FkbWluLnByb3RvEgp3aWRnZXRkLnYxIq8CCgpXaWRnZXRJbmZvEgwKBG5hbWUYASABKAkSDwoHdmVyc2lvbhgCIAEoCRINCgV0aXRsZRgDIAEoCRIXCg9yZXF1ZXN0ZWRfaG9zdHMYBCADKAkSGQoRcmVxdWVzdGVkX21ldGhvZHMYBSADKAkSEwoLbmV0d29ya193aHkYBiABKAkSEQoJZ3JhbnRfc2V0GAcgASgIEhUKDWdyYW50ZWRfaG9zdHMYCCADKAkSGAoQbmV0d29ya19kaXNhYmxlZBgJIAEoCBIUCgxjb25maWd1cmFibGUYCiABKAgSGAoQc2lnbl9pbl9wcm92aWRlchgLIAEoCRIaChJzaWduX2luX2NsaWVudF9zZXQYDCABKAgSGgoSc2lnbl9pbl9zZWNyZXRfc2V0GA0gASgIIhQKEkxpc3RXaWRnZXRzUmVxdWVzdCI+ChNMaXN0V2lkZ2V0c1Jlc3BvbnNlEicKB3dpZGdldHMYASADKAsyFi53aWRnZXRkLnYxLldpZGdldEluZm8iJAoSQWRkSW5zdGFuY2VSZXF1ZXN0Eg4KBndpZGdldBgBIAEoCSIqChNBZGRJbnN0YW5jZVJlc3BvbnNlEhMKC2luc3RhbmNlX2lkGAEgASgJIjEKGlJlcXVlc3RDb25maWdUaWNrZXRSZXF1ZXN0EhMKC2luc3RhbmNlX2lkGAEgASgJIloKG1JlcXVlc3RDb25maWdUaWNrZXRSZXNwb25zZRILCgN1cmwYASABKAkSLgoKZXhwaXJlc19hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiOwoUR2V0Q29uZmlnRm9ybVJlcXVlc3QSDgoGdGlja2V0GAEgASgJEhMKC2luc3RhbmNlX2lkGAIgASgJIvABChVHZXRDb25maWdGb3JtUmVzcG9uc2USEwoLaW5zdGFuY2VfaWQYASABKAkSJgoGd2lkZ2V0GAIgASgLMhYud2lkZ2V0ZC52MS5XaWRnZXRJbmZvEg0KBWxhYmVsGAMgASgJEhMKC2NvbmZpZ190eXBlGAQgASgJEg4KBnNjaGVtYRgFIAEoDBIOCgZjb25maWcYBiABKAwSKgoGc3RhdHVzGAcgASgLMhoud2lkZ2V0ZC52MS5JbnN0YW5jZVN0YXR1cxIVCg1zZWNyZXRfZmllbGRzGAggAygJEhMKC3NlY3JldHNfc2V0GAkgAygJIm4KEVNhdmVDb25maWdSZXF1ZXN0Eg4KBnRpY2tldBgBIAEoCRITCgtpbnN0YW5jZV9pZBgEIAEoCRINCgVsYWJlbBgCIAEoCRIOCgZjb25maWcYAyABKAwSFQoNY2xlYXJfc2VjcmV0cxgFIAMoCSIwCg5GaWVsZFZpb2xhdGlvbhINCgVmaWVsZBgBIAEoCRIPCgdtZXNzYWdlGAIgASgJIkQKElNhdmVDb25maWdSZXNwb25zZRIuCgp2aW9sYXRpb25zGAEgAygLMhoud2lkZ2V0ZC52MS5GaWVsZFZpb2xhdGlvbiIWChRMaXN0SW5zdGFuY2VzUmVxdWVzdCJEChVMaXN0SW5zdGFuY2VzUmVzcG9uc2USKwoJaW5zdGFuY2VzGAEgAygLMhgud2lkZ2V0ZC52MS5JbnN0YW5jZUluZm8ilQEKDEluc3RhbmNlSW5mbxIKCgJpZBgBIAEoCRIOCgZ3aWRnZXQYAiABKAkSDQoFbGFiZWwYAyABKAkSKgoGc3RhdHVzGAQgASgLMhoud2lkZ2V0ZC52MS5JbnN0YW5jZVN0YXR1cxIuCgpjcmVhdGVkX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCI7ChVSZW5hbWVJbnN0YW5jZVJlcXVlc3QSEwoLaW5zdGFuY2VfaWQYASABKAkSDQoFbGFiZWwYAiABKAkiGAoWUmVuYW1lSW5zdGFuY2VSZXNwb25zZSIsChVEZWxldGVJbnN0YW5jZVJlcXVlc3QSEwoLaW5zdGFuY2VfaWQYASABKAkiGAoWRGVsZXRlSW5zdGFuY2VSZXNwb25zZSJeChZTZXROZXR3b3JrR3JhbnRSZXF1ZXN0Eg4KBndpZGdldBgBIAEoCRINCgVob3N0cxgCIAMoCRIQCghkaXNhYmxlZBgDIAEoCBITCgt1c2VfZGVmYXVsdBgEIAEoCCIZChdTZXROZXR3b3JrR3JhbnRSZXNwb25zZSIxChpHZXRJbnN0YW5jZUFjdGl2aXR5UmVxdWVzdBITCgtpbnN0YW5jZV9pZBgBIAEoCSKuAQoFRmV0Y2gSJgoCYXQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg4KBm1ldGhvZBgCIAEoCRIMCgRob3N0GAMgASgJEgwKBHBhdGgYBCABKAkSDgoGc3RhdHVzGAUgASgFEg0KBWJ5dGVzGAYgASgDEg4KBmRlbmllZBgHIAEoCRINCgVlcnJvchgIIAEoCRITCgtkdXJhdGlvbl9tcxgJIAEoAyJBChtHZXRJbnN0YW5jZUFjdGl2aXR5UmVzcG9uc2USIgoHZmV0Y2hlcxgBIAMoCzIRLndpZGdldGQudjEuRmV0Y2giTgoXR2V0Q29uZmlnQ2hvaWNlc1JlcXVlc3QSDgoGdGlja2V0GAEgASgJEg4KBmNvbmZpZxgCIAEoDBITCgtpbnN0YW5jZV9pZBgDIAEoCSIsCgxDb25maWdDaG9pY2USDQoFdmFsdWUYASABKAkSDQoFbGFiZWwYAiABKAkiTgoSQ29uZmlnRmllbGRDaG9pY2VzEg0KBWZpZWxkGAEgASgJEikKB2Nob2ljZXMYAiADKAsyGC53aWRnZXRkLnYxLkNvbmZpZ0Nob2ljZSJKChhHZXRDb25maWdDaG9pY2VzUmVzcG9uc2USLgoGZmllbGRzGAEgAygLMh4ud2lkZ2V0ZC52MS5Db25maWdGaWVsZENob2ljZXMiKQoSQmVnaW5TaWduSW5SZXF1ZXN0EhMKC2luc3RhbmNlX2lkGAEgASgJIqcBChNCZWdpblNpZ25JblJlc3BvbnNlEhEKCXVzZXJfY29kZRgBIAEoCRIYChB2ZXJpZmljYXRpb25fdXJpGAIgASgJEiEKGXZlcmlmaWNhdGlvbl91cmlfY29tcGxldGUYAyABKAkSLgoKZXhwaXJlc19hdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEAoIcHJvdmlkZXIYBSABKAkiJQoOU2lnbk91dFJlcXVlc3QSEwoLaW5zdGFuY2VfaWQYASABKAkiEQoPU2lnbk91dFJlc3BvbnNlIlIKFlNldFNpZ25JbkNsaWVudFJlcXVlc3QSDgoGd2lkZ2V0GAEgASgJEhEKCWNsaWVudF9pZBgCIAEoCRIVCg1jbGllbnRfc2VjcmV0GAMgASgJIhkKF1NldFNpZ25JbkNsaWVudFJlc3BvbnNlMtoJChJXaWRnZXRBZG1pblNlcnZpY2USTgoLTGlzdFdpZGdldHMSHi53aWRnZXRkLnYxLkxpc3RXaWRnZXRzUmVxdWVzdBofLndpZGdldGQudjEuTGlzdFdpZGdldHNSZXNwb25zZRJOCgtBZGRJbnN0YW5jZRIeLndpZGdldGQudjEuQWRkSW5zdGFuY2VSZXF1ZXN0Gh8ud2lkZ2V0ZC52MS5BZGRJbnN0YW5jZVJlc3BvbnNlEmYKE1JlcXVlc3RDb25maWdUaWNrZXQSJi53aWRnZXRkLnYxLlJlcXVlc3RDb25maWdUaWNrZXRSZXF1ZXN0Gicud2lkZ2V0ZC52MS5SZXF1ZXN0Q29uZmlnVGlja2V0UmVzcG9uc2USVAoNR2V0Q29uZmlnRm9ybRIgLndpZGdldGQudjEuR2V0Q29uZmlnRm9ybVJlcXVlc3QaIS53aWRnZXRkLnYxLkdldENvbmZpZ0Zvcm1SZXNwb25zZRJdChBHZXRDb25maWdDaG9pY2VzEiMud2lkZ2V0ZC52MS5HZXRDb25maWdDaG9pY2VzUmVxdWVzdBokLndpZGdldGQudjEuR2V0Q29uZmlnQ2hvaWNlc1Jlc3BvbnNlEksKClNhdmVDb25maWcSHS53aWRnZXRkLnYxLlNhdmVDb25maWdSZXF1ZXN0Gh4ud2lkZ2V0ZC52MS5TYXZlQ29uZmlnUmVzcG9uc2USVAoNTGlzdEluc3RhbmNlcxIgLndpZGdldGQudjEuTGlzdEluc3RhbmNlc1JlcXVlc3QaIS53aWRnZXRkLnYxLkxpc3RJbnN0YW5jZXNSZXNwb25zZRJXCg5SZW5hbWVJbnN0YW5jZRIhLndpZGdldGQudjEuUmVuYW1lSW5zdGFuY2VSZXF1ZXN0GiIud2lkZ2V0ZC52MS5SZW5hbWVJbnN0YW5jZVJlc3BvbnNlElcKDkRlbGV0ZUluc3RhbmNlEiEud2lkZ2V0ZC52MS5EZWxldGVJbnN0YW5jZVJlcXVlc3QaIi53aWRnZXRkLnYxLkRlbGV0ZUluc3RhbmNlUmVzcG9uc2USWgoPU2V0TmV0d29ya0dyYW50EiIud2lkZ2V0ZC52MS5TZXROZXR3b3JrR3JhbnRSZXF1ZXN0GiMud2lkZ2V0ZC52MS5TZXROZXR3b3JrR3JhbnRSZXNwb25zZRJmChNHZXRJbnN0YW5jZUFjdGl2aXR5EiYud2lkZ2V0ZC52MS5HZXRJbnN0YW5jZUFjdGl2aXR5UmVxdWVzdBonLndpZGdldGQudjEuR2V0SW5zdGFuY2VBY3Rpdml0eVJlc3BvbnNlEk4KC0JlZ2luU2lnbkluEh4ud2lkZ2V0ZC52MS5CZWdpblNpZ25JblJlcXVlc3QaHy53aWRnZXRkLnYxLkJlZ2luU2lnbkluUmVzcG9uc2USQgoHU2lnbk91dBIaLndpZGdldGQudjEuU2lnbk91dFJlcXVlc3QaGy53aWRnZXRkLnYxLlNpZ25PdXRSZXNwb25zZRJaCg9TZXRTaWduSW5DbGllbnQSIi53aWRnZXRkLnYxLlNldFNpZ25JbkNsaWVudFJlcXVlc3QaIy53aWRnZXRkLnYxLlNldFNpZ25JbkNsaWVudFJlc3BvbnNlQjdaNWdpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvZ2VuL3dpZGdldGQvdjE7d2lkZ2V0ZHYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_widgetd_v1_stream]);
+  fileDesc("ChZ3aWRnZXRkL3YxL2FkbWluLnByb3RvEgp3aWRnZXRkLnYxIsgCCgpXaWRnZXRJbmZvEgwKBG5hbWUYASABKAkSDwoHdmVyc2lvbhgCIAEoCRINCgV0aXRsZRgDIAEoCRIXCg9yZXF1ZXN0ZWRfaG9zdHMYBCADKAkSGQoRcmVxdWVzdGVkX21ldGhvZHMYBSADKAkSEwoLbmV0d29ya193aHkYBiABKAkSEQoJZ3JhbnRfc2V0GAcgASgIEhUKDWdyYW50ZWRfaG9zdHMYCCADKAkSGAoQbmV0d29ya19kaXNhYmxlZBgJIAEoCBIUCgxjb25maWd1cmFibGUYCiABKAgSHQoEdXNlcxgOIAMoCzIPLndpZGdldGQudjEuVXNlSgQICxAMSgQIDBANSgQIDRAOUhBzaWduX2luX3Byb3ZpZGVyUhJzaWduX2luX2NsaWVudF9zZXRSEnNpZ25faW5fc2VjcmV0X3NldCIUChJMaXN0V2lkZ2V0c1JlcXVlc3QiPgoTTGlzdFdpZGdldHNSZXNwb25zZRInCgd3aWRnZXRzGAEgAygLMhYud2lkZ2V0ZC52MS5XaWRnZXRJbmZvIiQKEkFkZEluc3RhbmNlUmVxdWVzdBIOCgZ3aWRnZXQYASABKAkiKgoTQWRkSW5zdGFuY2VSZXNwb25zZRITCgtpbnN0YW5jZV9pZBgBIAEoCSIxChpSZXF1ZXN0Q29uZmlnVGlja2V0UmVxdWVzdBITCgtpbnN0YW5jZV9pZBgBIAEoCSJaChtSZXF1ZXN0Q29uZmlnVGlja2V0UmVzcG9uc2USCwoDdXJsGAEgASgJEi4KCmV4cGlyZXNfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIjsKFEdldENvbmZpZ0Zvcm1SZXF1ZXN0Eg4KBnRpY2tldBgBIAEoCRITCgtpbnN0YW5jZV9pZBgCIAEoCSLwAQoVR2V0Q29uZmlnRm9ybVJlc3BvbnNlEhMKC2luc3RhbmNlX2lkGAEgASgJEiYKBndpZGdldBgCIAEoCzIWLndpZGdldGQudjEuV2lkZ2V0SW5mbxINCgVsYWJlbBgDIAEoCRITCgtjb25maWdfdHlwZRgEIAEoCRIOCgZzY2hlbWEYBSABKAwSDgoGY29uZmlnGAYgASgMEioKBnN0YXR1cxgHIAEoCzIaLndpZGdldGQudjEuSW5zdGFuY2VTdGF0dXMSFQoNc2VjcmV0X2ZpZWxkcxgIIAMoCRITCgtzZWNyZXRzX3NldBgJIAMoCSJuChFTYXZlQ29uZmlnUmVxdWVzdBIOCgZ0aWNrZXQYASABKAkSEwoLaW5zdGFuY2VfaWQYBCABKAkSDQoFbGFiZWwYAiABKAkSDgoGY29uZmlnGAMgASgMEhUKDWNsZWFyX3NlY3JldHMYBSADKAkiMAoORmllbGRWaW9sYXRpb24SDQoFZmllbGQYASABKAkSDwoHbWVzc2FnZRgCIAEoCSJEChJTYXZlQ29uZmlnUmVzcG9uc2USLgoKdmlvbGF0aW9ucxgBIAMoCzIaLndpZGdldGQudjEuRmllbGRWaW9sYXRpb24iFgoUTGlzdEluc3RhbmNlc1JlcXVlc3QiRAoVTGlzdEluc3RhbmNlc1Jlc3BvbnNlEisKCWluc3RhbmNlcxgBIAMoCzIYLndpZGdldGQudjEuSW5zdGFuY2VJbmZvIrwBCgxJbnN0YW5jZUluZm8SCgoCaWQYASABKAkSDgoGd2lkZ2V0GAIgASgJEg0KBWxhYmVsGAMgASgJEioKBnN0YXR1cxgEIAEoCzIaLndpZGdldGQudjEuSW5zdGFuY2VTdGF0dXMSLgoKY3JlYXRlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASJQoIYmluZGluZ3MYBiADKAsyEy53aWRnZXRkLnYxLkJpbmRpbmciLwoHQmluZGluZxIQCghwcm92aWRlchgBIAEoCRISCgphY2NvdW50X2lkGAIgASgJIjsKFVJlbmFtZUluc3RhbmNlUmVxdWVzdBITCgtpbnN0YW5jZV9pZBgBIAEoCRINCgVsYWJlbBgCIAEoCSIYChZSZW5hbWVJbnN0YW5jZVJlc3BvbnNlIiwKFURlbGV0ZUluc3RhbmNlUmVxdWVzdBITCgtpbnN0YW5jZV9pZBgBIAEoCSIYChZEZWxldGVJbnN0YW5jZVJlc3BvbnNlIl4KFlNldE5ldHdvcmtHcmFudFJlcXVlc3QSDgoGd2lkZ2V0GAEgASgJEg0KBWhvc3RzGAIgAygJEhAKCGRpc2FibGVkGAMgASgIEhMKC3VzZV9kZWZhdWx0GAQgASgIIhkKF1NldE5ldHdvcmtHcmFudFJlc3BvbnNlIjEKGkdldEluc3RhbmNlQWN0aXZpdHlSZXF1ZXN0EhMKC2luc3RhbmNlX2lkGAEgASgJIq4BCgVGZXRjaBImCgJhdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDgoGbWV0aG9kGAIgASgJEgwKBGhvc3QYAyABKAkSDAoEcGF0aBgEIAEoCRIOCgZzdGF0dXMYBSABKAUSDQoFYnl0ZXMYBiABKAMSDgoGZGVuaWVkGAcgASgJEg0KBWVycm9yGAggASgJEhMKC2R1cmF0aW9uX21zGAkgASgDIkEKG0dldEluc3RhbmNlQWN0aXZpdHlSZXNwb25zZRIiCgdmZXRjaGVzGAEgAygLMhEud2lkZ2V0ZC52MS5GZXRjaCJOChdHZXRDb25maWdDaG9pY2VzUmVxdWVzdBIOCgZ0aWNrZXQYASABKAkSDgoGY29uZmlnGAIgASgMEhMKC2luc3RhbmNlX2lkGAMgASgJIiwKDENvbmZpZ0Nob2ljZRINCgV2YWx1ZRgBIAEoCRINCgVsYWJlbBgCIAEoCSJOChJDb25maWdGaWVsZENob2ljZXMSDQoFZmllbGQYASABKAkSKQoHY2hvaWNlcxgCIAMoCzIYLndpZGdldGQudjEuQ29uZmlnQ2hvaWNlIkoKGEdldENvbmZpZ0Nob2ljZXNSZXNwb25zZRIuCgZmaWVsZHMYASADKAsyHi53aWRnZXRkLnYxLkNvbmZpZ0ZpZWxkQ2hvaWNlcyInCgNVc2USEAoIcHJvdmlkZXIYASABKAkSDgoGc2NvcGVzGAIgAygJIo0BCgxQcm92aWRlckluZm8SDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRISCgpjbGllbnRfc2V0GAMgASgIEhIKCnNlY3JldF9zZXQYBCABKAgSFAoMcmVkaXJlY3RfdXJpGAUgASgJEhMKC2NsaWVudF9oZWxwGAYgASgJEg0KBWVycm9yGAcgASgJIq8BCgdBY2NvdW50EgoKAmlkGAEgASgJEhAKCHByb3ZpZGVyGAIgASgJEg0KBWxhYmVsGAMgASgJEhAKCGlkZW50aXR5GAQgASgJEhEKCXNpZ25lZF9pbhgFIAEoCBIPCgdncmFudGVkGAYgAygJEg4KBndhbnRlZBgHIAMoCRIPCgdtZXNzYWdlGAggASgJEg0KBWVycm9yGAkgASgJEhEKCWluc3RhbmNlcxgKIAMoCSIVChNMaXN0QWNjb3VudHNSZXF1ZXN0ImoKFExpc3RBY2NvdW50c1Jlc3BvbnNlEisKCXByb3ZpZGVycxgBIAMoCzIYLndpZGdldGQudjEuUHJvdmlkZXJJbmZvEiUKCGFjY291bnRzGAIgAygLMhMud2lkZ2V0ZC52MS5BY2NvdW50Ik8KEkJlZ2luU2lnbkluUmVxdWVzdBIQCghwcm92aWRlchgBIAEoCRISCgphY2NvdW50X2lkGAIgASgJEhMKC2luc3RhbmNlX2lkGAMgASgJIn0KE0JlZ2luU2lnbkluUmVzcG9uc2USCwoDdXJsGAEgASgJEhEKCXVzZXJfY29kZRgCIAEoCRIuCgpleHBpcmVzX2F0GAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIWCg5wcm92aWRlcl90aXRsZRgEIAEoCSIkCg5TaWduT3V0UmVxdWVzdBISCgphY2NvdW50X2lkGAEgASgJIhEKD1NpZ25PdXRSZXNwb25zZSI4ChNMYWJlbEFjY291bnRSZXF1ZXN0EhIKCmFjY291bnRfaWQYASABKAkSDQoFbGFiZWwYAiABKAkiFgoUTGFiZWxBY2NvdW50UmVzcG9uc2UiKgoURGVsZXRlQWNjb3VudFJlcXVlc3QSEgoKYWNjb3VudF9pZBgBIAEoCSIXChVEZWxldGVBY2NvdW50UmVzcG9uc2UiTwoSQmluZEFjY291bnRSZXF1ZXN0EhMKC2luc3RhbmNlX2lkGAEgASgJEhAKCHByb3ZpZGVyGAIgASgJEhIKCmFjY291bnRfaWQYAyABKAkiFQoTQmluZEFjY291bnRSZXNwb25zZSJWChhTZXRQcm92aWRlckNsaWVudFJlcXVlc3QSEAoIcHJvdmlkZXIYASABKAkSEQoJY2xpZW50X2lkGAIgASgJEhUKDWNsaWVudF9zZWNyZXQYAyABKAkiGwoZU2V0UHJvdmlkZXJDbGllbnRSZXNwb25zZTKsDAoSV2lkZ2V0QWRtaW5TZXJ2aWNlEk4KC0xpc3RXaWRnZXRzEh4ud2lkZ2V0ZC52MS5MaXN0V2lkZ2V0c1JlcXVlc3QaHy53aWRnZXRkLnYxLkxpc3RXaWRnZXRzUmVzcG9uc2USTgoLQWRkSW5zdGFuY2USHi53aWRnZXRkLnYxLkFkZEluc3RhbmNlUmVxdWVzdBofLndpZGdldGQudjEuQWRkSW5zdGFuY2VSZXNwb25zZRJmChNSZXF1ZXN0Q29uZmlnVGlja2V0EiYud2lkZ2V0ZC52MS5SZXF1ZXN0Q29uZmlnVGlja2V0UmVxdWVzdBonLndpZGdldGQudjEuUmVxdWVzdENvbmZpZ1RpY2tldFJlc3BvbnNlElQKDUdldENvbmZpZ0Zvcm0SIC53aWRnZXRkLnYxLkdldENvbmZpZ0Zvcm1SZXF1ZXN0GiEud2lkZ2V0ZC52MS5HZXRDb25maWdGb3JtUmVzcG9uc2USXQoQR2V0Q29uZmlnQ2hvaWNlcxIjLndpZGdldGQudjEuR2V0Q29uZmlnQ2hvaWNlc1JlcXVlc3QaJC53aWRnZXRkLnYxLkdldENvbmZpZ0Nob2ljZXNSZXNwb25zZRJLCgpTYXZlQ29uZmlnEh0ud2lkZ2V0ZC52MS5TYXZlQ29uZmlnUmVxdWVzdBoeLndpZGdldGQudjEuU2F2ZUNvbmZpZ1Jlc3BvbnNlElQKDUxpc3RJbnN0YW5jZXMSIC53aWRnZXRkLnYxLkxpc3RJbnN0YW5jZXNSZXF1ZXN0GiEud2lkZ2V0ZC52MS5MaXN0SW5zdGFuY2VzUmVzcG9uc2USVwoOUmVuYW1lSW5zdGFuY2USIS53aWRnZXRkLnYxLlJlbmFtZUluc3RhbmNlUmVxdWVzdBoiLndpZGdldGQudjEuUmVuYW1lSW5zdGFuY2VSZXNwb25zZRJXCg5EZWxldGVJbnN0YW5jZRIhLndpZGdldGQudjEuRGVsZXRlSW5zdGFuY2VSZXF1ZXN0GiIud2lkZ2V0ZC52MS5EZWxldGVJbnN0YW5jZVJlc3BvbnNlEloKD1NldE5ldHdvcmtHcmFudBIiLndpZGdldGQudjEuU2V0TmV0d29ya0dyYW50UmVxdWVzdBojLndpZGdldGQudjEuU2V0TmV0d29ya0dyYW50UmVzcG9uc2USZgoTR2V0SW5zdGFuY2VBY3Rpdml0eRImLndpZGdldGQudjEuR2V0SW5zdGFuY2VBY3Rpdml0eVJlcXVlc3QaJy53aWRnZXRkLnYxLkdldEluc3RhbmNlQWN0aXZpdHlSZXNwb25zZRJRCgxMaXN0QWNjb3VudHMSHy53aWRnZXRkLnYxLkxpc3RBY2NvdW50c1JlcXVlc3QaIC53aWRnZXRkLnYxLkxpc3RBY2NvdW50c1Jlc3BvbnNlEk4KC0JlZ2luU2lnbkluEh4ud2lkZ2V0ZC52MS5CZWdpblNpZ25JblJlcXVlc3QaHy53aWRnZXRkLnYxLkJlZ2luU2lnbkluUmVzcG9uc2USQgoHU2lnbk91dBIaLndpZGdldGQudjEuU2lnbk91dFJlcXVlc3QaGy53aWRnZXRkLnYxLlNpZ25PdXRSZXNwb25zZRJRCgxMYWJlbEFjY291bnQSHy53aWRnZXRkLnYxLkxhYmVsQWNjb3VudFJlcXVlc3QaIC53aWRnZXRkLnYxLkxhYmVsQWNjb3VudFJlc3BvbnNlElQKDURlbGV0ZUFjY291bnQSIC53aWRnZXRkLnYxLkRlbGV0ZUFjY291bnRSZXF1ZXN0GiEud2lkZ2V0ZC52MS5EZWxldGVBY2NvdW50UmVzcG9uc2USTgoLQmluZEFjY291bnQSHi53aWRnZXRkLnYxLkJpbmRBY2NvdW50UmVxdWVzdBofLndpZGdldGQudjEuQmluZEFjY291bnRSZXNwb25zZRJgChFTZXRQcm92aWRlckNsaWVudBIkLndpZGdldGQudjEuU2V0UHJvdmlkZXJDbGllbnRSZXF1ZXN0GiUud2lkZ2V0ZC52MS5TZXRQcm92aWRlckNsaWVudFJlc3BvbnNlQjdaNWdpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvZ2VuL3dpZGdldGQvdjE7d2lkZ2V0ZHYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_widgetd_v1_stream]);
 
 /**
  * @generated from message widgetd.v1.WidgetInfo
@@ -78,24 +78,11 @@ export type WidgetInfo = Message<"widgetd.v1.WidgetInfo"> & {
   configurable: boolean;
 
   /**
-   * Set if it signs in to an account: the provider's name, and whether a
-   * client (OAuth app) has been registered for it yet.
+   * The accounts it uses, and with what scopes.
    *
-   * @generated from field: string sign_in_provider = 11;
+   * @generated from field: repeated widgetd.v1.Use uses = 14;
    */
-  signInProvider: string;
-
-  /**
-   * @generated from field: bool sign_in_client_set = 12;
-   */
-  signInClientSet: boolean;
-
-  /**
-   * Whether a client secret is stored too (needed to renew expiring tokens).
-   *
-   * @generated from field: bool sign_in_secret_set = 13;
-   */
-  signInSecretSet: boolean;
+  uses: Use[];
 };
 
 /**
@@ -447,6 +434,13 @@ export type InstanceInfo = Message<"widgetd.v1.InstanceInfo"> & {
    * @generated from field: google.protobuf.Timestamp created_at = 5;
    */
   createdAt?: Timestamp | undefined;
+
+  /**
+   * One per provider the widget uses: which account it's bound to.
+   *
+   * @generated from field: repeated widgetd.v1.Binding bindings = 6;
+   */
+  bindings: Binding[];
 };
 
 /**
@@ -455,6 +449,30 @@ export type InstanceInfo = Message<"widgetd.v1.InstanceInfo"> & {
  */
 export const InstanceInfoSchema: GenMessage<InstanceInfo> = /*@__PURE__*/
   messageDesc(file_widgetd_v1_admin, 14);
+
+/**
+ * @generated from message widgetd.v1.Binding
+ */
+export type Binding = Message<"widgetd.v1.Binding"> & {
+  /**
+   * @generated from field: string provider = 1;
+   */
+  provider: string;
+
+  /**
+   * empty: none chosen yet
+   *
+   * @generated from field: string account_id = 2;
+   */
+  accountId: string;
+};
+
+/**
+ * Describes the message widgetd.v1.Binding.
+ * Use `create(BindingSchema)` to create a new message.
+ */
+export const BindingSchema: GenMessage<Binding> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 15);
 
 /**
  * @generated from message widgetd.v1.RenameInstanceRequest
@@ -476,7 +494,7 @@ export type RenameInstanceRequest = Message<"widgetd.v1.RenameInstanceRequest"> 
  * Use `create(RenameInstanceRequestSchema)` to create a new message.
  */
 export const RenameInstanceRequestSchema: GenMessage<RenameInstanceRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 15);
+  messageDesc(file_widgetd_v1_admin, 16);
 
 /**
  * @generated from message widgetd.v1.RenameInstanceResponse
@@ -489,7 +507,7 @@ export type RenameInstanceResponse = Message<"widgetd.v1.RenameInstanceResponse"
  * Use `create(RenameInstanceResponseSchema)` to create a new message.
  */
 export const RenameInstanceResponseSchema: GenMessage<RenameInstanceResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 16);
+  messageDesc(file_widgetd_v1_admin, 17);
 
 /**
  * @generated from message widgetd.v1.DeleteInstanceRequest
@@ -506,7 +524,7 @@ export type DeleteInstanceRequest = Message<"widgetd.v1.DeleteInstanceRequest"> 
  * Use `create(DeleteInstanceRequestSchema)` to create a new message.
  */
 export const DeleteInstanceRequestSchema: GenMessage<DeleteInstanceRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 17);
+  messageDesc(file_widgetd_v1_admin, 18);
 
 /**
  * @generated from message widgetd.v1.DeleteInstanceResponse
@@ -519,7 +537,7 @@ export type DeleteInstanceResponse = Message<"widgetd.v1.DeleteInstanceResponse"
  * Use `create(DeleteInstanceResponseSchema)` to create a new message.
  */
 export const DeleteInstanceResponseSchema: GenMessage<DeleteInstanceResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 18);
+  messageDesc(file_widgetd_v1_admin, 19);
 
 /**
  * @generated from message widgetd.v1.SetNetworkGrantRequest
@@ -555,7 +573,7 @@ export type SetNetworkGrantRequest = Message<"widgetd.v1.SetNetworkGrantRequest"
  * Use `create(SetNetworkGrantRequestSchema)` to create a new message.
  */
 export const SetNetworkGrantRequestSchema: GenMessage<SetNetworkGrantRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 19);
+  messageDesc(file_widgetd_v1_admin, 20);
 
 /**
  * @generated from message widgetd.v1.SetNetworkGrantResponse
@@ -568,7 +586,7 @@ export type SetNetworkGrantResponse = Message<"widgetd.v1.SetNetworkGrantRespons
  * Use `create(SetNetworkGrantResponseSchema)` to create a new message.
  */
 export const SetNetworkGrantResponseSchema: GenMessage<SetNetworkGrantResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 20);
+  messageDesc(file_widgetd_v1_admin, 21);
 
 /**
  * @generated from message widgetd.v1.GetInstanceActivityRequest
@@ -585,7 +603,7 @@ export type GetInstanceActivityRequest = Message<"widgetd.v1.GetInstanceActivity
  * Use `create(GetInstanceActivityRequestSchema)` to create a new message.
  */
 export const GetInstanceActivityRequestSchema: GenMessage<GetInstanceActivityRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 21);
+  messageDesc(file_widgetd_v1_admin, 22);
 
 /**
  * @generated from message widgetd.v1.Fetch
@@ -642,7 +660,7 @@ export type Fetch = Message<"widgetd.v1.Fetch"> & {
  * Use `create(FetchSchema)` to create a new message.
  */
 export const FetchSchema: GenMessage<Fetch> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 22);
+  messageDesc(file_widgetd_v1_admin, 23);
 
 /**
  * @generated from message widgetd.v1.GetInstanceActivityResponse
@@ -659,7 +677,7 @@ export type GetInstanceActivityResponse = Message<"widgetd.v1.GetInstanceActivit
  * Use `create(GetInstanceActivityResponseSchema)` to create a new message.
  */
 export const GetInstanceActivityResponseSchema: GenMessage<GetInstanceActivityResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 23);
+  messageDesc(file_widgetd_v1_admin, 24);
 
 /**
  * @generated from message widgetd.v1.GetConfigChoicesRequest
@@ -690,7 +708,7 @@ export type GetConfigChoicesRequest = Message<"widgetd.v1.GetConfigChoicesReques
  * Use `create(GetConfigChoicesRequestSchema)` to create a new message.
  */
 export const GetConfigChoicesRequestSchema: GenMessage<GetConfigChoicesRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 24);
+  messageDesc(file_widgetd_v1_admin, 25);
 
 /**
  * @generated from message widgetd.v1.ConfigChoice
@@ -712,7 +730,7 @@ export type ConfigChoice = Message<"widgetd.v1.ConfigChoice"> & {
  * Use `create(ConfigChoiceSchema)` to create a new message.
  */
 export const ConfigChoiceSchema: GenMessage<ConfigChoice> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 25);
+  messageDesc(file_widgetd_v1_admin, 26);
 
 /**
  * @generated from message widgetd.v1.ConfigFieldChoices
@@ -734,7 +752,7 @@ export type ConfigFieldChoices = Message<"widgetd.v1.ConfigFieldChoices"> & {
  * Use `create(ConfigFieldChoicesSchema)` to create a new message.
  */
 export const ConfigFieldChoicesSchema: GenMessage<ConfigFieldChoices> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 26);
+  messageDesc(file_widgetd_v1_admin, 27);
 
 /**
  * @generated from message widgetd.v1.GetConfigChoicesResponse
@@ -751,14 +769,223 @@ export type GetConfigChoicesResponse = Message<"widgetd.v1.GetConfigChoicesRespo
  * Use `create(GetConfigChoicesResponseSchema)` to create a new message.
  */
 export const GetConfigChoicesResponseSchema: GenMessage<GetConfigChoicesResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 27);
+  messageDesc(file_widgetd_v1_admin, 28);
+
+/**
+ * @generated from message widgetd.v1.Use
+ */
+export type Use = Message<"widgetd.v1.Use"> & {
+  /**
+   * "google", "github"
+   *
+   * @generated from field: string provider = 1;
+   */
+  provider: string;
+
+  /**
+   * @generated from field: repeated string scopes = 2;
+   */
+  scopes: string[];
+};
+
+/**
+ * Describes the message widgetd.v1.Use.
+ * Use `create(UseSchema)` to create a new message.
+ */
+export const UseSchema: GenMessage<Use> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 29);
+
+/**
+ * A provider the display's widgets use: its registered client.
+ *
+ * @generated from message widgetd.v1.ProviderInfo
+ */
+export type ProviderInfo = Message<"widgetd.v1.ProviderInfo"> & {
+  /**
+   * "google"
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * "Google"
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * @generated from field: bool client_set = 3;
+   */
+  clientSet: boolean;
+
+  /**
+   * @generated from field: bool secret_set = 4;
+   */
+  secretSet: boolean;
+
+  /**
+   * The redirect URI to register with the provider, for browser sign-in.
+   *
+   * @generated from field: string redirect_uri = 5;
+   */
+  redirectUri: string;
+
+  /**
+   * How to register a client with the provider.
+   *
+   * @generated from field: string client_help = 6;
+   */
+  clientHelp: string;
+
+  /**
+   * The last failure signing in a new account, if any.
+   *
+   * @generated from field: string error = 7;
+   */
+  error: string;
+};
+
+/**
+ * Describes the message widgetd.v1.ProviderInfo.
+ * Use `create(ProviderInfoSchema)` to create a new message.
+ */
+export const ProviderInfoSchema: GenMessage<ProviderInfo> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 30);
+
+/**
+ * An account the display has with a provider ("Google: Work"). Instances
+ * are bound to one each; its grant is kept to exactly the union of the
+ * scopes the instances bound to it use.
+ *
+ * @generated from message widgetd.v1.Account
+ */
+export type Account = Message<"widgetd.v1.Account"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string provider = 2;
+   */
+  provider: string;
+
+  /**
+   * Its admin-given name. Empty until named: a new sign-in can't be used
+   * until an admin names it.
+   *
+   * @generated from field: string label = 3;
+   */
+  label: string;
+
+  /**
+   * Who it is, if the provider says (an email, a login).
+   *
+   * @generated from field: string identity = 4;
+   */
+  identity: string;
+
+  /**
+   * @generated from field: bool signed_in = 5;
+   */
+  signedIn: boolean;
+
+  /**
+   * @generated from field: repeated string granted = 6;
+   */
+  granted: string[];
+
+  /**
+   * @generated from field: repeated string wanted = 7;
+   */
+  wanted: string[];
+
+  /**
+   * Why it needs attention, if it does.
+   *
+   * @generated from field: string message = 8;
+   */
+  message: string;
+
+  /**
+   * @generated from field: string error = 9;
+   */
+  error: string;
+
+  /**
+   * The instances bound to it.
+   *
+   * @generated from field: repeated string instances = 10;
+   */
+  instances: string[];
+};
+
+/**
+ * Describes the message widgetd.v1.Account.
+ * Use `create(AccountSchema)` to create a new message.
+ */
+export const AccountSchema: GenMessage<Account> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 31);
+
+/**
+ * @generated from message widgetd.v1.ListAccountsRequest
+ */
+export type ListAccountsRequest = Message<"widgetd.v1.ListAccountsRequest"> & {
+};
+
+/**
+ * Describes the message widgetd.v1.ListAccountsRequest.
+ * Use `create(ListAccountsRequestSchema)` to create a new message.
+ */
+export const ListAccountsRequestSchema: GenMessage<ListAccountsRequest> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 32);
+
+/**
+ * @generated from message widgetd.v1.ListAccountsResponse
+ */
+export type ListAccountsResponse = Message<"widgetd.v1.ListAccountsResponse"> & {
+  /**
+   * @generated from field: repeated widgetd.v1.ProviderInfo providers = 1;
+   */
+  providers: ProviderInfo[];
+
+  /**
+   * @generated from field: repeated widgetd.v1.Account accounts = 2;
+   */
+  accounts: Account[];
+};
+
+/**
+ * Describes the message widgetd.v1.ListAccountsResponse.
+ * Use `create(ListAccountsResponseSchema)` to create a new message.
+ */
+export const ListAccountsResponseSchema: GenMessage<ListAccountsResponse> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 33);
 
 /**
  * @generated from message widgetd.v1.BeginSignInRequest
  */
 export type BeginSignInRequest = Message<"widgetd.v1.BeginSignInRequest"> & {
   /**
-   * @generated from field: string instance_id = 1;
+   * @generated from field: string provider = 1;
+   */
+  provider: string;
+
+  /**
+   * Sign an existing account in again; it must be the same identity, when
+   * the provider says who it is.
+   *
+   * @generated from field: string account_id = 2;
+   */
+  accountId: string;
+
+  /**
+   * Or: sign in a new account, bound to this instance once it's named.
+   * Admins only.
+   *
+   * @generated from field: string instance_id = 3;
    */
   instanceId: string;
 };
@@ -768,41 +995,34 @@ export type BeginSignInRequest = Message<"widgetd.v1.BeginSignInRequest"> & {
  * Use `create(BeginSignInRequestSchema)` to create a new message.
  */
 export const BeginSignInRequestSchema: GenMessage<BeginSignInRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 28);
+  messageDesc(file_widgetd_v1_admin, 34);
 
 /**
  * @generated from message widgetd.v1.BeginSignInResponse
  */
 export type BeginSignInResponse = Message<"widgetd.v1.BeginSignInResponse"> & {
   /**
-   * Show this, and where to enter it.
+   * Where to go to sign in: what a QR code should open. For a device-flow
+   * provider, also the code to enter there.
    *
-   * @generated from field: string user_code = 1;
+   * @generated from field: string url = 1;
+   */
+  url: string;
+
+  /**
+   * @generated from field: string user_code = 2;
    */
   userCode: string;
 
   /**
-   * @generated from field: string verification_uri = 2;
-   */
-  verificationUri: string;
-
-  /**
-   * The same page with the code filled in, if the provider offers one:
-   * what a QR code should open.
-   *
-   * @generated from field: string verification_uri_complete = 3;
-   */
-  verificationUriComplete: string;
-
-  /**
-   * @generated from field: google.protobuf.Timestamp expires_at = 4;
+   * @generated from field: google.protobuf.Timestamp expires_at = 3;
    */
   expiresAt?: Timestamp | undefined;
 
   /**
-   * @generated from field: string provider = 5;
+   * @generated from field: string provider_title = 4;
    */
-  provider: string;
+  providerTitle: string;
 };
 
 /**
@@ -810,16 +1030,18 @@ export type BeginSignInResponse = Message<"widgetd.v1.BeginSignInResponse"> & {
  * Use `create(BeginSignInResponseSchema)` to create a new message.
  */
 export const BeginSignInResponseSchema: GenMessage<BeginSignInResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 29);
+  messageDesc(file_widgetd_v1_admin, 35);
 
 /**
+ * Revokes its grant; the account stays, named and signed out.
+ *
  * @generated from message widgetd.v1.SignOutRequest
  */
 export type SignOutRequest = Message<"widgetd.v1.SignOutRequest"> & {
   /**
-   * @generated from field: string instance_id = 1;
+   * @generated from field: string account_id = 1;
    */
-  instanceId: string;
+  accountId: string;
 };
 
 /**
@@ -827,7 +1049,7 @@ export type SignOutRequest = Message<"widgetd.v1.SignOutRequest"> & {
  * Use `create(SignOutRequestSchema)` to create a new message.
  */
 export const SignOutRequestSchema: GenMessage<SignOutRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 30);
+  messageDesc(file_widgetd_v1_admin, 36);
 
 /**
  * @generated from message widgetd.v1.SignOutResponse
@@ -840,25 +1062,137 @@ export type SignOutResponse = Message<"widgetd.v1.SignOutResponse"> & {
  * Use `create(SignOutResponseSchema)` to create a new message.
  */
 export const SignOutResponseSchema: GenMessage<SignOutResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 31);
+  messageDesc(file_widgetd_v1_admin, 37);
 
 /**
- * @generated from message widgetd.v1.SetSignInClientRequest
+ * @generated from message widgetd.v1.LabelAccountRequest
  */
-export type SetSignInClientRequest = Message<"widgetd.v1.SetSignInClientRequest"> & {
+export type LabelAccountRequest = Message<"widgetd.v1.LabelAccountRequest"> & {
   /**
-   * @generated from field: string widget = 1;
+   * @generated from field: string account_id = 1;
    */
-  widget: string;
+  accountId: string;
 
   /**
+   * 1–60 characters
+   *
+   * @generated from field: string label = 2;
+   */
+  label: string;
+};
+
+/**
+ * Describes the message widgetd.v1.LabelAccountRequest.
+ * Use `create(LabelAccountRequestSchema)` to create a new message.
+ */
+export const LabelAccountRequestSchema: GenMessage<LabelAccountRequest> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 38);
+
+/**
+ * @generated from message widgetd.v1.LabelAccountResponse
+ */
+export type LabelAccountResponse = Message<"widgetd.v1.LabelAccountResponse"> & {
+};
+
+/**
+ * Describes the message widgetd.v1.LabelAccountResponse.
+ * Use `create(LabelAccountResponseSchema)` to create a new message.
+ */
+export const LabelAccountResponseSchema: GenMessage<LabelAccountResponse> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 39);
+
+/**
+ * Revokes its grant and forgets it; its instances wait for another.
+ *
+ * @generated from message widgetd.v1.DeleteAccountRequest
+ */
+export type DeleteAccountRequest = Message<"widgetd.v1.DeleteAccountRequest"> & {
+  /**
+   * @generated from field: string account_id = 1;
+   */
+  accountId: string;
+};
+
+/**
+ * Describes the message widgetd.v1.DeleteAccountRequest.
+ * Use `create(DeleteAccountRequestSchema)` to create a new message.
+ */
+export const DeleteAccountRequestSchema: GenMessage<DeleteAccountRequest> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 40);
+
+/**
+ * @generated from message widgetd.v1.DeleteAccountResponse
+ */
+export type DeleteAccountResponse = Message<"widgetd.v1.DeleteAccountResponse"> & {
+};
+
+/**
+ * Describes the message widgetd.v1.DeleteAccountResponse.
+ * Use `create(DeleteAccountResponseSchema)` to create a new message.
+ */
+export const DeleteAccountResponseSchema: GenMessage<DeleteAccountResponse> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 41);
+
+/**
+ * @generated from message widgetd.v1.BindAccountRequest
+ */
+export type BindAccountRequest = Message<"widgetd.v1.BindAccountRequest"> & {
+  /**
+   * @generated from field: string instance_id = 1;
+   */
+  instanceId: string;
+
+  /**
+   * @generated from field: string provider = 2;
+   */
+  provider: string;
+
+  /**
+   * Empty unbinds.
+   *
+   * @generated from field: string account_id = 3;
+   */
+  accountId: string;
+};
+
+/**
+ * Describes the message widgetd.v1.BindAccountRequest.
+ * Use `create(BindAccountRequestSchema)` to create a new message.
+ */
+export const BindAccountRequestSchema: GenMessage<BindAccountRequest> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 42);
+
+/**
+ * @generated from message widgetd.v1.BindAccountResponse
+ */
+export type BindAccountResponse = Message<"widgetd.v1.BindAccountResponse"> & {
+};
+
+/**
+ * Describes the message widgetd.v1.BindAccountResponse.
+ * Use `create(BindAccountResponseSchema)` to create a new message.
+ */
+export const BindAccountResponseSchema: GenMessage<BindAccountResponse> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 43);
+
+/**
+ * @generated from message widgetd.v1.SetProviderClientRequest
+ */
+export type SetProviderClientRequest = Message<"widgetd.v1.SetProviderClientRequest"> & {
+  /**
+   * @generated from field: string provider = 1;
+   */
+  provider: string;
+
+  /**
+   * Empty keeps the stored one.
+   *
    * @generated from field: string client_id = 2;
    */
   clientId: string;
 
   /**
-   * Optional: device flow itself needs none, but renewing an expiring token
-   * usually does. Write-only; empty keeps the stored one.
+   * Write-only; empty keeps the stored one.
    *
    * @generated from field: string client_secret = 3;
    */
@@ -866,24 +1200,24 @@ export type SetSignInClientRequest = Message<"widgetd.v1.SetSignInClientRequest"
 };
 
 /**
- * Describes the message widgetd.v1.SetSignInClientRequest.
- * Use `create(SetSignInClientRequestSchema)` to create a new message.
+ * Describes the message widgetd.v1.SetProviderClientRequest.
+ * Use `create(SetProviderClientRequestSchema)` to create a new message.
  */
-export const SetSignInClientRequestSchema: GenMessage<SetSignInClientRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 32);
+export const SetProviderClientRequestSchema: GenMessage<SetProviderClientRequest> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 44);
 
 /**
- * @generated from message widgetd.v1.SetSignInClientResponse
+ * @generated from message widgetd.v1.SetProviderClientResponse
  */
-export type SetSignInClientResponse = Message<"widgetd.v1.SetSignInClientResponse"> & {
+export type SetProviderClientResponse = Message<"widgetd.v1.SetProviderClientResponse"> & {
 };
 
 /**
- * Describes the message widgetd.v1.SetSignInClientResponse.
- * Use `create(SetSignInClientResponseSchema)` to create a new message.
+ * Describes the message widgetd.v1.SetProviderClientResponse.
+ * Use `create(SetProviderClientResponseSchema)` to create a new message.
  */
-export const SetSignInClientResponseSchema: GenMessage<SetSignInClientResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 33);
+export const SetProviderClientResponseSchema: GenMessage<SetProviderClientResponse> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 45);
 
 /**
  * WidgetAdminService manages what runs. Screens (paired devices) may add a
@@ -1007,12 +1341,19 @@ export const WidgetAdminService: GenService<{
     output: typeof GetInstanceActivityResponseSchema;
   },
   /**
-   * Sign-in, for widgets that use an account (device flow: a code shown
-   * on the screen, approved on the provider's site from a phone).
-   * BeginSignIn: screen or admin, but a screen only for an instance that
-   * isn't signed in yet; replacing a sign-in needs an admin. The rest:
-   * admin.
+   * Accounts: one per provider (Google, GitHub) for the whole display,
+   * granted exactly the union of the scopes its widgets on the board use.
+   * ListAccounts and BeginSignIn: screen or admin (a screen may only sign
+   * in an account that needs it). The rest: admin.
    *
+   * @generated from rpc widgetd.v1.WidgetAdminService.ListAccounts
+   */
+  listAccounts: {
+    methodKind: "unary";
+    input: typeof ListAccountsRequestSchema;
+    output: typeof ListAccountsResponseSchema;
+  },
+  /**
    * @generated from rpc widgetd.v1.WidgetAdminService.BeginSignIn
    */
   beginSignIn: {
@@ -1029,15 +1370,39 @@ export const WidgetAdminService: GenService<{
     output: typeof SignOutResponseSchema;
   },
   /**
-   * The OAuth app a widget signs in with, registered by whoever runs the
-   * host with the provider.
-   *
-   * @generated from rpc widgetd.v1.WidgetAdminService.SetSignInClient
+   * @generated from rpc widgetd.v1.WidgetAdminService.LabelAccount
    */
-  setSignInClient: {
+  labelAccount: {
     methodKind: "unary";
-    input: typeof SetSignInClientRequestSchema;
-    output: typeof SetSignInClientResponseSchema;
+    input: typeof LabelAccountRequestSchema;
+    output: typeof LabelAccountResponseSchema;
+  },
+  /**
+   * @generated from rpc widgetd.v1.WidgetAdminService.DeleteAccount
+   */
+  deleteAccount: {
+    methodKind: "unary";
+    input: typeof DeleteAccountRequestSchema;
+    output: typeof DeleteAccountResponseSchema;
+  },
+  /**
+   * @generated from rpc widgetd.v1.WidgetAdminService.BindAccount
+   */
+  bindAccount: {
+    methodKind: "unary";
+    input: typeof BindAccountRequestSchema;
+    output: typeof BindAccountResponseSchema;
+  },
+  /**
+   * The OAuth client (app) the display signs in to a provider with,
+   * registered with the provider by whoever runs the host.
+   *
+   * @generated from rpc widgetd.v1.WidgetAdminService.SetProviderClient
+   */
+  setProviderClient: {
+    methodKind: "unary";
+    input: typeof SetProviderClientRequestSchema;
+    output: typeof SetProviderClientResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_widgetd_v1_admin, 0);

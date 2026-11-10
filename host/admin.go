@@ -101,10 +101,8 @@ func (a *adminService) widgetInfo(w *loadedWidget) *widgetdv1.WidgetInfo {
 		RequestedHosts: w.spec.Network.Hosts, RequestedMethods: w.spec.Network.Methods,
 		NetworkWhy: w.spec.Network.Why, Configurable: w.spec.Config != nil,
 	}
-	if si := w.spec.SignIn; si != nil {
-		info.SignInProvider = si.Provider
-		c, ok, _ := a.srv.loadClient(w.spec.Name)
-		info.SignInClientSet, info.SignInSecretSet = ok, ok && c.secret != ""
+	for _, u := range w.spec.Uses {
+		info.Uses = append(info.Uses, &widgetdv1.Use{Provider: u.Provider, Scopes: u.Scopes})
 	}
 	if g, ok, _ := a.srv.loadGrant(w.spec.Name); ok {
 		info.GrantSet, info.NetworkDisabled, info.GrantedHosts = true, g.disabled, g.hosts
@@ -262,9 +260,13 @@ func (a *adminService) ListInstances(ctx context.Context, req *connect.Request[w
 		in.mu.Lock()
 		label := in.label
 		in.mu.Unlock()
-		out.Instances = append(out.Instances, &widgetdv1.InstanceInfo{
+		info := &widgetdv1.InstanceInfo{
 			Id: in.id, Widget: in.w.spec.Name, Label: label, Status: in.status(), CreatedAt: timestamppb.New(in.created),
-		})
+		}
+		for _, p := range in.w.usedProviders() {
+			info.Bindings = append(info.Bindings, &widgetdv1.Binding{Provider: p, AccountId: in.binding(p)})
+		}
+		out.Instances = append(out.Instances, info)
 	}
 	return connect.NewResponse(out), nil
 }

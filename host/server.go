@@ -66,6 +66,8 @@ type Options struct {
 	wasmCacheDir string
 	// transport replaces the guarded transport (tests: fake providers over TLS).
 	transport http.RoundTripper
+	// providers replaces the built-in provider catalog (tests).
+	providers map[string]*provider
 }
 
 // Instance seeds a configured copy of a widget: created on first start if
@@ -92,6 +94,9 @@ type Server struct {
 	sealer    *sealer
 	wasm      *wasmHost // nil unless a widget is sandboxed
 	tickets   *tickets
+	accountErrMu sync.Mutex
+	accountErr   map[string]string // the last sign-in failure, by provider
+	providers map[string]*provider
 	signIns   signIns
 	choices   choiceCache
 
@@ -128,10 +133,20 @@ func New(opts Options) (*Server, error) {
 		tickets:   newTickets(),
 		instances: map[string]*instance{},
 	}
+	if s.providers = opts.providers; s.providers == nil {
+		ps, err := loadBuiltinProviders()
+		if err != nil {
+			return nil, fmt.Errorf("built-in providers: %w", err)
+		}
+		s.providers = ps
+	}
 	for _, spec := range opts.Widgets {
 		w, err := loadWidget(spec)
 		if err != nil {
 			return nil, err
+		}
+		if err := checkUses(spec, s.providers); err != nil {
+			return nil, fmt.Errorf("widget %s: %w", spec.Name, err)
 		}
 		if _, dup := s.widgets[spec.Name]; dup {
 			return nil, fmt.Errorf("widget %s registered twice", spec.Name)
@@ -169,6 +184,15 @@ func New(opts Options) (*Server, error) {
 	if err := s.loadInstances(); err != nil {
 		return fail(fmt.Errorf("instances: %w", err))
 	}
+	if err := s.migrateClients(); err != nil {
+		return fail(fmt.Errorf("accounts: %w", err))
+	}
+	if err := s.loadQuarantine(); err != nil {
+		return fail(fmt.Errorf("quarantine: %w", err))
+	}
+	if err := s.loadBindings(); err != nil {
+		return fail(fmt.Errorf("bindings: %w", err))
+	}
 	a, err := newAuth(db, opts.PublicURL, base)
 	if err != nil {
 		return fail(err)
@@ -187,6 +211,10 @@ func (s *Server) Start() {
 	for _, id := range s.instanceOrder {
 		in := s.instances[id]
 		s.startIfReadyLocked(in)
+	}
+	// Bring every account in line with the board as it now stands.
+	for p := range s.providers {
+		s.reconcileLocked(p)
 	}
 	s.mu.Unlock()
 	if u := s.auth.setupURL(); u != "" {

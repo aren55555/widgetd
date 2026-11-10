@@ -46,6 +46,8 @@ message Result {
   string error = 1;
   // Set when the network policy refused a fetch: the rule it broke.
   string denied_rule = 2;
+  // Set when a signed fetch needed a scope the widget didn't declare.
+  ScopeProblem scope = 8;
 
   oneof value {
     bytes config = 3;
@@ -218,4 +220,12 @@ message Violation {
   // The field's name, dotted for nested fields; empty for the whole thing.
   string field = 1;
   string message = 2;
+}
+
+// ScopeProblem: the host wouldn't sign a fetch (no scope the widget declared
+// covers it), or the API refused it for want of a scope.
+message ScopeProblem {
+  string provider = 1;
+  repeated string missing = 2;
+  bool refused = 3;
 }

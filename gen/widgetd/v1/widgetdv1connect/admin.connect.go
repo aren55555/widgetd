@@ -66,15 +66,27 @@ const (
 	// WidgetAdminServiceGetInstanceActivityProcedure is the fully-qualified name of the
 	// WidgetAdminService's GetInstanceActivity RPC.
 	WidgetAdminServiceGetInstanceActivityProcedure = "/widgetd.v1.WidgetAdminService/GetInstanceActivity"
+	// WidgetAdminServiceListAccountsProcedure is the fully-qualified name of the WidgetAdminService's
+	// ListAccounts RPC.
+	WidgetAdminServiceListAccountsProcedure = "/widgetd.v1.WidgetAdminService/ListAccounts"
 	// WidgetAdminServiceBeginSignInProcedure is the fully-qualified name of the WidgetAdminService's
 	// BeginSignIn RPC.
 	WidgetAdminServiceBeginSignInProcedure = "/widgetd.v1.WidgetAdminService/BeginSignIn"
 	// WidgetAdminServiceSignOutProcedure is the fully-qualified name of the WidgetAdminService's
 	// SignOut RPC.
 	WidgetAdminServiceSignOutProcedure = "/widgetd.v1.WidgetAdminService/SignOut"
-	// WidgetAdminServiceSetSignInClientProcedure is the fully-qualified name of the
-	// WidgetAdminService's SetSignInClient RPC.
-	WidgetAdminServiceSetSignInClientProcedure = "/widgetd.v1.WidgetAdminService/SetSignInClient"
+	// WidgetAdminServiceLabelAccountProcedure is the fully-qualified name of the WidgetAdminService's
+	// LabelAccount RPC.
+	WidgetAdminServiceLabelAccountProcedure = "/widgetd.v1.WidgetAdminService/LabelAccount"
+	// WidgetAdminServiceDeleteAccountProcedure is the fully-qualified name of the WidgetAdminService's
+	// DeleteAccount RPC.
+	WidgetAdminServiceDeleteAccountProcedure = "/widgetd.v1.WidgetAdminService/DeleteAccount"
+	// WidgetAdminServiceBindAccountProcedure is the fully-qualified name of the WidgetAdminService's
+	// BindAccount RPC.
+	WidgetAdminServiceBindAccountProcedure = "/widgetd.v1.WidgetAdminService/BindAccount"
+	// WidgetAdminServiceSetProviderClientProcedure is the fully-qualified name of the
+	// WidgetAdminService's SetProviderClient RPC.
+	WidgetAdminServiceSetProviderClientProcedure = "/widgetd.v1.WidgetAdminService/SetProviderClient"
 )
 
 // WidgetAdminServiceClient is a client for the widgetd.v1.WidgetAdminService service.
@@ -105,16 +117,19 @@ type WidgetAdminServiceClient interface {
 	// A widget's network grant, and an instance's recent fetches. Admin.
 	SetNetworkGrant(context.Context, *connect.Request[v1.SetNetworkGrantRequest]) (*connect.Response[v1.SetNetworkGrantResponse], error)
 	GetInstanceActivity(context.Context, *connect.Request[v1.GetInstanceActivityRequest]) (*connect.Response[v1.GetInstanceActivityResponse], error)
-	// Sign-in, for widgets that use an account (device flow: a code shown
-	// on the screen, approved on the provider's site from a phone).
-	// BeginSignIn: screen or admin, but a screen only for an instance that
-	// isn't signed in yet; replacing a sign-in needs an admin. The rest:
-	// admin.
+	// Accounts: one per provider (Google, GitHub) for the whole display,
+	// granted exactly the union of the scopes its widgets on the board use.
+	// ListAccounts and BeginSignIn: screen or admin (a screen may only sign
+	// in an account that needs it). The rest: admin.
+	ListAccounts(context.Context, *connect.Request[v1.ListAccountsRequest]) (*connect.Response[v1.ListAccountsResponse], error)
 	BeginSignIn(context.Context, *connect.Request[v1.BeginSignInRequest]) (*connect.Response[v1.BeginSignInResponse], error)
 	SignOut(context.Context, *connect.Request[v1.SignOutRequest]) (*connect.Response[v1.SignOutResponse], error)
-	// The OAuth app a widget signs in with, registered by whoever runs the
-	// host with the provider.
-	SetSignInClient(context.Context, *connect.Request[v1.SetSignInClientRequest]) (*connect.Response[v1.SetSignInClientResponse], error)
+	LabelAccount(context.Context, *connect.Request[v1.LabelAccountRequest]) (*connect.Response[v1.LabelAccountResponse], error)
+	DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error)
+	BindAccount(context.Context, *connect.Request[v1.BindAccountRequest]) (*connect.Response[v1.BindAccountResponse], error)
+	// The OAuth client (app) the display signs in to a provider with,
+	// registered with the provider by whoever runs the host.
+	SetProviderClient(context.Context, *connect.Request[v1.SetProviderClientRequest]) (*connect.Response[v1.SetProviderClientResponse], error)
 }
 
 // NewWidgetAdminServiceClient constructs a client for the widgetd.v1.WidgetAdminService service. By
@@ -194,6 +209,12 @@ func NewWidgetAdminServiceClient(httpClient connect.HTTPClient, baseURL string, 
 			connect.WithSchema(widgetAdminServiceMethods.ByName("GetInstanceActivity")),
 			connect.WithClientOptions(opts...),
 		),
+		listAccounts: connect.NewClient[v1.ListAccountsRequest, v1.ListAccountsResponse](
+			httpClient,
+			baseURL+WidgetAdminServiceListAccountsProcedure,
+			connect.WithSchema(widgetAdminServiceMethods.ByName("ListAccounts")),
+			connect.WithClientOptions(opts...),
+		),
 		beginSignIn: connect.NewClient[v1.BeginSignInRequest, v1.BeginSignInResponse](
 			httpClient,
 			baseURL+WidgetAdminServiceBeginSignInProcedure,
@@ -206,10 +227,28 @@ func NewWidgetAdminServiceClient(httpClient connect.HTTPClient, baseURL string, 
 			connect.WithSchema(widgetAdminServiceMethods.ByName("SignOut")),
 			connect.WithClientOptions(opts...),
 		),
-		setSignInClient: connect.NewClient[v1.SetSignInClientRequest, v1.SetSignInClientResponse](
+		labelAccount: connect.NewClient[v1.LabelAccountRequest, v1.LabelAccountResponse](
 			httpClient,
-			baseURL+WidgetAdminServiceSetSignInClientProcedure,
-			connect.WithSchema(widgetAdminServiceMethods.ByName("SetSignInClient")),
+			baseURL+WidgetAdminServiceLabelAccountProcedure,
+			connect.WithSchema(widgetAdminServiceMethods.ByName("LabelAccount")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteAccount: connect.NewClient[v1.DeleteAccountRequest, v1.DeleteAccountResponse](
+			httpClient,
+			baseURL+WidgetAdminServiceDeleteAccountProcedure,
+			connect.WithSchema(widgetAdminServiceMethods.ByName("DeleteAccount")),
+			connect.WithClientOptions(opts...),
+		),
+		bindAccount: connect.NewClient[v1.BindAccountRequest, v1.BindAccountResponse](
+			httpClient,
+			baseURL+WidgetAdminServiceBindAccountProcedure,
+			connect.WithSchema(widgetAdminServiceMethods.ByName("BindAccount")),
+			connect.WithClientOptions(opts...),
+		),
+		setProviderClient: connect.NewClient[v1.SetProviderClientRequest, v1.SetProviderClientResponse](
+			httpClient,
+			baseURL+WidgetAdminServiceSetProviderClientProcedure,
+			connect.WithSchema(widgetAdminServiceMethods.ByName("SetProviderClient")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -228,9 +267,13 @@ type widgetAdminServiceClient struct {
 	deleteInstance      *connect.Client[v1.DeleteInstanceRequest, v1.DeleteInstanceResponse]
 	setNetworkGrant     *connect.Client[v1.SetNetworkGrantRequest, v1.SetNetworkGrantResponse]
 	getInstanceActivity *connect.Client[v1.GetInstanceActivityRequest, v1.GetInstanceActivityResponse]
+	listAccounts        *connect.Client[v1.ListAccountsRequest, v1.ListAccountsResponse]
 	beginSignIn         *connect.Client[v1.BeginSignInRequest, v1.BeginSignInResponse]
 	signOut             *connect.Client[v1.SignOutRequest, v1.SignOutResponse]
-	setSignInClient     *connect.Client[v1.SetSignInClientRequest, v1.SetSignInClientResponse]
+	labelAccount        *connect.Client[v1.LabelAccountRequest, v1.LabelAccountResponse]
+	deleteAccount       *connect.Client[v1.DeleteAccountRequest, v1.DeleteAccountResponse]
+	bindAccount         *connect.Client[v1.BindAccountRequest, v1.BindAccountResponse]
+	setProviderClient   *connect.Client[v1.SetProviderClientRequest, v1.SetProviderClientResponse]
 }
 
 // ListWidgets calls widgetd.v1.WidgetAdminService.ListWidgets.
@@ -288,6 +331,11 @@ func (c *widgetAdminServiceClient) GetInstanceActivity(ctx context.Context, req 
 	return c.getInstanceActivity.CallUnary(ctx, req)
 }
 
+// ListAccounts calls widgetd.v1.WidgetAdminService.ListAccounts.
+func (c *widgetAdminServiceClient) ListAccounts(ctx context.Context, req *connect.Request[v1.ListAccountsRequest]) (*connect.Response[v1.ListAccountsResponse], error) {
+	return c.listAccounts.CallUnary(ctx, req)
+}
+
 // BeginSignIn calls widgetd.v1.WidgetAdminService.BeginSignIn.
 func (c *widgetAdminServiceClient) BeginSignIn(ctx context.Context, req *connect.Request[v1.BeginSignInRequest]) (*connect.Response[v1.BeginSignInResponse], error) {
 	return c.beginSignIn.CallUnary(ctx, req)
@@ -298,9 +346,24 @@ func (c *widgetAdminServiceClient) SignOut(ctx context.Context, req *connect.Req
 	return c.signOut.CallUnary(ctx, req)
 }
 
-// SetSignInClient calls widgetd.v1.WidgetAdminService.SetSignInClient.
-func (c *widgetAdminServiceClient) SetSignInClient(ctx context.Context, req *connect.Request[v1.SetSignInClientRequest]) (*connect.Response[v1.SetSignInClientResponse], error) {
-	return c.setSignInClient.CallUnary(ctx, req)
+// LabelAccount calls widgetd.v1.WidgetAdminService.LabelAccount.
+func (c *widgetAdminServiceClient) LabelAccount(ctx context.Context, req *connect.Request[v1.LabelAccountRequest]) (*connect.Response[v1.LabelAccountResponse], error) {
+	return c.labelAccount.CallUnary(ctx, req)
+}
+
+// DeleteAccount calls widgetd.v1.WidgetAdminService.DeleteAccount.
+func (c *widgetAdminServiceClient) DeleteAccount(ctx context.Context, req *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error) {
+	return c.deleteAccount.CallUnary(ctx, req)
+}
+
+// BindAccount calls widgetd.v1.WidgetAdminService.BindAccount.
+func (c *widgetAdminServiceClient) BindAccount(ctx context.Context, req *connect.Request[v1.BindAccountRequest]) (*connect.Response[v1.BindAccountResponse], error) {
+	return c.bindAccount.CallUnary(ctx, req)
+}
+
+// SetProviderClient calls widgetd.v1.WidgetAdminService.SetProviderClient.
+func (c *widgetAdminServiceClient) SetProviderClient(ctx context.Context, req *connect.Request[v1.SetProviderClientRequest]) (*connect.Response[v1.SetProviderClientResponse], error) {
+	return c.setProviderClient.CallUnary(ctx, req)
 }
 
 // WidgetAdminServiceHandler is an implementation of the widgetd.v1.WidgetAdminService service.
@@ -331,16 +394,19 @@ type WidgetAdminServiceHandler interface {
 	// A widget's network grant, and an instance's recent fetches. Admin.
 	SetNetworkGrant(context.Context, *connect.Request[v1.SetNetworkGrantRequest]) (*connect.Response[v1.SetNetworkGrantResponse], error)
 	GetInstanceActivity(context.Context, *connect.Request[v1.GetInstanceActivityRequest]) (*connect.Response[v1.GetInstanceActivityResponse], error)
-	// Sign-in, for widgets that use an account (device flow: a code shown
-	// on the screen, approved on the provider's site from a phone).
-	// BeginSignIn: screen or admin, but a screen only for an instance that
-	// isn't signed in yet; replacing a sign-in needs an admin. The rest:
-	// admin.
+	// Accounts: one per provider (Google, GitHub) for the whole display,
+	// granted exactly the union of the scopes its widgets on the board use.
+	// ListAccounts and BeginSignIn: screen or admin (a screen may only sign
+	// in an account that needs it). The rest: admin.
+	ListAccounts(context.Context, *connect.Request[v1.ListAccountsRequest]) (*connect.Response[v1.ListAccountsResponse], error)
 	BeginSignIn(context.Context, *connect.Request[v1.BeginSignInRequest]) (*connect.Response[v1.BeginSignInResponse], error)
 	SignOut(context.Context, *connect.Request[v1.SignOutRequest]) (*connect.Response[v1.SignOutResponse], error)
-	// The OAuth app a widget signs in with, registered by whoever runs the
-	// host with the provider.
-	SetSignInClient(context.Context, *connect.Request[v1.SetSignInClientRequest]) (*connect.Response[v1.SetSignInClientResponse], error)
+	LabelAccount(context.Context, *connect.Request[v1.LabelAccountRequest]) (*connect.Response[v1.LabelAccountResponse], error)
+	DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error)
+	BindAccount(context.Context, *connect.Request[v1.BindAccountRequest]) (*connect.Response[v1.BindAccountResponse], error)
+	// The OAuth client (app) the display signs in to a provider with,
+	// registered with the provider by whoever runs the host.
+	SetProviderClient(context.Context, *connect.Request[v1.SetProviderClientRequest]) (*connect.Response[v1.SetProviderClientResponse], error)
 }
 
 // NewWidgetAdminServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -416,6 +482,12 @@ func NewWidgetAdminServiceHandler(svc WidgetAdminServiceHandler, opts ...connect
 		connect.WithSchema(widgetAdminServiceMethods.ByName("GetInstanceActivity")),
 		connect.WithHandlerOptions(opts...),
 	)
+	widgetAdminServiceListAccountsHandler := connect.NewUnaryHandler(
+		WidgetAdminServiceListAccountsProcedure,
+		svc.ListAccounts,
+		connect.WithSchema(widgetAdminServiceMethods.ByName("ListAccounts")),
+		connect.WithHandlerOptions(opts...),
+	)
 	widgetAdminServiceBeginSignInHandler := connect.NewUnaryHandler(
 		WidgetAdminServiceBeginSignInProcedure,
 		svc.BeginSignIn,
@@ -428,10 +500,28 @@ func NewWidgetAdminServiceHandler(svc WidgetAdminServiceHandler, opts ...connect
 		connect.WithSchema(widgetAdminServiceMethods.ByName("SignOut")),
 		connect.WithHandlerOptions(opts...),
 	)
-	widgetAdminServiceSetSignInClientHandler := connect.NewUnaryHandler(
-		WidgetAdminServiceSetSignInClientProcedure,
-		svc.SetSignInClient,
-		connect.WithSchema(widgetAdminServiceMethods.ByName("SetSignInClient")),
+	widgetAdminServiceLabelAccountHandler := connect.NewUnaryHandler(
+		WidgetAdminServiceLabelAccountProcedure,
+		svc.LabelAccount,
+		connect.WithSchema(widgetAdminServiceMethods.ByName("LabelAccount")),
+		connect.WithHandlerOptions(opts...),
+	)
+	widgetAdminServiceDeleteAccountHandler := connect.NewUnaryHandler(
+		WidgetAdminServiceDeleteAccountProcedure,
+		svc.DeleteAccount,
+		connect.WithSchema(widgetAdminServiceMethods.ByName("DeleteAccount")),
+		connect.WithHandlerOptions(opts...),
+	)
+	widgetAdminServiceBindAccountHandler := connect.NewUnaryHandler(
+		WidgetAdminServiceBindAccountProcedure,
+		svc.BindAccount,
+		connect.WithSchema(widgetAdminServiceMethods.ByName("BindAccount")),
+		connect.WithHandlerOptions(opts...),
+	)
+	widgetAdminServiceSetProviderClientHandler := connect.NewUnaryHandler(
+		WidgetAdminServiceSetProviderClientProcedure,
+		svc.SetProviderClient,
+		connect.WithSchema(widgetAdminServiceMethods.ByName("SetProviderClient")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/widgetd.v1.WidgetAdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -458,12 +548,20 @@ func NewWidgetAdminServiceHandler(svc WidgetAdminServiceHandler, opts ...connect
 			widgetAdminServiceSetNetworkGrantHandler.ServeHTTP(w, r)
 		case WidgetAdminServiceGetInstanceActivityProcedure:
 			widgetAdminServiceGetInstanceActivityHandler.ServeHTTP(w, r)
+		case WidgetAdminServiceListAccountsProcedure:
+			widgetAdminServiceListAccountsHandler.ServeHTTP(w, r)
 		case WidgetAdminServiceBeginSignInProcedure:
 			widgetAdminServiceBeginSignInHandler.ServeHTTP(w, r)
 		case WidgetAdminServiceSignOutProcedure:
 			widgetAdminServiceSignOutHandler.ServeHTTP(w, r)
-		case WidgetAdminServiceSetSignInClientProcedure:
-			widgetAdminServiceSetSignInClientHandler.ServeHTTP(w, r)
+		case WidgetAdminServiceLabelAccountProcedure:
+			widgetAdminServiceLabelAccountHandler.ServeHTTP(w, r)
+		case WidgetAdminServiceDeleteAccountProcedure:
+			widgetAdminServiceDeleteAccountHandler.ServeHTTP(w, r)
+		case WidgetAdminServiceBindAccountProcedure:
+			widgetAdminServiceBindAccountHandler.ServeHTTP(w, r)
+		case WidgetAdminServiceSetProviderClientProcedure:
+			widgetAdminServiceSetProviderClientHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -517,6 +615,10 @@ func (UnimplementedWidgetAdminServiceHandler) GetInstanceActivity(context.Contex
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetAdminService.GetInstanceActivity is not implemented"))
 }
 
+func (UnimplementedWidgetAdminServiceHandler) ListAccounts(context.Context, *connect.Request[v1.ListAccountsRequest]) (*connect.Response[v1.ListAccountsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetAdminService.ListAccounts is not implemented"))
+}
+
 func (UnimplementedWidgetAdminServiceHandler) BeginSignIn(context.Context, *connect.Request[v1.BeginSignInRequest]) (*connect.Response[v1.BeginSignInResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetAdminService.BeginSignIn is not implemented"))
 }
@@ -525,6 +627,18 @@ func (UnimplementedWidgetAdminServiceHandler) SignOut(context.Context, *connect.
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetAdminService.SignOut is not implemented"))
 }
 
-func (UnimplementedWidgetAdminServiceHandler) SetSignInClient(context.Context, *connect.Request[v1.SetSignInClientRequest]) (*connect.Response[v1.SetSignInClientResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetAdminService.SetSignInClient is not implemented"))
+func (UnimplementedWidgetAdminServiceHandler) LabelAccount(context.Context, *connect.Request[v1.LabelAccountRequest]) (*connect.Response[v1.LabelAccountResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetAdminService.LabelAccount is not implemented"))
+}
+
+func (UnimplementedWidgetAdminServiceHandler) DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetAdminService.DeleteAccount is not implemented"))
+}
+
+func (UnimplementedWidgetAdminServiceHandler) BindAccount(context.Context, *connect.Request[v1.BindAccountRequest]) (*connect.Response[v1.BindAccountResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetAdminService.BindAccount is not implemented"))
+}
+
+func (UnimplementedWidgetAdminServiceHandler) SetProviderClient(context.Context, *connect.Request[v1.SetProviderClientRequest]) (*connect.Response[v1.SetProviderClientResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetAdminService.SetProviderClient is not implemented"))
 }

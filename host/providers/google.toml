@@ -1,0 +1,46 @@
+# Google, as a provider package: data only. Widgets use it by declaring
+# [[uses]] provider = "google" with scopes from the table below.
+name    = "google"
+title   = "Google"
+version = "1"
+
+[sign_in]
+# Google's device flow allows only a handful of scopes (not Calendar or
+# Gmail), so sign-in is in the browser: a QR code to Google's consent page.
+flow      = "browser"
+auth_url  = "https://accounts.google.com/o/oauth2/v2/auth"
+token_url = "https://oauth2.googleapis.com/token"
+revoke     = "rfc7009"
+revoke_url = "https://oauth2.googleapis.com/revoke"
+client_help = "Google Cloud console → APIs & Services → Credentials → Create OAuth client ID → Web application, with the redirect URI shown here. Enable the APIs your widgets use, and publish the OAuth consent screen: in Testing, refresh tokens expire after 7 days."
+
+[sign_in.auth_params]
+access_type            = "offline"  # a refresh token...
+prompt                 = "consent"  # ...every time, so a re-consent gets one too
+include_granted_scopes = "false"    # exactly what's asked: the grant follows the board
+
+[scopes]
+missing = "rfc6750"
+# Google lists the scopes a sign-in objected to in its error text:
+# "Some requested scopes were invalid. {invalid=[a, b]}".
+rejected_pattern = '\{invalid=\[([^\]]*)\]'
+
+# Strict: each scope unlocks only these. Add a scope here (and a provider
+# release) before a widget can use it.
+[scopes.covers]
+"openid"  = ["GET https://openidconnect.googleapis.com/v1/userinfo", "GET https://www.googleapis.com/oauth2/v3/userinfo"]
+"email"   = ["GET https://openidconnect.googleapis.com/v1/userinfo", "GET https://www.googleapis.com/oauth2/v3/userinfo"]
+"profile" = ["GET https://openidconnect.googleapis.com/v1/userinfo", "GET https://www.googleapis.com/oauth2/v3/userinfo"]
+"https://www.googleapis.com/auth/calendar.readonly"        = ["GET https://www.googleapis.com/calendar/v3/"]
+"https://www.googleapis.com/auth/calendar.events.readonly" = ["GET https://www.googleapis.com/calendar/v3/calendars/"]
+"https://www.googleapis.com/auth/gmail.readonly"  = ["GET https://gmail.googleapis.com/gmail/v1/users/", "GET https://www.googleapis.com/gmail/v1/users/"]
+"https://www.googleapis.com/auth/gmail.metadata"  = ["GET https://gmail.googleapis.com/gmail/v1/users/", "GET https://www.googleapis.com/gmail/v1/users/"]
+"https://www.googleapis.com/auth/tasks.readonly"  = ["GET https://tasks.googleapis.com/tasks/v1/", "GET https://www.googleapis.com/tasks/v1/"]
+
+# Who a token belongs to. Every Google sign-in also asks for openid and
+# email (basic, non-sensitive scopes) so the host can tell a work account
+# from a personal one, and refuse signing the wrong one back in.
+[identity]
+url    = "https://openidconnect.googleapis.com/v1/userinfo"
+field  = "email"
+scopes = ["openid", "email"]

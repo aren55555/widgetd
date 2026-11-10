@@ -116,6 +116,8 @@ func (s *Server) routes(w http.ResponseWriter, r *http.Request) {
 		s.serveFrame(w, r, parts[1], parts[2])
 	case len(parts) == 4 && parts[0] == "v":
 		s.serveAsset(w, r, parts[1], parts[2], parts[3])
+	case parts[0] == "oauth":
+		s.serveOAuth(w, r, strings.TrimPrefix(rest, "oauth/"))
 	case phonePages[parts[0]]:
 		s.servePage(w, r)
 	default:

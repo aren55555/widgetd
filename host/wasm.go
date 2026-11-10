@@ -219,6 +219,10 @@ func hostTake(ctx context.Context, m api.Module, ptr, n uint32) {
 }
 
 func errResult(err error) *abiv1.Result {
+	var se *widget.ScopeError
+	if errors.As(err, &se) {
+		return &abiv1.Result{Error: err.Error(), Scope: &abiv1.ScopeProblem{Provider: se.Provider, Missing: se.Missing, Refused: se.Refused}}
+	}
 	var pd *PolicyDenied
 	if errors.As(err, &pd) {
 		return &abiv1.Result{Error: err.Error(), DeniedRule: pd.Rule}

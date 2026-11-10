@@ -9,14 +9,9 @@ hosts   = ["api.github.com"]
 methods = ["GET"]
 why     = "Your GitHub notifications"
 
-# The host signs in to GitHub (device flow: a code on the screen, approved
-# on github.com from a phone) and keeps the token; the widget's requests to
-# api.github.com carry it, and nothing else ever sees it. Whoever runs the
-# host registers a GitHub OAuth app with device flow enabled and enters its
-# client ID on the admin page.
-[sign_in]
-provider   = "GitHub"
-device_url = "https://github.com/login/device/code"
-token_url  = "https://github.com/login/oauth/access_token"
-scopes     = ["notifications"]
-api_hosts  = ["api.github.com"]
+# The display's GitHub account, with the notifications scope. The host
+# signs it in (and keeps its grant to what the board's widgets use) and
+# signs this widget's requests to api.github.com; the token never reaches it.
+[[uses]]
+provider = "github"
+scopes   = ["notifications"]

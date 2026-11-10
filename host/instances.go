@@ -183,7 +183,11 @@ func (in *instance) status() *widgetdv1.InstanceStatus {
 	if title == "" {
 		title = in.w.title()
 	}
-	return &widgetdv1.InstanceStatus{State: in.state, Widget: in.w.spec.Name, Title: title, Message: in.message}
+	st := &widgetdv1.InstanceStatus{State: in.state, Widget: in.w.spec.Name, Title: title, Message: in.message, Warning: in.warning}
+	if in.state == widgetdv1.InstanceStatus_STATE_NEEDS_SIGN_IN {
+		st.Provider, st.Account, st.AccountLabel = in.waitProvider, in.waitAccount, in.waitLabel
+	}
+	return st
 }
 
 func (in *instance) setState(st widgetdv1.InstanceStatus_State, msg string) {
@@ -286,8 +290,10 @@ func (s *Server) configure(id, label string, cfg []byte) error {
 	s.stopLocked(in)
 	in.mu.Lock()
 	in.label, in.config, in.runConfig, in.configured = label, stored, cfg, true
+	in.warning = ""
 	in.state, in.message = widgetdv1.InstanceStatus_STATE_UNSPECIFIED, ""
 	in.mu.Unlock()
+	s.unquarantine(in)
 	s.startIfReadyLocked(in) // or wait to be signed in
 	return nil
 }
@@ -332,7 +338,10 @@ func (s *Server) deleteInstance(id string) error {
 	if _, err := tx.Exec(`DELETE FROM secrets WHERE instance = ?`, id); err != nil {
 		return err
 	}
-	if _, err := tx.Exec(`DELETE FROM tokens WHERE instance = ?`, id); err != nil {
+	if _, err := tx.Exec(`DELETE FROM quarantine WHERE instance = ?`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM bindings WHERE instance = ?`, id); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM instances WHERE id = ?`, id); err != nil {
@@ -349,6 +358,10 @@ func (s *Server) deleteInstance(id string) error {
 		}
 	}
 	s.board.removeInstance(id)
+	// Its accounts may now be granted more than the board uses: trim them.
+	for _, p := range in.w.usedProviders() {
+		s.reconcileLocked(p)
+	}
 	return nil
 }
 
@@ -465,4 +478,34 @@ func requested(w *loadedWidget, host string) bool {
 		}
 	}
 	return false
+}
+
+// needsSignIn puts an instance to waiting for an account with a provider:
+// one to be bound (a nil a), named, or signed in to cover it.
+func (in *instance) needsSignIn(provider, title string, a *account) {
+	msg := "Needs a " + title + " account: choose one for it on the admin page"
+	in.mu.Lock()
+	in.waitProvider, in.waitAccount, in.waitLabel = provider, "", ""
+	if a != nil {
+		in.waitAccount, in.waitLabel = a.ID, a.Label
+		msg = "Needs " + title + " access (" + a.Label + ")"
+		if a.Label == "" {
+			msg = "Waiting for its new " + title + " account to be named on the admin page"
+		}
+	}
+	in.mu.Unlock()
+	in.setState(widgetdv1.InstanceStatus_STATE_NEEDS_SIGN_IN, msg)
+}
+
+// warn records something wrong with an instance that doesn't stop it, and
+// tells screens.
+func (in *instance) warn(msg string) {
+	in.mu.Lock()
+	changed := in.warning != msg
+	in.warning = msg
+	in.mu.Unlock()
+	if changed {
+		in.log.Warn("widget instance warning", "warning", msg)
+		in.srv.board.setInstance(in.id, in.status())
+	}
 }

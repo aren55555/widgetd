@@ -162,9 +162,6 @@ func loadWidget(spec widget.Spec) (*loadedWidget, error) {
 	if err := checkSecretFields(cfgDesc, spec.Secrets); err != nil {
 		return nil, fmt.Errorf("widget %s: %w", spec.Name, err)
 	}
-	if err := checkSignIn(spec); err != nil {
-		return nil, fmt.Errorf("widget %s: %w", spec.Name, err)
-	}
 	digest, err := widgetDigest(spec)
 	if err != nil {
 		return nil, fmt.Errorf("widget %s: %w", spec.Name, err)

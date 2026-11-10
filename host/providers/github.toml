@@ -1,0 +1,34 @@
+# GitHub, as a provider package: data only. Widgets use it by declaring
+# [[uses]] provider = "github" with scopes from the table below.
+name    = "github"
+title   = "GitHub"
+version = "1"
+
+[sign_in]
+flow       = "device"
+device_url = "https://github.com/login/device/code"
+token_url  = "https://github.com/login/oauth/access_token"
+# GitHub doesn't implement RFC 7009; its OAuth apps revoke a grant here.
+revoke     = "github-grant"
+revoke_url = "https://api.github.com/applications/{client_id}/grant"
+client_help = "GitHub → Settings → Developer settings → OAuth Apps → New OAuth App, with Enable Device Flow ticked. Add its client secret too, so expiring tokens renew and signing out revokes the grant."
+
+[scopes]
+# GitHub predates RFC 6750's insufficient_scope; it reports the token's
+# scopes and the ones an endpoint accepts in these headers instead.
+missing      = "headers"
+missing_have = "X-OAuth-Scopes"
+missing_want = "X-Accepted-OAuth-Scopes"
+# Any signed-in token may read who it belongs to.
+any_token = ["GET https://api.github.com/user", "GET https://api.github.com/rate_limit"]
+
+[scopes.covers]
+"notifications" = ["https://api.github.com/notifications"]
+"read:user"     = ["GET https://api.github.com/user"]
+"user:email"    = ["GET https://api.github.com/user/emails"]
+"read:org"      = ["GET https://api.github.com/orgs/", "GET https://api.github.com/user/orgs"]
+
+# Who a token belongs to: any token can read it, so no extra scope.
+[identity]
+url   = "https://api.github.com/user"
+field = "login"

@@ -9,6 +9,7 @@ package widget
 
 import (
 	"context"
+	"strings"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -64,10 +65,10 @@ type Spec struct {
 	// View is the built view: view.js (and view.css, if any) at its root.
 	View fs.FS
 
-	// SignIn, if set, means the widget uses an account: the host runs the
-	// sign-in and keeps the token, and the widget's Authorize'd requests to
-	// SignIn.APIHosts carry it.
-	SignIn *SignIn
+	// Uses are the accounts the widget's requests may be signed with, and
+	// with what scopes. The display has one account per provider; its
+	// sign-in covers exactly the union of the scopes its widgets use.
+	Uses []Use
 
 	// Network is what the widget asks to reach. The host grants at most
 	// this, and may grant less.
@@ -308,20 +309,13 @@ func WithVerify(f VerifyFunc) MainOption {
 	return func(o *mainOptions) { o.verify = f }
 }
 
-// SignIn describes an OAuth 2.0 device-flow sign-in (RFC 8628): the screen
-// shows a code, someone approves it on the provider's site from a phone,
-// and the host keeps the resulting token.
-type SignIn struct {
-	// Provider is what people see: "GitHub".
-	Provider string
-	// DeviceURL and TokenURL are the provider's device authorization and
-	// token endpoints.
-	DeviceURL string
-	TokenURL  string
-	Scopes    []string
-	// APIHosts are where the token may be sent; each must be in the
-	// widget's network request.
-	APIHosts []string
+// Use is an account a widget uses: a provider the host knows ("google",
+// "github") and the scopes it needs there. The host runs the sign-in and
+// keeps the token; the widget marks requests with Authorize and the host
+// signs them, only for that provider's API hosts.
+type Use struct {
+	Provider string   `json:"provider" toml:"provider"`
+	Scopes   []string `json:"scopes" toml:"scopes"`
 }
 
 // authorizeHeader marks a request for the host to sign in. The host strips
@@ -329,7 +323,7 @@ type SignIn struct {
 const authorizeHeader = "Widgetd-Authorize"
 
 // Authorize marks req to carry the signed-in account's token. The host adds
-// it, only if req goes to one of the SignIn's API hosts, and the widget
+// it, only if req goes to an API host of a provider the widget uses, and the widget
 // never sees the token itself. A 401 back means the sign-in has lapsed:
 // the host stops the instance and asks for it again.
 func Authorize(req *http.Request) *http.Request {
@@ -343,4 +337,27 @@ func IsAuthorized(req *http.Request) bool {
 	ok := req.Header.Get(authorizeHeader) != ""
 	req.Header.Del(authorizeHeader)
 	return ok
+}
+
+// ScopeError is a request that needed a scope the widget didn't declare:
+// either the host wouldn't sign it (no declared scope covers it), or the
+// API refused it for a missing scope. Declare the scope in widget.toml's
+// [[uses]]; the host never widens a grant on its own.
+type ScopeError struct {
+	Provider string   // "Google"
+	Missing  []string // scopes that would have covered it, if known
+	// Refused is true when the API refused the request, false when the
+	// host didn't sign it.
+	Refused bool
+}
+
+func (e *ScopeError) Error() string {
+	what := "the host didn't sign this request"
+	if e.Refused {
+		what = e.Provider + " refused this request"
+	}
+	if len(e.Missing) == 0 {
+		return what + ": it needs a scope the widget didn't declare"
+	}
+	return what + ": it needs " + strings.Join(e.Missing, " or ") + ", which the widget didn't declare"
 }

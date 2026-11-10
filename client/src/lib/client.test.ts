@@ -102,6 +102,8 @@ describe("placeholders", () => {
 });
 
 test("an instance waiting for an account offers sign-in, saying why", () => {
-  expect(placeholderFor(InstanceStatus_State.NEEDS_SIGN_IN, "")).toEqual({ show: true, text: "Needs an account signed in.", setUp: false, signIn: true });
+  expect(placeholderFor(InstanceStatus_State.NEEDS_SIGN_IN, "", true)).toEqual({ show: true, text: "Needs an account signed in.", setUp: false, signIn: true });
+  // No account bound (or not yet named): that's the admin page's to fix.
+  expect(placeholderFor(InstanceStatus_State.NEEDS_SIGN_IN, "Needs a Google account")).toMatchObject({ signIn: false });
   expect(placeholderFor(InstanceStatus_State.NEEDS_SIGN_IN, "The sign-in lapsed. Sign in again.")).toMatchObject({ text: "The sign-in lapsed. Sign in again." });
 });

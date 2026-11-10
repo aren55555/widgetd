@@ -45,7 +45,7 @@ export const staleCards = (cached: Iterable<string>, mounted: ReadonlySet<string
  */
 export type Placeholder = { show: false } | { show: true; text: string; setUp: boolean; signIn?: boolean };
 
-export function placeholderFor(state: InstanceStatus_State, message: string): Placeholder {
+export function placeholderFor(state: InstanceStatus_State, message: string, canSignIn = false): Placeholder {
   switch (state) {
     case InstanceStatus_State.RUNNING:
       return { show: false };
@@ -56,7 +56,7 @@ export function placeholderFor(state: InstanceStatus_State, message: string): Pl
     case InstanceStatus_State.FAULTED:
       return { show: true, text: message ? `Stopped: ${message}. Retrying…` : "Stopped. Retrying…", setUp: false };
     case InstanceStatus_State.NEEDS_SIGN_IN:
-      return { show: true, text: message || "Needs an account signed in.", setUp: false, signIn: true };
+      return { show: true, text: message || "Needs an account signed in.", setUp: false, signIn: canSignIn };
     default:
       return { show: false };
   }
