@@ -19,8 +19,12 @@ has **no auth code at all**.
    Calendar API, publish the consent screen. Sign-in is a QR code to Google's
    consent page; the phone that scans it must be on the tailnet, since
    Google redirects it back to the host.
-1. **Host:** a `Bleed` mount option, and the board (`client/src/board.ts`)
-   skipping its title row for such cards. (Not there yet.)
+1. **Host: nothing.** Full bleed already works: the board adds the title row
+   only `if (m.title)` (`client/src/board.ts`) and the iframe is flush to the
+   card. Mount with an empty `Title`. (The frame's accessible name then
+   falls back to the card id. A re-mount that switches between empty and
+   non-empty titles doesn't add or remove the row, which doesn't matter
+   here.) Board options' screen-wide `hide_titles` would sit beside this.
 2. **Widget server (`examples/calendar-spectrum`), built to WASM (.wpkg):**
    - `widget.toml`: `[network] hosts = ["www.googleapis.com"]`, GET;
      `[[uses]] provider = "google"`, `scopes = [calendar.events.readonly]`
@@ -91,3 +95,26 @@ Sizes for the fake fortnight: busy ≈ 0.2 KB, titles ≈ 1.2 KB, full ≈ 12 KB
 - Default detail level: suggested TITLES, FULL opt-in.
 - Event fields map from the API: summary, location, hangoutLink /
   conferenceData, organizer, description, attendees[] (responseStatus, self).
+
+## Built (worktree-calendar-widget)
+
+`examples/calendar`, as interviewed on 2026-11-10:
+- Calendars: a multi-pick from the account's calendar list (`WithChoices`),
+  so the scope is `calendar.readonly`. Empty means `primary`.
+- Detail: FULL by default; TITLES and BUSY are settings.
+- Declined events are hidden; events marked Free draw as tentative.
+- No sync token: Google refuses one alongside timeMin/timeMax, and without
+  a window the first sync would pull all history. Each poll (1 min)
+  re-reads the 24-day window, trimmed with `fields=`, and snapshots only on
+  change.
+- View: model.ts (zones, days, layout; bun tests) + view.ts (the three
+  components). Prefs come from `detectPrefs()` until board options lands.
+
+## Next: push
+
+You chose push from Google (`events.watch`). The notification only says
+"changed", so it triggers the same window re-read; polling drops to a slow
+fallback (e.g. 15 min). Needs, in the host: an inbound webhook path for
+widgets (a per-instance secret URL, delivered to the widget like actions),
+channel renewal before expiry, and a public HTTPS URL for that path only
+(Tailscale Funnel on `/hooks/`).
