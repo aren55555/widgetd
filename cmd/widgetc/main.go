@@ -1,24 +1,32 @@
 // Command widgetc builds a widget from its folder:
 //
 //	<widget>/
-//	  widget.toml          manifest: name, version, config message, network request
+//	  widget.toml          manifest: name, version, title, icon, config message, network request
 //	  buf.yaml, buf.lock   the schema's buf module (proto/ plus its deps)
 //	  proto/...            the schema: State, Delta, Config
 //	  server/              the server half: a Go package exporting Run
 //	  view/view.ts         the view half: calls defineWidget
 //	  view/view.css        optional
+//	  view/plugins.ts      optional: Bun build plugins, `export default [...]`
 //
 // `widgetc build <dir>` generates the schema's Go code into <dir>/gen and its
 // TypeScript into <dir>/view/gen (from the same .proto, so the two halves
-// can't disagree), bundles the view into <dir>/dist, and writes
+// can't disagree), bundles the view into <dir>/dist (see buildview.ts: one
+// classic script, NODE_ENV=production, the view's plugins applied), and writes
 // <dir>/widget_gen.go, which exposes the whole widget as a widget.Spec.
 // It also compiles the server half for the sandbox (GOOS=wasip1) and writes
 // <dir>/<name>.wpkg: schema, server.wasm and view in one file, which is
 // what a host loads; widget_gen.go just embeds it.
+//
+// widget.toml's `icon` names a Lucide icon ("cloud-sun"; https://lucide.dev),
+// looked up in the view's own @widgetd/sdk/icons the way <wd-icon> finds
+// one. Its shapes go into the package, and widgetd's pages draw it beside
+// the widget's title.
 package main
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -50,6 +58,9 @@ type manifest struct {
 	Name    string `toml:"name"`
 	Version string `toml:"version"`
 	Title   string `toml:"title"`
+	// Icon is a Lucide icon's name ("cloud-sun"), drawn beside the title on
+	// widgetd's own pages.
+	Icon    string `toml:"icon"`
 	Config  string `toml:"config"`
 	Secrets []string `toml:"secrets"`
 	Network struct {
@@ -119,10 +130,11 @@ func build(dir string, withSpec bool) error {
 	if err := generate(dir, importPath); err != nil {
 		return err
 	}
-	if err := bundleView(dir); err != nil {
+	icon, err := bundleView(dir, m.Icon)
+	if err != nil {
 		return err
 	}
-	if err := pack(dir, importPath, m, protos); err != nil {
+	if err := pack(dir, importPath, m, icon, protos); err != nil {
 		return err
 	}
 	if !withSpec {
@@ -208,25 +220,58 @@ func findUp(dir, rel string) (string, error) {
 	}
 }
 
-// bundleView bundles view/view.ts (and copies view/view.css) into dist/. The
-// bundle is a classic script: the card frame runs in an opaque origin, where
-// a module script would need CORS.
-func bundleView(dir string) error {
+// buildViewScript bundles a view; see buildview.ts.
+//
+//go:embed buildview.ts
+var buildViewScript []byte
+
+// iconNameRE is the form of a Lucide icon name, as widget.toml's `icon`.
+var iconNameRE = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
+
+// bundleView bundles view/view.ts (and copies view/view.css) into dist/, and
+// resolves the manifest's icon, if any, from the view's @widgetd/sdk/icons.
+// The bundle is a classic script: the card frame runs in an opaque origin,
+// where a module script would need CORS.
+func bundleView(dir, iconName string) (*widget.Icon, error) {
+	if iconName != "" && !iconNameRE.MatchString(iconName) {
+		return nil, fmt.Errorf("widget.toml: icon %q: want a Lucide name like \"cloud-sun\"", iconName)
+	}
 	dist := filepath.Join(dir, "dist")
 	if err := os.RemoveAll(dist); err != nil {
-		return err
+		return nil, err
 	}
-	if err := run(dir, "bun", "build", "view/view.ts", "--outfile", "dist/view.js", "--format", "iife", "--target", "browser", "--minify"); err != nil {
-		return err
+	work, err := os.MkdirTemp("", "widgetc-view")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(work)
+	script := filepath.Join(work, "buildview.ts")
+	if err := os.WriteFile(script, buildViewScript, 0o644); err != nil {
+		return nil, err
+	}
+	iconJSON := filepath.Join(work, "icon.json")
+	if err := run(dir, "bun", script, filepath.Join(dir, "view"), dist, iconJSON, iconName); err != nil {
+		return nil, err
+	}
+	var icon *widget.Icon
+	if iconName != "" {
+		b, err := os.ReadFile(iconJSON)
+		if err != nil {
+			return nil, err
+		}
+		icon = new(widget.Icon)
+		if err := json.Unmarshal(b, icon); err != nil {
+			return nil, fmt.Errorf("icon %s: %w", iconName, err)
+		}
 	}
 	css, err := os.ReadFile(filepath.Join(dir, "view", "view.css"))
 	if errors.Is(err, fs.ErrNotExist) {
-		return nil
+		return icon, nil
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return os.WriteFile(filepath.Join(dist, "view.css"), css, 0o644)
+	return icon, os.WriteFile(filepath.Join(dist, "view.css"), css, 0o644)
 }
 
 // mainTmpl is the sandboxed server half's entry point: the widget's own
@@ -250,7 +295,7 @@ func main() {
 
 // pack builds server.wasm and the schema, and writes <name>.wpkg: the one
 // file a host needs to run the widget.
-func pack(dir, importPath string, m manifest, protos []string) error {
+func pack(dir, importPath string, m manifest, icon *widget.Icon, protos []string) error {
 	work, err := os.MkdirTemp("", "widgetc")
 	if err != nil {
 		return err
@@ -329,7 +374,7 @@ func pack(dir, importPath string, m manifest, protos []string) error {
 	}
 	defer out.Close()
 	man := host.Manifest{
-		Name: m.Name, Version: m.Version, Title: m.Title, Config: m.Config, Modes: modes, Secrets: m.Secrets,
+		Name: m.Name, Version: m.Version, Title: m.Title, Icon: icon, Config: m.Config, Modes: modes, Secrets: m.Secrets,
 		Network: widget.NetworkRequest{Hosts: m.Network.Hosts, Methods: m.Network.Methods, Why: m.Network.Why},
 	}
 	man.Uses = m.Uses

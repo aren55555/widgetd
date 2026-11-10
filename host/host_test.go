@@ -28,7 +28,7 @@ type harness struct {
 	hosts chan widget.Host
 }
 
-func newHarness(t *testing.T) *harness {
+func newHarness(t *testing.T, mods ...func(*widget.Spec)) *harness {
 	t.Helper()
 	h := &harness{t: t, hosts: make(chan widget.Host, 4)}
 	spec := widget.Spec{
@@ -42,6 +42,9 @@ func newHarness(t *testing.T) *harness {
 			<-ctx.Done()
 			return ctx.Err()
 		},
+	}
+	for _, mod := range mods {
+		mod(&spec)
 	}
 	srv, err := New(Options{
 		StateDir:  t.TempDir(),

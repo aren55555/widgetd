@@ -35,6 +35,8 @@ type Manifest struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
 	Title   string `json:"title,omitempty"`
+	// Icon is drawn beside Title on widgetd's own pages.
+	Icon *widget.Icon `json:"icon,omitempty"`
 	// Config is the fully qualified name of the instance configuration
 	// message, if the widget takes one.
 	Config  string                `json:"config,omitempty"`
@@ -92,6 +94,9 @@ func LoadPackage(b []byte) (widget.Spec, error) {
 	if err := json.Unmarshal(raw, &m); err != nil {
 		return widget.Spec{}, fmt.Errorf("package manifest: %w", err)
 	}
+	if err := checkIcon(m.Icon); err != nil {
+		return widget.Spec{}, fmt.Errorf("package manifest: %w", err)
+	}
 
 	raw, err = read("schema.binpb")
 	if err != nil {
@@ -139,6 +144,7 @@ func LoadPackage(b []byte) (widget.Spec, error) {
 		Name:    m.Name,
 		Version: m.Version,
 		Title:   m.Title,
+		Icon:    m.Icon,
 		Modes:   m.Modes,
 		Secrets: m.Secrets,
 		Uses:    m.Uses,

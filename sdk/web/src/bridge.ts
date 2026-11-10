@@ -78,4 +78,6 @@ export const THEME_TOKENS = [
   "--wd-font-sans",
   "--wd-font-mono",
   "--wd-radius",
+  /** Stroke width of icons drawn with @widgetd/sdk/icons (Lucide's own is 2). */
+  "--wd-icon-stroke",
 ] as const;

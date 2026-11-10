@@ -28,6 +28,9 @@ type Spec struct {
 	Version string
 	// Title is what people call it ("Bitcoin price spiral"); Name if empty.
 	Title string
+	// Icon is drawn beside Title on widgetd's own pages: the board's card
+	// headers and the admin pages. Optional.
+	Icon *Icon
 
 	// Files is the widget's schema: the descriptors generated from its
 	// widget.proto. The host decodes and validates every payload and config
@@ -73,6 +76,21 @@ type Spec struct {
 	// Network is what the widget asks to reach. The host grants at most
 	// this, and may grant less.
 	Network NetworkRequest
+}
+
+// Icon is a Lucide icon as drawing data: shapes on a 24×24 viewBox, stroked
+// in currentColor. widgetc fills it from the `icon` named in widget.toml.
+type Icon struct {
+	// Name is Lucide's name for it, e.g. "cloud-sun".
+	Name   string      `json:"name"`
+	Shapes []IconShape `json:"shapes"`
+}
+
+// IconShape is one element of an Icon: a tag such as "path" and its
+// geometry attributes, e.g. {"d": "M12 2v2"}.
+type IconShape struct {
+	Tag   string            `json:"tag"`
+	Attrs map[string]string `json:"attrs"`
 }
 
 // NetworkRequest is a widget's declared need for the network.

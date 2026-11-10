@@ -183,7 +183,7 @@ func (in *instance) status() *widgetdv1.InstanceStatus {
 	if title == "" {
 		title = in.w.title()
 	}
-	st := &widgetdv1.InstanceStatus{State: in.state, Widget: in.w.spec.Name, Title: title, Message: in.message, Warning: in.warning}
+	st := &widgetdv1.InstanceStatus{State: in.state, Widget: in.w.spec.Name, Title: title, Message: in.message, Warning: in.warning, Icon: iconProto(in.w.spec.Icon)}
 	if in.state == widgetdv1.InstanceStatus_STATE_NEEDS_SIGN_IN {
 		st.Provider, st.Account, st.AccountLabel = in.waitProvider, in.waitAccount, in.waitLabel
 	}

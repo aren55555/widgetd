@@ -2,6 +2,7 @@
 name    = "sports-game"
 version = "0.1.0"
 title   = "Game cards"
+icon    = "trophy"
 config  = "sportsgame.v1.Config"
 
 # The hosts it may reach: ESPN's public API for schedules and live scores,

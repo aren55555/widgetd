@@ -2,6 +2,7 @@
 name    = "github-notifications"
 version = "0.1.0"
 title   = "GitHub notifications"
+icon    = "git-pull-request"
 config  = "ghnotif.v1.Config"
 
 [network]

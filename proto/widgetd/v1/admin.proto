@@ -81,6 +81,8 @@ message WidgetInfo {
   reserved "sign_in_provider", "sign_in_client_set", "sign_in_secret_set";
   // The accounts it uses, and with what scopes.
   repeated Use uses = 14;
+  // Its own icon, if it declares one.
+  Icon icon = 15;
 }
 
 message ListWidgetsRequest {}

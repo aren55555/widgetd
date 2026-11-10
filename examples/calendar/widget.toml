@@ -2,6 +2,7 @@
 name    = "calendar"
 version = "0.1.0"
 title   = "Calendar"
+icon    = "calendar"
 config  = "calendar.v1.Config"
 
 [network]

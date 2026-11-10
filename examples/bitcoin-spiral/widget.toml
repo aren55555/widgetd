@@ -3,6 +3,7 @@
 name    = "bitcoin-spiral"
 version = "0.1.0"
 title   = "Bitcoin price spiral"
+icon    = "bitcoin"
 # The instance configuration message, fully qualified.
 config  = "bitcoinspiral.v1.Config"
 

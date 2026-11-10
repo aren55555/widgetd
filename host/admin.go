@@ -100,6 +100,7 @@ func (a *adminService) widgetInfo(w *loadedWidget) *widgetdv1.WidgetInfo {
 		Name: w.spec.Name, Version: w.spec.Version, Title: w.title(),
 		RequestedHosts: w.spec.Network.Hosts, RequestedMethods: w.spec.Network.Methods,
 		NetworkWhy: w.spec.Network.Why, Configurable: w.spec.Config != nil,
+		Icon: iconProto(w.spec.Icon),
 	}
 	for _, u := range w.spec.Uses {
 		info.Uses = append(info.Uses, &widgetdv1.Use{Provider: u.Provider, Scopes: u.Scopes})

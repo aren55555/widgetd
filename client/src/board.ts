@@ -38,6 +38,16 @@ import type { Cursor } from "@widgetd/sdk/bridge";
 import { browserEnv, PreferencesSchema, resolvePrefs, toMessage, type ResolvedPrefs } from "@widgetd/sdk/prefs";
 import { readBoardOptions, resolveLayout, type Layout } from "./lib/options.ts";
 import { appVersion, layoutRows, offlineText, prefsRows, type Row } from "./lib/prefs.ts";
+import { WIDGET_ICON_CSS, widgetIcon } from "./lib/icon.ts";
+import type { Icon } from "./gen/widgetd/v1/stream_pb.ts";
+
+/** A card's heading: the widget's icon, if it has one, then the title. */
+function paintTitle(h: HTMLElement, title: string, icon: Icon | undefined) {
+  const text = document.createElement("span");
+  text.textContent = title;
+  const svg = widgetIcon(icon, 14);
+  h.replaceChildren(...(svg ? [svg] : []), text);
+}
 
 /** The client package's version, stamped in by build.ts. */
 declare const __BOARD_VERSION__: string;
@@ -47,8 +57,11 @@ const STYLE = `
 .grid { display: grid; gap: 12px; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-rows: 180px; }
 .card { position: relative; display: flex; flex-direction: column; min-width: 0; border-radius: var(--wd-radius, 10px);
   border: 1px solid var(--wd-edge, #27272a); background: var(--wd-surface, #18181b); overflow: hidden; }
-.card h3 { margin: 0; padding: 8px 12px 0; font: 500 12px/16px var(--wd-font-mono, ui-monospace, monospace);
-  color: var(--wd-ink-muted, #a1a1aa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card h3 { display: flex; align-items: center; gap: 6px; margin: 0; padding: 8px 12px 0; font: 500 12px/16px var(--wd-font-mono, ui-monospace, monospace);
+  color: var(--wd-ink-muted, #a1a1aa); white-space: nowrap; }
+.card h3 span { overflow: hidden; text-overflow: ellipsis; }
+${WIDGET_ICON_CSS}
+.picker .action { display: inline-flex; align-items: center; gap: 6px; }
 .card iframe { flex: 1; width: 100%; border: 0; background: transparent; color-scheme: normal; }
 .fault { position: absolute; right: 8px; top: 6px; padding: 1px 6px; border-radius: 999px; font: 11px/16px var(--wd-font-mono, monospace);
   background: color-mix(in oklab, var(--wd-down, #ef4444) 20%, transparent); color: var(--wd-down, #ef4444); cursor: help; }
@@ -411,7 +424,7 @@ class WidgetBoard extends HTMLElement {
     const existing = this.cards.get(id);
     if (existing && existing.mounted.frameUrl === m.frameUrl) {
       existing.mounted = m;
-      existing.title.textContent = m.title;
+      paintTitle(existing.title, m.title, m.icon);
       Object.assign(existing.el.style, gridSpan(m.layout?.cols ?? 1, m.layout?.rows ?? 1, this.maxCols));
       return;
     }
@@ -420,7 +433,7 @@ class WidgetBoard extends HTMLElement {
     const el = document.createElement("section");
     el.className = "card";
     const title = document.createElement("h3");
-    title.textContent = m.title;
+    paintTitle(title, m.title, m.icon);
     const fault = document.createElement("span");
     fault.className = "fault";
     fault.hidden = true;
@@ -475,7 +488,7 @@ class WidgetBoard extends HTMLElement {
     const tile = entry.tile ?? document.createElement("section");
     tile.className = "card placeholder";
     const title = document.createElement("h3");
-    title.textContent = st.title;
+    paintTitle(title, st.title, st.icon);
     const text = document.createElement("p");
     text.textContent = p.text;
     tile.replaceChildren(title, text);
@@ -613,7 +626,8 @@ class WidgetBoard extends HTMLElement {
       for (const w of widgets) {
         const b = document.createElement("button");
         b.className = "action";
-        b.textContent = w.title;
+        const svg = widgetIcon(w.icon, 16);
+        b.replaceChildren(...(svg ? [svg] : []), w.title);
         b.addEventListener("click", async () => {
           const { instanceId } = await admin.addInstance({ widget: w.name });
           this.justAdded = instanceId;

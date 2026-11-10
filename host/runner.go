@@ -273,6 +273,7 @@ func (h *runHost) Mount(id string, opts widget.MountOptions) (widget.RawCard, er
 			ActionType: string(opts.ActionType),
 			Layout:     &widgetdv1.Layout{Cols: max(opts.Layout.Cols, 1), Rows: max(opts.Layout.Rows, 1)},
 			Title:      opts.Title,
+			Icon:       iconProto(w.spec.Icon),
 		},
 	}
 	// Re-mounting with the same types keeps the card's data; anything else

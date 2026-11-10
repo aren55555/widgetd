@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file widgetd/v1/stream.proto.
  */
 export const file_widgetd_v1_stream: GenFile = /*@__PURE__*/
-  fileDesc("Chd3aWRnZXRkL3YxL3N0cmVhbS5wcm90bxIKd2lkZ2V0ZC52MSJFChFTZW5kQWN0aW9uUmVxdWVzdBIPCgdjYXJkX2lkGAEgASgJEhAKCHR5cGVfdXJsGAIgASgJEg0KBXZhbHVlGAMgASgMIhQKElNlbmRBY3Rpb25SZXNwb25zZSIkCgZDdXJzb3ISDQoFZXBvY2gYASABKAQSCwoDc2VxGAIgASgEIk0KBlJlc3VtZRIPCgdjYXJkX2lkGAEgASgJEg4KBmRpZ2VzdBgCIAEoCRIiCgZjdXJzb3IYAyABKAsyEi53aWRnZXRkLnYxLkN1cnNvciI6ChRTdHJlYW1XaWRnZXRzUmVxdWVzdBIiCgZyZXN1bWUYASADKAsyEi53aWRnZXRkLnYxLlJlc3VtZSI/ChVTdHJlYW1XaWRnZXRzUmVzcG9uc2USJgoFZnJhbWUYASABKAsyFy53aWRnZXRkLnYxLldpZGdldEZyYW1lIrICCgtXaWRnZXRGcmFtZRITCgtpbnN0YW5jZV9pZBgBIAEoCRIPCgdjYXJkX2lkGAIgASgJEiYKB21vdW50ZWQYAyABKAsyEy53aWRnZXRkLnYxLk1vdW50ZWRIABInCghzbmFwc2hvdBgEIAEoCzITLndpZGdldGQudjEuUGF5bG9hZEgAEiQKBWRlbHRhGAUgASgLMhMud2lkZ2V0ZC52MS5QYXlsb2FkSAASKgoJdW5tb3VudGVkGAYgASgLMhUud2lkZ2V0ZC52MS5Vbm1vdW50ZWRIABIiCgVmYXVsdBgHIAEoCzIRLndpZGdldGQudjEuRmF1bHRIABIuCghpbnN0YW5jZRgIIAEoCzIaLndpZGdldGQudjEuSW5zdGFuY2VTdGF0dXNIAEIGCgRib2R5It8CCg5JbnN0YW5jZVN0YXR1cxIvCgVzdGF0ZRgBIAEoDjIgLndpZGdldGQudjEuSW5zdGFuY2VTdGF0dXMuU3RhdGUSDgoGd2lkZ2V0GAIgASgJEg0KBXRpdGxlGAMgASgJEg8KB21lc3NhZ2UYBCABKAkSDwoHcmVtb3ZlZBgFIAEoCBIQCghwcm92aWRlchgGIAEoCRIPCgd3YXJuaW5nGAcgASgJEg8KB2FjY291bnQYCCABKAkSFQoNYWNjb3VudF9sYWJlbBgJIAEoCSKPAQoFU3RhdGUSFQoRU1RBVEVfVU5TUEVDSUZJRUQQABIWChJTVEFURV9ORUVEU19DT05GSUcQARIRCg1TVEFURV9SVU5OSU5HEAISEQoNU1RBVEVfRkFVTFRFRBADEhgKFFNUQVRFX0lOVkFMSURfQ09ORklHEAQSFwoTU1RBVEVfTkVFRFNfU0lHTl9JThAFIjoKCVdpZGdldFJlZhIMCgRuYW1lGAEgASgJEg8KB3ZlcnNpb24YAiABKAkSDgoGZGlnZXN0GAMgASgJIuYBCgdNb3VudGVkEiUKBndpZGdldBgBIAEoCzIVLndpZGdldGQudjEuV2lkZ2V0UmVmEhEKCWZyYW1lX3VybBgCIAEoCRISCgpzdGF0ZV90eXBlGAMgASgJEhIKCmRlbHRhX3R5cGUYBCABKAkSIgoGbGF5b3V0GAUgASgLMhIud2lkZ2V0ZC52MS5MYXlvdXQSMQoNdmlzaWJsZV91bnRpbBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDQoFdGl0bGUYByABKAkSEwoLYWN0aW9uX3R5cGUYCCABKAkiJAoGTGF5b3V0EgwKBGNvbHMYASABKA0SDAoEcm93cxgCIAEoDSJwCgdQYXlsb2FkEhAKCHR5cGVfdXJsGAEgASgJEg0KBXZhbHVlGAIgASgMEiIKBmN1cnNvchgDIAEoCzISLndpZGdldGQudjEuQ3Vyc29yEiAKBHByZXYYBCABKAsyEi53aWRnZXRkLnYxLkN1cnNvciIaCglVbm1vdW50ZWQSDQoFcHVyZ2UYASABKAgiGAoFRmF1bHQSDwoHbWVzc2FnZRgBIAEoCTK6AQoTV2lkZ2V0U3RyZWFtU2VydmljZRJWCg1TdHJlYW1XaWRnZXRzEiAud2lkZ2V0ZC52MS5TdHJlYW1XaWRnZXRzUmVxdWVzdBohLndpZGdldGQudjEuU3RyZWFtV2lkZ2V0c1Jlc3BvbnNlMAESSwoKU2VuZEFjdGlvbhIdLndpZGdldGQudjEuU2VuZEFjdGlvblJlcXVlc3QaHi53aWRnZXRkLnYxLlNlbmRBY3Rpb25SZXNwb25zZUI3WjVnaXRodWIuY29tL2FyZW41NTU1NS93aWRnZXRkL2dlbi93aWRnZXRkL3YxO3dpZGdldGR2MWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+  fileDesc("Chd3aWRnZXRkL3YxL3N0cmVhbS5wcm90bxIKd2lkZ2V0ZC52MSJFChFTZW5kQWN0aW9uUmVxdWVzdBIPCgdjYXJkX2lkGAEgASgJEhAKCHR5cGVfdXJsGAIgASgJEg0KBXZhbHVlGAMgASgMIhQKElNlbmRBY3Rpb25SZXNwb25zZSIkCgZDdXJzb3ISDQoFZXBvY2gYASABKAQSCwoDc2VxGAIgASgEIk0KBlJlc3VtZRIPCgdjYXJkX2lkGAEgASgJEg4KBmRpZ2VzdBgCIAEoCRIiCgZjdXJzb3IYAyABKAsyEi53aWRnZXRkLnYxLkN1cnNvciI6ChRTdHJlYW1XaWRnZXRzUmVxdWVzdBIiCgZyZXN1bWUYASADKAsyEi53aWRnZXRkLnYxLlJlc3VtZSI/ChVTdHJlYW1XaWRnZXRzUmVzcG9uc2USJgoFZnJhbWUYASABKAsyFy53aWRnZXRkLnYxLldpZGdldEZyYW1lIrICCgtXaWRnZXRGcmFtZRITCgtpbnN0YW5jZV9pZBgBIAEoCRIPCgdjYXJkX2lkGAIgASgJEiYKB21vdW50ZWQYAyABKAsyEy53aWRnZXRkLnYxLk1vdW50ZWRIABInCghzbmFwc2hvdBgEIAEoCzITLndpZGdldGQudjEuUGF5bG9hZEgAEiQKBWRlbHRhGAUgASgLMhMud2lkZ2V0ZC52MS5QYXlsb2FkSAASKgoJdW5tb3VudGVkGAYgASgLMhUud2lkZ2V0ZC52MS5Vbm1vdW50ZWRIABIiCgVmYXVsdBgHIAEoCzIRLndpZGdldGQudjEuRmF1bHRIABIuCghpbnN0YW5jZRgIIAEoCzIaLndpZGdldGQudjEuSW5zdGFuY2VTdGF0dXNIAEIGCgRib2R5Iv8CCg5JbnN0YW5jZVN0YXR1cxIvCgVzdGF0ZRgBIAEoDjIgLndpZGdldGQudjEuSW5zdGFuY2VTdGF0dXMuU3RhdGUSDgoGd2lkZ2V0GAIgASgJEg0KBXRpdGxlGAMgASgJEg8KB21lc3NhZ2UYBCABKAkSDwoHcmVtb3ZlZBgFIAEoCBIQCghwcm92aWRlchgGIAEoCRIPCgd3YXJuaW5nGAcgASgJEg8KB2FjY291bnQYCCABKAkSFQoNYWNjb3VudF9sYWJlbBgJIAEoCRIeCgRpY29uGAogASgLMhAud2lkZ2V0ZC52MS5JY29uIo8BCgVTdGF0ZRIVChFTVEFURV9VTlNQRUNJRklFRBAAEhYKElNUQVRFX05FRURTX0NPTkZJRxABEhEKDVNUQVRFX1JVTk5JTkcQAhIRCg1TVEFURV9GQVVMVEVEEAMSGAoUU1RBVEVfSU5WQUxJRF9DT05GSUcQBBIXChNTVEFURV9ORUVEU19TSUdOX0lOEAUiOwoESWNvbhIMCgRuYW1lGAEgASgJEiUKBnNoYXBlcxgCIAMoCzIVLndpZGdldGQudjEuSWNvblNoYXBlIncKCUljb25TaGFwZRILCgN0YWcYASABKAkSLwoFYXR0cnMYAiADKAsyIC53aWRnZXRkLnYxLkljb25TaGFwZS5BdHRyc0VudHJ5GiwKCkF0dHJzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASI6CglXaWRnZXRSZWYSDAoEbmFtZRgBIAEoCRIPCgd2ZXJzaW9uGAIgASgJEg4KBmRpZ2VzdBgDIAEoCSKGAgoHTW91bnRlZBIlCgZ3aWRnZXQYASABKAsyFS53aWRnZXRkLnYxLldpZGdldFJlZhIRCglmcmFtZV91cmwYAiABKAkSEgoKc3RhdGVfdHlwZRgDIAEoCRISCgpkZWx0YV90eXBlGAQgASgJEiIKBmxheW91dBgFIAEoCzISLndpZGdldGQudjEuTGF5b3V0EjEKDXZpc2libGVfdW50aWwYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg0KBXRpdGxlGAcgASgJEhMKC2FjdGlvbl90eXBlGAggASgJEh4KBGljb24YCSABKAsyEC53aWRnZXRkLnYxLkljb24iJAoGTGF5b3V0EgwKBGNvbHMYASABKA0SDAoEcm93cxgCIAEoDSJwCgdQYXlsb2FkEhAKCHR5cGVfdXJsGAEgASgJEg0KBXZhbHVlGAIgASgMEiIKBmN1cnNvchgDIAEoCzISLndpZGdldGQudjEuQ3Vyc29yEiAKBHByZXYYBCABKAsyEi53aWRnZXRkLnYxLkN1cnNvciIaCglVbm1vdW50ZWQSDQoFcHVyZ2UYASABKAgiGAoFRmF1bHQSDwoHbWVzc2FnZRgBIAEoCTK6AQoTV2lkZ2V0U3RyZWFtU2VydmljZRJWCg1TdHJlYW1XaWRnZXRzEiAud2lkZ2V0ZC52MS5TdHJlYW1XaWRnZXRzUmVxdWVzdBohLndpZGdldGQudjEuU3RyZWFtV2lkZ2V0c1Jlc3BvbnNlMAESSwoKU2VuZEFjdGlvbhIdLndpZGdldGQudjEuU2VuZEFjdGlvblJlcXVlc3QaHi53aWRnZXRkLnYxLlNlbmRBY3Rpb25SZXNwb25zZUI3WjVnaXRodWIuY29tL2FyZW41NTU1NS93aWRnZXRkL2dlbi93aWRnZXRkL3YxO3dpZGdldGR2MWIGcHJvdG8z", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message widgetd.v1.SendActionRequest
@@ -281,6 +281,13 @@ export type InstanceStatus = Message<"widgetd.v1.InstanceStatus"> & {
    * @generated from field: string account_label = 9;
    */
   accountLabel: string;
+
+  /**
+   * The widget's own icon, if it declares one.
+   *
+   * @generated from field: widgetd.v1.Icon icon = 10;
+   */
+  icon?: Icon | undefined;
 };
 
 /**
@@ -344,6 +351,62 @@ export const InstanceStatus_StateSchema: GenEnum<InstanceStatus_State> = /*@__PU
   enumDesc(file_widgetd_v1_stream, 7, 0);
 
 /**
+ * Icon is a widget's icon (`icon` in its widget.toml): a Lucide icon as
+ * drawing data, for widgetd's own pages to draw beside the widget's title.
+ * It is data, not markup: the host accepts only Lucide's shapes and
+ * attributes, and pages build the SVG from it element by element. Drawn on
+ * a 24×24 viewBox, stroked in currentColor.
+ *
+ * @generated from message widgetd.v1.Icon
+ */
+export type Icon = Message<"widgetd.v1.Icon"> & {
+  /**
+   * Lucide's name for it, e.g. "cloud-sun".
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: repeated widgetd.v1.IconShape shapes = 2;
+   */
+  shapes: IconShape[];
+};
+
+/**
+ * Describes the message widgetd.v1.Icon.
+ * Use `create(IconSchema)` to create a new message.
+ */
+export const IconSchema: GenMessage<Icon> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_stream, 8);
+
+/**
+ * @generated from message widgetd.v1.IconShape
+ */
+export type IconShape = Message<"widgetd.v1.IconShape"> & {
+  /**
+   * "path", "circle", "rect", "line", "ellipse", "polyline" or "polygon".
+   *
+   * @generated from field: string tag = 1;
+   */
+  tag: string;
+
+  /**
+   * Its geometry, e.g. {"d": "M12 2v2"}.
+   *
+   * @generated from field: map<string, string> attrs = 2;
+   */
+  attrs: { [key: string]: string };
+};
+
+/**
+ * Describes the message widgetd.v1.IconShape.
+ * Use `create(IconShapeSchema)` to create a new message.
+ */
+export const IconShapeSchema: GenMessage<IconShape> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_stream, 9);
+
+/**
  * @generated from message widgetd.v1.WidgetRef
  */
 export type WidgetRef = Message<"widgetd.v1.WidgetRef"> & {
@@ -371,7 +434,7 @@ export type WidgetRef = Message<"widgetd.v1.WidgetRef"> & {
  * Use `create(WidgetRefSchema)` to create a new message.
  */
 export const WidgetRefSchema: GenMessage<WidgetRef> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 8);
+  messageDesc(file_widgetd_v1_stream, 10);
 
 /**
  * Mounted announces a card. It is always sent before the card's first payload.
@@ -427,6 +490,13 @@ export type Mounted = Message<"widgetd.v1.Mounted"> & {
    * @generated from field: string action_type = 8;
    */
   actionType: string;
+
+  /**
+   * The widget's own icon, if it declares one.
+   *
+   * @generated from field: widgetd.v1.Icon icon = 9;
+   */
+  icon?: Icon | undefined;
 };
 
 /**
@@ -434,7 +504,7 @@ export type Mounted = Message<"widgetd.v1.Mounted"> & {
  * Use `create(MountedSchema)` to create a new message.
  */
 export const MountedSchema: GenMessage<Mounted> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 9);
+  messageDesc(file_widgetd_v1_stream, 11);
 
 /**
  * Layout is a size hint in grid units.
@@ -458,7 +528,7 @@ export type Layout = Message<"widgetd.v1.Layout"> & {
  * Use `create(LayoutSchema)` to create a new message.
  */
 export const LayoutSchema: GenMessage<Layout> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 10);
+  messageDesc(file_widgetd_v1_stream, 12);
 
 /**
  * @generated from message widgetd.v1.Payload
@@ -495,7 +565,7 @@ export type Payload = Message<"widgetd.v1.Payload"> & {
  * Use `create(PayloadSchema)` to create a new message.
  */
 export const PayloadSchema: GenMessage<Payload> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 11);
+  messageDesc(file_widgetd_v1_stream, 13);
 
 /**
  * @generated from message widgetd.v1.Unmounted
@@ -515,7 +585,7 @@ export type Unmounted = Message<"widgetd.v1.Unmounted"> & {
  * Use `create(UnmountedSchema)` to create a new message.
  */
 export const UnmountedSchema: GenMessage<Unmounted> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 12);
+  messageDesc(file_widgetd_v1_stream, 14);
 
 /**
  * @generated from message widgetd.v1.Fault
@@ -532,7 +602,7 @@ export type Fault = Message<"widgetd.v1.Fault"> & {
  * Use `create(FaultSchema)` to create a new message.
  */
 export const FaultSchema: GenMessage<Fault> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 13);
+  messageDesc(file_widgetd_v1_stream, 15);
 
 /**
  * WidgetStreamService is the one pipe every card on a screen shares. A screen

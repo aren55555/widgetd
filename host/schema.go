@@ -146,6 +146,9 @@ func loadWidget(spec widget.Spec) (*loadedWidget, error) {
 	if _, err := fs.Stat(spec.View, "view.js"); err != nil {
 		return nil, fmt.Errorf("widget %s: view has no view.js: %w", spec.Name, err)
 	}
+	if err := checkIcon(spec.Icon); err != nil {
+		return nil, fmt.Errorf("widget %s: %w", spec.Name, err)
+	}
 	sch, err := newSchema(spec.Files)
 	if err != nil {
 		return nil, fmt.Errorf("widget %s: %w", spec.Name, err)

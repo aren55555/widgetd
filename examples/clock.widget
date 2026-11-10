@@ -2,6 +2,7 @@
 name    = "clock"
 version = "0.1.0"
 title   = "Clock"
+icon    = "clock"
 config  = "clock.v1.Config"
 # No [network]: this widget never leaves the sandbox.
 </manifest>

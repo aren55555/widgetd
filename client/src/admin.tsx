@@ -19,8 +19,9 @@ import { render } from "solid-js/web";
 
 import { AuthService, Role, type Device } from "./gen/widgetd/v1/auth_pb.ts";
 import { WidgetAdminService, type Account, type GetConfigFormResponse, type InstanceInfo, type ProviderInfo, type WidgetInfo } from "./gen/widgetd/v1/admin_pb.ts";
-import { InstanceStatus_State } from "./gen/widgetd/v1/stream_pb.ts";
+import { InstanceStatus_State, type Icon } from "./gen/widgetd/v1/stream_pb.ts";
 import { createConfigForm, type ConfigForm } from "./lib/ConfigForm.tsx";
+import { widgetIcon } from "./lib/icon.ts";
 import { sameChoices, type Choices, type Secrets } from "./lib/form.ts";
 import * as ui from "./lib/ui.ts";
 
@@ -84,13 +85,21 @@ function App() {
 
 // ---- shared pieces ----
 
-function Page(props: { title: string; children: JSX.Element }) {
+function Page(props: { title: string; icon?: Icon; children: JSX.Element }) {
   return (
     <>
-      <h1 class="text-2xl font-bold">{props.title}</h1>
+      <h1 class="flex items-center gap-2 text-2xl font-bold">
+        <WidgetIcon icon={props.icon} size={24} />
+        {props.title}
+      </h1>
       {props.children}
     </>
   );
+}
+
+/** A widget's own icon (its widget.toml `icon`); nothing if it has none. */
+function WidgetIcon(props: { icon?: Icon; size?: number }) {
+  return <>{widgetIcon(props.icon, props.size ?? 18)}</>;
 }
 
 const H2 = "mt-4 text-lg font-bold";
@@ -358,7 +367,7 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
         </Page>
       }
     >
-      <Page title={w.title}>
+      <Page title={w.title} icon={w.icon}>
         {"instanceId" in target && (
           <p>
             <AdminLink>← All widgets</AdminLink>
@@ -486,7 +495,10 @@ function InstanceItem(props: { inst: InstanceInfo; widget: WidgetInfo | undefine
   return (
     <li class={ui.item}>
       <div>
-        <strong>{title}</strong>
+        <strong class="inline-flex items-center gap-2 align-middle">
+          <WidgetIcon icon={widget?.icon} />
+          {title}
+        </strong>
         <span class={ui.muted}>
           {" "}
           {inst.widget} · {stateText(state, inst.status?.message)}
@@ -555,7 +567,10 @@ function NetworkGrant(props: { w: WidgetInfo }) {
   const st = createStatus();
   return (
     <li class={ui.item}>
-      <strong>{w.title}</strong>
+      <strong class="inline-flex items-center gap-2">
+        <WidgetIcon icon={w.icon} />
+        {w.title}
+      </strong>
       <p class={ui.muted}>{w.networkWhy}</p>
       <For each={w.requestedHosts}>
         {(host) => (

@@ -39,7 +39,9 @@ type WidgetInfo struct {
 	// Whether it takes a configuration at all.
 	Configurable bool `protobuf:"varint,10,opt,name=configurable,proto3" json:"configurable,omitempty"`
 	// The accounts it uses, and with what scopes.
-	Uses          []*Use `protobuf:"bytes,14,rep,name=uses,proto3" json:"uses,omitempty"`
+	Uses []*Use `protobuf:"bytes,14,rep,name=uses,proto3" json:"uses,omitempty"`
+	// Its own icon, if it declares one.
+	Icon          *Icon `protobuf:"bytes,15,opt,name=icon,proto3" json:"icon,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -147,6 +149,13 @@ func (x *WidgetInfo) GetConfigurable() bool {
 func (x *WidgetInfo) GetUses() []*Use {
 	if x != nil {
 		return x.Uses
+	}
+	return nil
+}
+
+func (x *WidgetInfo) GetIcon() *Icon {
+	if x != nil {
+		return x.Icon
 	}
 	return nil
 }
@@ -2603,7 +2612,7 @@ var File_widgetd_v1_admin_proto protoreflect.FileDescriptor
 const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\n" +
 	"\x16widgetd/v1/admin.proto\x12\n" +
-	"widgetd.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17widgetd/v1/stream.proto\"\xc9\x03\n" +
+	"widgetd.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17widgetd/v1/stream.proto\"\xef\x03\n" +
 	"\n" +
 	"WidgetInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
@@ -2618,7 +2627,8 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\x10network_disabled\x18\t \x01(\bR\x0fnetworkDisabled\x12\"\n" +
 	"\fconfigurable\x18\n" +
 	" \x01(\bR\fconfigurable\x12#\n" +
-	"\x04uses\x18\x0e \x03(\v2\x0f.widgetd.v1.UseR\x04usesJ\x04\b\v\x10\fJ\x04\b\f\x10\rJ\x04\b\r\x10\x0eR\x10sign_in_providerR\x12sign_in_client_setR\x12sign_in_secret_set\"\x14\n" +
+	"\x04uses\x18\x0e \x03(\v2\x0f.widgetd.v1.UseR\x04uses\x12$\n" +
+	"\x04icon\x18\x0f \x01(\v2\x10.widgetd.v1.IconR\x04iconJ\x04\b\v\x10\fJ\x04\b\f\x10\rJ\x04\b\r\x10\x0eR\x10sign_in_providerR\x12sign_in_client_setR\x12sign_in_secret_set\"\x14\n" +
 	"\x12ListWidgetsRequest\"G\n" +
 	"\x13ListWidgetsResponse\x120\n" +
 	"\awidgets\x18\x01 \x03(\v2\x16.widgetd.v1.WidgetInfoR\awidgets\",\n" +
@@ -2873,68 +2883,70 @@ var file_widgetd_v1_admin_proto_goTypes = []any{
 	(*BindAccountResponse)(nil),         // 43: widgetd.v1.BindAccountResponse
 	(*SetProviderClientRequest)(nil),    // 44: widgetd.v1.SetProviderClientRequest
 	(*SetProviderClientResponse)(nil),   // 45: widgetd.v1.SetProviderClientResponse
-	(*timestamppb.Timestamp)(nil),       // 46: google.protobuf.Timestamp
-	(*InstanceStatus)(nil),              // 47: widgetd.v1.InstanceStatus
+	(*Icon)(nil),                        // 46: widgetd.v1.Icon
+	(*timestamppb.Timestamp)(nil),       // 47: google.protobuf.Timestamp
+	(*InstanceStatus)(nil),              // 48: widgetd.v1.InstanceStatus
 }
 var file_widgetd_v1_admin_proto_depIdxs = []int32{
 	29, // 0: widgetd.v1.WidgetInfo.uses:type_name -> widgetd.v1.Use
-	0,  // 1: widgetd.v1.ListWidgetsResponse.widgets:type_name -> widgetd.v1.WidgetInfo
-	46, // 2: widgetd.v1.RequestConfigTicketResponse.expires_at:type_name -> google.protobuf.Timestamp
-	0,  // 3: widgetd.v1.GetConfigFormResponse.widget:type_name -> widgetd.v1.WidgetInfo
-	47, // 4: widgetd.v1.GetConfigFormResponse.status:type_name -> widgetd.v1.InstanceStatus
-	10, // 5: widgetd.v1.SaveConfigResponse.violations:type_name -> widgetd.v1.FieldViolation
-	14, // 6: widgetd.v1.ListInstancesResponse.instances:type_name -> widgetd.v1.InstanceInfo
-	47, // 7: widgetd.v1.InstanceInfo.status:type_name -> widgetd.v1.InstanceStatus
-	46, // 8: widgetd.v1.InstanceInfo.created_at:type_name -> google.protobuf.Timestamp
-	15, // 9: widgetd.v1.InstanceInfo.bindings:type_name -> widgetd.v1.Binding
-	46, // 10: widgetd.v1.Fetch.at:type_name -> google.protobuf.Timestamp
-	23, // 11: widgetd.v1.GetInstanceActivityResponse.fetches:type_name -> widgetd.v1.Fetch
-	26, // 12: widgetd.v1.ConfigFieldChoices.choices:type_name -> widgetd.v1.ConfigChoice
-	27, // 13: widgetd.v1.GetConfigChoicesResponse.fields:type_name -> widgetd.v1.ConfigFieldChoices
-	30, // 14: widgetd.v1.ListAccountsResponse.providers:type_name -> widgetd.v1.ProviderInfo
-	31, // 15: widgetd.v1.ListAccountsResponse.accounts:type_name -> widgetd.v1.Account
-	46, // 16: widgetd.v1.BeginSignInResponse.expires_at:type_name -> google.protobuf.Timestamp
-	1,  // 17: widgetd.v1.WidgetAdminService.ListWidgets:input_type -> widgetd.v1.ListWidgetsRequest
-	3,  // 18: widgetd.v1.WidgetAdminService.AddInstance:input_type -> widgetd.v1.AddInstanceRequest
-	5,  // 19: widgetd.v1.WidgetAdminService.RequestConfigTicket:input_type -> widgetd.v1.RequestConfigTicketRequest
-	7,  // 20: widgetd.v1.WidgetAdminService.GetConfigForm:input_type -> widgetd.v1.GetConfigFormRequest
-	25, // 21: widgetd.v1.WidgetAdminService.GetConfigChoices:input_type -> widgetd.v1.GetConfigChoicesRequest
-	9,  // 22: widgetd.v1.WidgetAdminService.SaveConfig:input_type -> widgetd.v1.SaveConfigRequest
-	12, // 23: widgetd.v1.WidgetAdminService.ListInstances:input_type -> widgetd.v1.ListInstancesRequest
-	16, // 24: widgetd.v1.WidgetAdminService.RenameInstance:input_type -> widgetd.v1.RenameInstanceRequest
-	18, // 25: widgetd.v1.WidgetAdminService.DeleteInstance:input_type -> widgetd.v1.DeleteInstanceRequest
-	20, // 26: widgetd.v1.WidgetAdminService.SetNetworkGrant:input_type -> widgetd.v1.SetNetworkGrantRequest
-	22, // 27: widgetd.v1.WidgetAdminService.GetInstanceActivity:input_type -> widgetd.v1.GetInstanceActivityRequest
-	32, // 28: widgetd.v1.WidgetAdminService.ListAccounts:input_type -> widgetd.v1.ListAccountsRequest
-	34, // 29: widgetd.v1.WidgetAdminService.BeginSignIn:input_type -> widgetd.v1.BeginSignInRequest
-	36, // 30: widgetd.v1.WidgetAdminService.SignOut:input_type -> widgetd.v1.SignOutRequest
-	38, // 31: widgetd.v1.WidgetAdminService.LabelAccount:input_type -> widgetd.v1.LabelAccountRequest
-	40, // 32: widgetd.v1.WidgetAdminService.DeleteAccount:input_type -> widgetd.v1.DeleteAccountRequest
-	42, // 33: widgetd.v1.WidgetAdminService.BindAccount:input_type -> widgetd.v1.BindAccountRequest
-	44, // 34: widgetd.v1.WidgetAdminService.SetProviderClient:input_type -> widgetd.v1.SetProviderClientRequest
-	2,  // 35: widgetd.v1.WidgetAdminService.ListWidgets:output_type -> widgetd.v1.ListWidgetsResponse
-	4,  // 36: widgetd.v1.WidgetAdminService.AddInstance:output_type -> widgetd.v1.AddInstanceResponse
-	6,  // 37: widgetd.v1.WidgetAdminService.RequestConfigTicket:output_type -> widgetd.v1.RequestConfigTicketResponse
-	8,  // 38: widgetd.v1.WidgetAdminService.GetConfigForm:output_type -> widgetd.v1.GetConfigFormResponse
-	28, // 39: widgetd.v1.WidgetAdminService.GetConfigChoices:output_type -> widgetd.v1.GetConfigChoicesResponse
-	11, // 40: widgetd.v1.WidgetAdminService.SaveConfig:output_type -> widgetd.v1.SaveConfigResponse
-	13, // 41: widgetd.v1.WidgetAdminService.ListInstances:output_type -> widgetd.v1.ListInstancesResponse
-	17, // 42: widgetd.v1.WidgetAdminService.RenameInstance:output_type -> widgetd.v1.RenameInstanceResponse
-	19, // 43: widgetd.v1.WidgetAdminService.DeleteInstance:output_type -> widgetd.v1.DeleteInstanceResponse
-	21, // 44: widgetd.v1.WidgetAdminService.SetNetworkGrant:output_type -> widgetd.v1.SetNetworkGrantResponse
-	24, // 45: widgetd.v1.WidgetAdminService.GetInstanceActivity:output_type -> widgetd.v1.GetInstanceActivityResponse
-	33, // 46: widgetd.v1.WidgetAdminService.ListAccounts:output_type -> widgetd.v1.ListAccountsResponse
-	35, // 47: widgetd.v1.WidgetAdminService.BeginSignIn:output_type -> widgetd.v1.BeginSignInResponse
-	37, // 48: widgetd.v1.WidgetAdminService.SignOut:output_type -> widgetd.v1.SignOutResponse
-	39, // 49: widgetd.v1.WidgetAdminService.LabelAccount:output_type -> widgetd.v1.LabelAccountResponse
-	41, // 50: widgetd.v1.WidgetAdminService.DeleteAccount:output_type -> widgetd.v1.DeleteAccountResponse
-	43, // 51: widgetd.v1.WidgetAdminService.BindAccount:output_type -> widgetd.v1.BindAccountResponse
-	45, // 52: widgetd.v1.WidgetAdminService.SetProviderClient:output_type -> widgetd.v1.SetProviderClientResponse
-	35, // [35:53] is the sub-list for method output_type
-	17, // [17:35] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	46, // 1: widgetd.v1.WidgetInfo.icon:type_name -> widgetd.v1.Icon
+	0,  // 2: widgetd.v1.ListWidgetsResponse.widgets:type_name -> widgetd.v1.WidgetInfo
+	47, // 3: widgetd.v1.RequestConfigTicketResponse.expires_at:type_name -> google.protobuf.Timestamp
+	0,  // 4: widgetd.v1.GetConfigFormResponse.widget:type_name -> widgetd.v1.WidgetInfo
+	48, // 5: widgetd.v1.GetConfigFormResponse.status:type_name -> widgetd.v1.InstanceStatus
+	10, // 6: widgetd.v1.SaveConfigResponse.violations:type_name -> widgetd.v1.FieldViolation
+	14, // 7: widgetd.v1.ListInstancesResponse.instances:type_name -> widgetd.v1.InstanceInfo
+	48, // 8: widgetd.v1.InstanceInfo.status:type_name -> widgetd.v1.InstanceStatus
+	47, // 9: widgetd.v1.InstanceInfo.created_at:type_name -> google.protobuf.Timestamp
+	15, // 10: widgetd.v1.InstanceInfo.bindings:type_name -> widgetd.v1.Binding
+	47, // 11: widgetd.v1.Fetch.at:type_name -> google.protobuf.Timestamp
+	23, // 12: widgetd.v1.GetInstanceActivityResponse.fetches:type_name -> widgetd.v1.Fetch
+	26, // 13: widgetd.v1.ConfigFieldChoices.choices:type_name -> widgetd.v1.ConfigChoice
+	27, // 14: widgetd.v1.GetConfigChoicesResponse.fields:type_name -> widgetd.v1.ConfigFieldChoices
+	30, // 15: widgetd.v1.ListAccountsResponse.providers:type_name -> widgetd.v1.ProviderInfo
+	31, // 16: widgetd.v1.ListAccountsResponse.accounts:type_name -> widgetd.v1.Account
+	47, // 17: widgetd.v1.BeginSignInResponse.expires_at:type_name -> google.protobuf.Timestamp
+	1,  // 18: widgetd.v1.WidgetAdminService.ListWidgets:input_type -> widgetd.v1.ListWidgetsRequest
+	3,  // 19: widgetd.v1.WidgetAdminService.AddInstance:input_type -> widgetd.v1.AddInstanceRequest
+	5,  // 20: widgetd.v1.WidgetAdminService.RequestConfigTicket:input_type -> widgetd.v1.RequestConfigTicketRequest
+	7,  // 21: widgetd.v1.WidgetAdminService.GetConfigForm:input_type -> widgetd.v1.GetConfigFormRequest
+	25, // 22: widgetd.v1.WidgetAdminService.GetConfigChoices:input_type -> widgetd.v1.GetConfigChoicesRequest
+	9,  // 23: widgetd.v1.WidgetAdminService.SaveConfig:input_type -> widgetd.v1.SaveConfigRequest
+	12, // 24: widgetd.v1.WidgetAdminService.ListInstances:input_type -> widgetd.v1.ListInstancesRequest
+	16, // 25: widgetd.v1.WidgetAdminService.RenameInstance:input_type -> widgetd.v1.RenameInstanceRequest
+	18, // 26: widgetd.v1.WidgetAdminService.DeleteInstance:input_type -> widgetd.v1.DeleteInstanceRequest
+	20, // 27: widgetd.v1.WidgetAdminService.SetNetworkGrant:input_type -> widgetd.v1.SetNetworkGrantRequest
+	22, // 28: widgetd.v1.WidgetAdminService.GetInstanceActivity:input_type -> widgetd.v1.GetInstanceActivityRequest
+	32, // 29: widgetd.v1.WidgetAdminService.ListAccounts:input_type -> widgetd.v1.ListAccountsRequest
+	34, // 30: widgetd.v1.WidgetAdminService.BeginSignIn:input_type -> widgetd.v1.BeginSignInRequest
+	36, // 31: widgetd.v1.WidgetAdminService.SignOut:input_type -> widgetd.v1.SignOutRequest
+	38, // 32: widgetd.v1.WidgetAdminService.LabelAccount:input_type -> widgetd.v1.LabelAccountRequest
+	40, // 33: widgetd.v1.WidgetAdminService.DeleteAccount:input_type -> widgetd.v1.DeleteAccountRequest
+	42, // 34: widgetd.v1.WidgetAdminService.BindAccount:input_type -> widgetd.v1.BindAccountRequest
+	44, // 35: widgetd.v1.WidgetAdminService.SetProviderClient:input_type -> widgetd.v1.SetProviderClientRequest
+	2,  // 36: widgetd.v1.WidgetAdminService.ListWidgets:output_type -> widgetd.v1.ListWidgetsResponse
+	4,  // 37: widgetd.v1.WidgetAdminService.AddInstance:output_type -> widgetd.v1.AddInstanceResponse
+	6,  // 38: widgetd.v1.WidgetAdminService.RequestConfigTicket:output_type -> widgetd.v1.RequestConfigTicketResponse
+	8,  // 39: widgetd.v1.WidgetAdminService.GetConfigForm:output_type -> widgetd.v1.GetConfigFormResponse
+	28, // 40: widgetd.v1.WidgetAdminService.GetConfigChoices:output_type -> widgetd.v1.GetConfigChoicesResponse
+	11, // 41: widgetd.v1.WidgetAdminService.SaveConfig:output_type -> widgetd.v1.SaveConfigResponse
+	13, // 42: widgetd.v1.WidgetAdminService.ListInstances:output_type -> widgetd.v1.ListInstancesResponse
+	17, // 43: widgetd.v1.WidgetAdminService.RenameInstance:output_type -> widgetd.v1.RenameInstanceResponse
+	19, // 44: widgetd.v1.WidgetAdminService.DeleteInstance:output_type -> widgetd.v1.DeleteInstanceResponse
+	21, // 45: widgetd.v1.WidgetAdminService.SetNetworkGrant:output_type -> widgetd.v1.SetNetworkGrantResponse
+	24, // 46: widgetd.v1.WidgetAdminService.GetInstanceActivity:output_type -> widgetd.v1.GetInstanceActivityResponse
+	33, // 47: widgetd.v1.WidgetAdminService.ListAccounts:output_type -> widgetd.v1.ListAccountsResponse
+	35, // 48: widgetd.v1.WidgetAdminService.BeginSignIn:output_type -> widgetd.v1.BeginSignInResponse
+	37, // 49: widgetd.v1.WidgetAdminService.SignOut:output_type -> widgetd.v1.SignOutResponse
+	39, // 50: widgetd.v1.WidgetAdminService.LabelAccount:output_type -> widgetd.v1.LabelAccountResponse
+	41, // 51: widgetd.v1.WidgetAdminService.DeleteAccount:output_type -> widgetd.v1.DeleteAccountResponse
+	43, // 52: widgetd.v1.WidgetAdminService.BindAccount:output_type -> widgetd.v1.BindAccountResponse
+	45, // 53: widgetd.v1.WidgetAdminService.SetProviderClient:output_type -> widgetd.v1.SetProviderClientResponse
+	36, // [36:54] is the sub-list for method output_type
+	18, // [18:36] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_widgetd_v1_admin_proto_init() }

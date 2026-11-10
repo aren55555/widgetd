@@ -576,8 +576,10 @@ type InstanceStatus struct {
 	Warning string `protobuf:"bytes,7,opt,name=warning,proto3" json:"warning,omitempty"`
 	// For STATE_NEEDS_SIGN_IN: the account bound to it (empty: none chosen
 	// yet, which only an admin can do) and that account's name.
-	Account       string `protobuf:"bytes,8,opt,name=account,proto3" json:"account,omitempty"`
-	AccountLabel  string `protobuf:"bytes,9,opt,name=account_label,json=accountLabel,proto3" json:"account_label,omitempty"`
+	Account      string `protobuf:"bytes,8,opt,name=account,proto3" json:"account,omitempty"`
+	AccountLabel string `protobuf:"bytes,9,opt,name=account_label,json=accountLabel,proto3" json:"account_label,omitempty"`
+	// The widget's own icon, if it declares one.
+	Icon          *Icon `protobuf:"bytes,10,opt,name=icon,proto3" json:"icon,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -675,6 +677,125 @@ func (x *InstanceStatus) GetAccountLabel() string {
 	return ""
 }
 
+func (x *InstanceStatus) GetIcon() *Icon {
+	if x != nil {
+		return x.Icon
+	}
+	return nil
+}
+
+// Icon is a widget's icon (`icon` in its widget.toml): a Lucide icon as
+// drawing data, for widgetd's own pages to draw beside the widget's title.
+// It is data, not markup: the host accepts only Lucide's shapes and
+// attributes, and pages build the SVG from it element by element. Drawn on
+// a 24×24 viewBox, stroked in currentColor.
+type Icon struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Lucide's name for it, e.g. "cloud-sun".
+	Name          string       `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Shapes        []*IconShape `protobuf:"bytes,2,rep,name=shapes,proto3" json:"shapes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Icon) Reset() {
+	*x = Icon{}
+	mi := &file_widgetd_v1_stream_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Icon) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Icon) ProtoMessage() {}
+
+func (x *Icon) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_stream_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Icon.ProtoReflect.Descriptor instead.
+func (*Icon) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *Icon) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Icon) GetShapes() []*IconShape {
+	if x != nil {
+		return x.Shapes
+	}
+	return nil
+}
+
+type IconShape struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// "path", "circle", "rect", "line", "ellipse", "polyline" or "polygon".
+	Tag string `protobuf:"bytes,1,opt,name=tag,proto3" json:"tag,omitempty"`
+	// Its geometry, e.g. {"d": "M12 2v2"}.
+	Attrs         map[string]string `protobuf:"bytes,2,rep,name=attrs,proto3" json:"attrs,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IconShape) Reset() {
+	*x = IconShape{}
+	mi := &file_widgetd_v1_stream_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IconShape) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IconShape) ProtoMessage() {}
+
+func (x *IconShape) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_stream_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IconShape.ProtoReflect.Descriptor instead.
+func (*IconShape) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *IconShape) GetTag() string {
+	if x != nil {
+		return x.Tag
+	}
+	return ""
+}
+
+func (x *IconShape) GetAttrs() map[string]string {
+	if x != nil {
+		return x.Attrs
+	}
+	return nil
+}
+
 type WidgetRef struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Name    string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -688,7 +809,7 @@ type WidgetRef struct {
 
 func (x *WidgetRef) Reset() {
 	*x = WidgetRef{}
-	mi := &file_widgetd_v1_stream_proto_msgTypes[8]
+	mi := &file_widgetd_v1_stream_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -700,7 +821,7 @@ func (x *WidgetRef) String() string {
 func (*WidgetRef) ProtoMessage() {}
 
 func (x *WidgetRef) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_stream_proto_msgTypes[8]
+	mi := &file_widgetd_v1_stream_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -713,7 +834,7 @@ func (x *WidgetRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WidgetRef.ProtoReflect.Descriptor instead.
 func (*WidgetRef) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{8}
+	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *WidgetRef) GetName() string {
@@ -752,14 +873,16 @@ type Mounted struct {
 	VisibleUntil *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=visible_until,json=visibleUntil,proto3" json:"visible_until,omitempty"`
 	Title        string                 `protobuf:"bytes,7,opt,name=title,proto3" json:"title,omitempty"`
 	// The message a card accepts from viewers; empty if it takes none.
-	ActionType    string `protobuf:"bytes,8,opt,name=action_type,json=actionType,proto3" json:"action_type,omitempty"`
+	ActionType string `protobuf:"bytes,8,opt,name=action_type,json=actionType,proto3" json:"action_type,omitempty"`
+	// The widget's own icon, if it declares one.
+	Icon          *Icon `protobuf:"bytes,9,opt,name=icon,proto3" json:"icon,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Mounted) Reset() {
 	*x = Mounted{}
-	mi := &file_widgetd_v1_stream_proto_msgTypes[9]
+	mi := &file_widgetd_v1_stream_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -771,7 +894,7 @@ func (x *Mounted) String() string {
 func (*Mounted) ProtoMessage() {}
 
 func (x *Mounted) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_stream_proto_msgTypes[9]
+	mi := &file_widgetd_v1_stream_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -784,7 +907,7 @@ func (x *Mounted) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Mounted.ProtoReflect.Descriptor instead.
 func (*Mounted) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{9}
+	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *Mounted) GetWidget() *WidgetRef {
@@ -843,6 +966,13 @@ func (x *Mounted) GetActionType() string {
 	return ""
 }
 
+func (x *Mounted) GetIcon() *Icon {
+	if x != nil {
+		return x.Icon
+	}
+	return nil
+}
+
 // Layout is a size hint in grid units.
 type Layout struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -854,7 +984,7 @@ type Layout struct {
 
 func (x *Layout) Reset() {
 	*x = Layout{}
-	mi := &file_widgetd_v1_stream_proto_msgTypes[10]
+	mi := &file_widgetd_v1_stream_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -866,7 +996,7 @@ func (x *Layout) String() string {
 func (*Layout) ProtoMessage() {}
 
 func (x *Layout) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_stream_proto_msgTypes[10]
+	mi := &file_widgetd_v1_stream_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -879,7 +1009,7 @@ func (x *Layout) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Layout.ProtoReflect.Descriptor instead.
 func (*Layout) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{10}
+	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Layout) GetCols() uint32 {
@@ -911,7 +1041,7 @@ type Payload struct {
 
 func (x *Payload) Reset() {
 	*x = Payload{}
-	mi := &file_widgetd_v1_stream_proto_msgTypes[11]
+	mi := &file_widgetd_v1_stream_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -923,7 +1053,7 @@ func (x *Payload) String() string {
 func (*Payload) ProtoMessage() {}
 
 func (x *Payload) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_stream_proto_msgTypes[11]
+	mi := &file_widgetd_v1_stream_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -936,7 +1066,7 @@ func (x *Payload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Payload.ProtoReflect.Descriptor instead.
 func (*Payload) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{11}
+	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *Payload) GetTypeUrl() string {
@@ -978,7 +1108,7 @@ type Unmounted struct {
 
 func (x *Unmounted) Reset() {
 	*x = Unmounted{}
-	mi := &file_widgetd_v1_stream_proto_msgTypes[12]
+	mi := &file_widgetd_v1_stream_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -990,7 +1120,7 @@ func (x *Unmounted) String() string {
 func (*Unmounted) ProtoMessage() {}
 
 func (x *Unmounted) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_stream_proto_msgTypes[12]
+	mi := &file_widgetd_v1_stream_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1003,7 +1133,7 @@ func (x *Unmounted) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Unmounted.ProtoReflect.Descriptor instead.
 func (*Unmounted) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{12}
+	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *Unmounted) GetPurge() bool {
@@ -1022,7 +1152,7 @@ type Fault struct {
 
 func (x *Fault) Reset() {
 	*x = Fault{}
-	mi := &file_widgetd_v1_stream_proto_msgTypes[13]
+	mi := &file_widgetd_v1_stream_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1034,7 +1164,7 @@ func (x *Fault) String() string {
 func (*Fault) ProtoMessage() {}
 
 func (x *Fault) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_stream_proto_msgTypes[13]
+	mi := &file_widgetd_v1_stream_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1047,7 +1177,7 @@ func (x *Fault) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Fault.ProtoReflect.Descriptor instead.
 func (*Fault) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{13}
+	return file_widgetd_v1_stream_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Fault) GetMessage() string {
@@ -1089,7 +1219,7 @@ const file_widgetd_v1_stream_proto_rawDesc = "" +
 	"\tunmounted\x18\x06 \x01(\v2\x15.widgetd.v1.UnmountedH\x00R\tunmounted\x12)\n" +
 	"\x05fault\x18\a \x01(\v2\x11.widgetd.v1.FaultH\x00R\x05fault\x128\n" +
 	"\binstance\x18\b \x01(\v2\x1a.widgetd.v1.InstanceStatusH\x00R\binstanceB\x06\n" +
-	"\x04body\"\xb1\x03\n" +
+	"\x04body\"\xd7\x03\n" +
 	"\x0eInstanceStatus\x126\n" +
 	"\x05state\x18\x01 \x01(\x0e2 .widgetd.v1.InstanceStatus.StateR\x05state\x12\x16\n" +
 	"\x06widget\x18\x02 \x01(\tR\x06widget\x12\x14\n" +
@@ -1099,18 +1229,30 @@ const file_widgetd_v1_stream_proto_rawDesc = "" +
 	"\bprovider\x18\x06 \x01(\tR\bprovider\x12\x18\n" +
 	"\awarning\x18\a \x01(\tR\awarning\x12\x18\n" +
 	"\aaccount\x18\b \x01(\tR\aaccount\x12#\n" +
-	"\raccount_label\x18\t \x01(\tR\faccountLabel\"\x8f\x01\n" +
+	"\raccount_label\x18\t \x01(\tR\faccountLabel\x12$\n" +
+	"\x04icon\x18\n" +
+	" \x01(\v2\x10.widgetd.v1.IconR\x04icon\"\x8f\x01\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12STATE_NEEDS_CONFIG\x10\x01\x12\x11\n" +
 	"\rSTATE_RUNNING\x10\x02\x12\x11\n" +
 	"\rSTATE_FAULTED\x10\x03\x12\x18\n" +
 	"\x14STATE_INVALID_CONFIG\x10\x04\x12\x17\n" +
-	"\x13STATE_NEEDS_SIGN_IN\x10\x05\"Q\n" +
+	"\x13STATE_NEEDS_SIGN_IN\x10\x05\"I\n" +
+	"\x04Icon\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12-\n" +
+	"\x06shapes\x18\x02 \x03(\v2\x15.widgetd.v1.IconShapeR\x06shapes\"\x8f\x01\n" +
+	"\tIconShape\x12\x10\n" +
+	"\x03tag\x18\x01 \x01(\tR\x03tag\x126\n" +
+	"\x05attrs\x18\x02 \x03(\v2 .widgetd.v1.IconShape.AttrsEntryR\x05attrs\x1a8\n" +
+	"\n" +
+	"AttrsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"Q\n" +
 	"\tWidgetRef\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x16\n" +
-	"\x06digest\x18\x03 \x01(\tR\x06digest\"\xb7\x02\n" +
+	"\x06digest\x18\x03 \x01(\tR\x06digest\"\xdd\x02\n" +
 	"\aMounted\x12-\n" +
 	"\x06widget\x18\x01 \x01(\v2\x15.widgetd.v1.WidgetRefR\x06widget\x12\x1b\n" +
 	"\tframe_url\x18\x02 \x01(\tR\bframeUrl\x12\x1d\n" +
@@ -1122,7 +1264,8 @@ const file_widgetd_v1_stream_proto_rawDesc = "" +
 	"\rvisible_until\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\fvisibleUntil\x12\x14\n" +
 	"\x05title\x18\a \x01(\tR\x05title\x12\x1f\n" +
 	"\vaction_type\x18\b \x01(\tR\n" +
-	"actionType\"0\n" +
+	"actionType\x12$\n" +
+	"\x04icon\x18\t \x01(\v2\x10.widgetd.v1.IconR\x04icon\"0\n" +
 	"\x06Layout\x12\x12\n" +
 	"\x04cols\x18\x01 \x01(\rR\x04cols\x12\x12\n" +
 	"\x04rows\x18\x02 \x01(\rR\x04rows\"\x8e\x01\n" +
@@ -1153,7 +1296,7 @@ func file_widgetd_v1_stream_proto_rawDescGZIP() []byte {
 }
 
 var file_widgetd_v1_stream_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_widgetd_v1_stream_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_widgetd_v1_stream_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_widgetd_v1_stream_proto_goTypes = []any{
 	(InstanceStatus_State)(0),     // 0: widgetd.v1.InstanceStatus.State
 	(*SendActionRequest)(nil),     // 1: widgetd.v1.SendActionRequest
@@ -1164,39 +1307,46 @@ var file_widgetd_v1_stream_proto_goTypes = []any{
 	(*StreamWidgetsResponse)(nil), // 6: widgetd.v1.StreamWidgetsResponse
 	(*WidgetFrame)(nil),           // 7: widgetd.v1.WidgetFrame
 	(*InstanceStatus)(nil),        // 8: widgetd.v1.InstanceStatus
-	(*WidgetRef)(nil),             // 9: widgetd.v1.WidgetRef
-	(*Mounted)(nil),               // 10: widgetd.v1.Mounted
-	(*Layout)(nil),                // 11: widgetd.v1.Layout
-	(*Payload)(nil),               // 12: widgetd.v1.Payload
-	(*Unmounted)(nil),             // 13: widgetd.v1.Unmounted
-	(*Fault)(nil),                 // 14: widgetd.v1.Fault
-	(*timestamppb.Timestamp)(nil), // 15: google.protobuf.Timestamp
+	(*Icon)(nil),                  // 9: widgetd.v1.Icon
+	(*IconShape)(nil),             // 10: widgetd.v1.IconShape
+	(*WidgetRef)(nil),             // 11: widgetd.v1.WidgetRef
+	(*Mounted)(nil),               // 12: widgetd.v1.Mounted
+	(*Layout)(nil),                // 13: widgetd.v1.Layout
+	(*Payload)(nil),               // 14: widgetd.v1.Payload
+	(*Unmounted)(nil),             // 15: widgetd.v1.Unmounted
+	(*Fault)(nil),                 // 16: widgetd.v1.Fault
+	nil,                           // 17: widgetd.v1.IconShape.AttrsEntry
+	(*timestamppb.Timestamp)(nil), // 18: google.protobuf.Timestamp
 }
 var file_widgetd_v1_stream_proto_depIdxs = []int32{
 	3,  // 0: widgetd.v1.Resume.cursor:type_name -> widgetd.v1.Cursor
 	4,  // 1: widgetd.v1.StreamWidgetsRequest.resume:type_name -> widgetd.v1.Resume
 	7,  // 2: widgetd.v1.StreamWidgetsResponse.frame:type_name -> widgetd.v1.WidgetFrame
-	10, // 3: widgetd.v1.WidgetFrame.mounted:type_name -> widgetd.v1.Mounted
-	12, // 4: widgetd.v1.WidgetFrame.snapshot:type_name -> widgetd.v1.Payload
-	12, // 5: widgetd.v1.WidgetFrame.delta:type_name -> widgetd.v1.Payload
-	13, // 6: widgetd.v1.WidgetFrame.unmounted:type_name -> widgetd.v1.Unmounted
-	14, // 7: widgetd.v1.WidgetFrame.fault:type_name -> widgetd.v1.Fault
+	12, // 3: widgetd.v1.WidgetFrame.mounted:type_name -> widgetd.v1.Mounted
+	14, // 4: widgetd.v1.WidgetFrame.snapshot:type_name -> widgetd.v1.Payload
+	14, // 5: widgetd.v1.WidgetFrame.delta:type_name -> widgetd.v1.Payload
+	15, // 6: widgetd.v1.WidgetFrame.unmounted:type_name -> widgetd.v1.Unmounted
+	16, // 7: widgetd.v1.WidgetFrame.fault:type_name -> widgetd.v1.Fault
 	8,  // 8: widgetd.v1.WidgetFrame.instance:type_name -> widgetd.v1.InstanceStatus
 	0,  // 9: widgetd.v1.InstanceStatus.state:type_name -> widgetd.v1.InstanceStatus.State
-	9,  // 10: widgetd.v1.Mounted.widget:type_name -> widgetd.v1.WidgetRef
-	11, // 11: widgetd.v1.Mounted.layout:type_name -> widgetd.v1.Layout
-	15, // 12: widgetd.v1.Mounted.visible_until:type_name -> google.protobuf.Timestamp
-	3,  // 13: widgetd.v1.Payload.cursor:type_name -> widgetd.v1.Cursor
-	3,  // 14: widgetd.v1.Payload.prev:type_name -> widgetd.v1.Cursor
-	5,  // 15: widgetd.v1.WidgetStreamService.StreamWidgets:input_type -> widgetd.v1.StreamWidgetsRequest
-	1,  // 16: widgetd.v1.WidgetStreamService.SendAction:input_type -> widgetd.v1.SendActionRequest
-	6,  // 17: widgetd.v1.WidgetStreamService.StreamWidgets:output_type -> widgetd.v1.StreamWidgetsResponse
-	2,  // 18: widgetd.v1.WidgetStreamService.SendAction:output_type -> widgetd.v1.SendActionResponse
-	17, // [17:19] is the sub-list for method output_type
-	15, // [15:17] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	9,  // 10: widgetd.v1.InstanceStatus.icon:type_name -> widgetd.v1.Icon
+	10, // 11: widgetd.v1.Icon.shapes:type_name -> widgetd.v1.IconShape
+	17, // 12: widgetd.v1.IconShape.attrs:type_name -> widgetd.v1.IconShape.AttrsEntry
+	11, // 13: widgetd.v1.Mounted.widget:type_name -> widgetd.v1.WidgetRef
+	13, // 14: widgetd.v1.Mounted.layout:type_name -> widgetd.v1.Layout
+	18, // 15: widgetd.v1.Mounted.visible_until:type_name -> google.protobuf.Timestamp
+	9,  // 16: widgetd.v1.Mounted.icon:type_name -> widgetd.v1.Icon
+	3,  // 17: widgetd.v1.Payload.cursor:type_name -> widgetd.v1.Cursor
+	3,  // 18: widgetd.v1.Payload.prev:type_name -> widgetd.v1.Cursor
+	5,  // 19: widgetd.v1.WidgetStreamService.StreamWidgets:input_type -> widgetd.v1.StreamWidgetsRequest
+	1,  // 20: widgetd.v1.WidgetStreamService.SendAction:input_type -> widgetd.v1.SendActionRequest
+	6,  // 21: widgetd.v1.WidgetStreamService.StreamWidgets:output_type -> widgetd.v1.StreamWidgetsResponse
+	2,  // 22: widgetd.v1.WidgetStreamService.SendAction:output_type -> widgetd.v1.SendActionResponse
+	21, // [21:23] is the sub-list for method output_type
+	19, // [19:21] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_widgetd_v1_stream_proto_init() }
@@ -1218,7 +1368,7 @@ func file_widgetd_v1_stream_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_widgetd_v1_stream_proto_rawDesc), len(file_widgetd_v1_stream_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   14,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
