@@ -405,7 +405,7 @@ func rewriteGoImports(src string, f func(string) (string, error)) (out string, o
 	fset := token.NewFileSet()
 	file, perr := parser.ParseFile(fset, "", src, parser.ImportsOnly)
 	if perr != nil {
-		return src, false, nil
+		return src, false, nil //nolint:nilerr // unparseable imports are reported by ok, not err
 	}
 	b := []byte(src)
 	for i := len(file.Imports) - 1; i >= 0; i-- {

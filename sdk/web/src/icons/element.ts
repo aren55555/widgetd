@@ -18,7 +18,7 @@ const registry = new IconRegistry();
 const warned = new Set<string>();
 
 /** The attributes of <wd-icon>; each is also a property. */
-export type WdIconAttributes = {
+export interface WdIconAttributes {
   /** Lucide's name for the icon, e.g. "cloud-sun". Register it first with defineIcons. */
   name: string;
   /** "sm" | "md" | "lg" | "xl" (16/24/32/48px), or pixels. Default "md". */
@@ -27,7 +27,7 @@ export type WdIconAttributes = {
   "stroke-width"?: number | `${number}`;
   /** Names the icon for screen readers; without it the icon is decorative. */
   label?: string;
-};
+}
 
 /** A <wd-icon> element. */
 export interface WdIconElement extends HTMLElement {
@@ -50,30 +50,52 @@ export function defineIcons(icons: Record<string, IconNode>): void {
     customElements.define(TAG, elementClass());
     return; // defining upgrades, and so renders, every element already there
   }
-  for (const el of document.querySelectorAll(TAG)) (el as WdIconElement).render?.();
+  // An element defined by another copy of the SDK may lack render().
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  for (const el of document.querySelectorAll(TAG)) el.render?.();
 }
 
 function elementClass(): CustomElementConstructor {
   // Frameworks differ in whether they set attributes or properties on custom
   // elements (Solid sets properties; React 19 and Vue sometimes do), so every
   // attribute is also a property that reflects to it.
-  const reflect = (el: HTMLElement, attr: string, v: unknown) => {
+  const reflect = (el: HTMLElement, attr: string, v: string | number | null) => {
     if (v == null || v === "") el.removeAttribute(attr);
     else el.setAttribute(attr, String(v));
   };
   return class extends HTMLElement implements WdIconElement {
     static observedAttributes = ["name", "size", "stroke-width", "label"];
 
-    get name(): string { return this.getAttribute("name") ?? ""; }
-    set name(v: string | null) { reflect(this, "name", v); }
-    get size(): string | null { return this.getAttribute("size"); }
-    set size(v: IconSize | null) { reflect(this, "size", v); }
-    get strokeWidth(): string | null { return this.getAttribute("stroke-width"); }
-    set strokeWidth(v: number | string | null) { reflect(this, "stroke-width", v); }
-    get ["stroke-width"](): string | null { return this.strokeWidth; }
-    set ["stroke-width"](v: number | string | null) { this.strokeWidth = v; }
-    get label(): string | null { return this.getAttribute("label"); }
-    set label(v: string | null) { reflect(this, "label", v); }
+    get name(): string {
+      return this.getAttribute("name") ?? "";
+    }
+    set name(v: string | null) {
+      reflect(this, "name", v);
+    }
+    get size(): string | null {
+      return this.getAttribute("size");
+    }
+    set size(v: string | null) {
+      reflect(this, "size", v);
+    }
+    get strokeWidth(): string | null {
+      return this.getAttribute("stroke-width");
+    }
+    set strokeWidth(v: number | string | null) {
+      reflect(this, "stroke-width", v);
+    }
+    get ["stroke-width"](): string | null {
+      return this.strokeWidth;
+    }
+    set ["stroke-width"](v: number | string | null) {
+      this.strokeWidth = v;
+    }
+    get label(): string | null {
+      return this.getAttribute("label");
+    }
+    set label(v: string | null) {
+      reflect(this, "label", v);
+    }
 
     connectedCallback(): void {
       this.render();
@@ -86,16 +108,20 @@ function elementClass(): CustomElementConstructor {
     render(): void {
       const name = this.name;
       const node = registry.get(name);
-      const px = iconPixels(this.size as IconSize | null);
+      const px = iconPixels(this.size);
       if (!node || px === undefined) {
         this.replaceChildren();
         if (name && !node && !warned.has(name)) {
           warned.add(name);
-          console.warn(`<wd-icon>: no icon "${name}"; register it with defineIcons, e.g. defineIcons({ ${pascal(name)} })`);
+          console.warn(
+            `<wd-icon>: no icon "${name}"; register it with defineIcons, e.g. defineIcons({ ${pascal(name)} })`,
+          );
         }
         return;
       }
-      this.replaceChildren(icon(node, { size: px, strokeWidth: this.strokeWidth ?? undefined, label: this.label ?? undefined }));
+      this.replaceChildren(
+        icon(node, { size: px, strokeWidth: this.strokeWidth ?? undefined, label: this.label ?? undefined }),
+      );
     }
   };
 }

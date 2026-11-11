@@ -11,13 +11,18 @@ const DAY_MS = 86_400_000;
 const HALVINGS = [Date.UTC(2012, 10, 28), Date.UTC(2016, 6, 9), Date.UTC(2020, 4, 11), Date.UTC(2024, 3, 20)];
 const CYCLE_MS = 1461 * DAY_MS;
 
-export type Cycle = { index: number; start: number; end: number; frac: number };
+export interface Cycle {
+  index: number;
+  start: number;
+  end: number;
+  frac: number;
+}
 
 /** Which halving cycle `t` falls in, and how far through it (0..1). Cycle 1 starts at the first halving. */
 export function cycleOf(t: number): Cycle {
   let i = HALVINGS.length - 1;
-  while (i > 0 && HALVINGS[i]! > t) i--;
-  let start = HALVINGS[i]!;
+  while (i > 0 && HALVINGS[i] > t) i--;
+  let start = HALVINGS[i];
   let index = i + 1;
   if (t < start) {
     // Before the first halving: count back a cycle at a time.
@@ -25,7 +30,7 @@ export function cycleOf(t: number): Cycle {
     start -= back * CYCLE_MS;
     index -= back;
   }
-  while (start + CYCLE_MS <= t && (index >= HALVINGS.length || HALVINGS[index] === undefined)) {
+  while (start + CYCLE_MS <= t && (index >= HALVINGS.length || (HALVINGS[index] as number | undefined) === undefined)) {
     start += CYCLE_MS;
     index++;
   }
@@ -33,7 +38,10 @@ export function cycleOf(t: number): Cycle {
   return { index, start, end, frac: (t - start) / (end - start) };
 }
 
-export type Scale = { lo: number; hi: number };
+export interface Scale {
+  lo: number;
+  hi: number;
+}
 
 /** A log scale from the power of ten at or below `min` to the one at or above `max`. */
 export function logScale(min: number, max: number): Scale {
@@ -49,12 +57,12 @@ export const radial = (price: number, s: Scale) => (Math.log10(price) - s.lo) / 
 /** Inner radius fraction kept clear so the first cycle isn't a knot. */
 export const HOLE = 0.14;
 
-/** Position of (t, price) in a square of side 2R centred on (R, R). */
-export function point(t: number, price: number, s: Scale, R: number): { x: number; y: number; cycle: number } {
+/** Position of (t, price) in a square of side 2·outer centred on (outer, outer). */
+export function point(t: number, price: number, s: Scale, outer: number): { x: number; y: number; cycle: number } {
   const c = cycleOf(t);
   const a = c.frac * 2 * Math.PI - Math.PI / 2;
-  const r = R * (HOLE + (1 - HOLE) * radial(price, s));
-  return { x: R + r * Math.cos(a), y: R + r * Math.sin(a), cycle: c.index };
+  const r = outer * (HOLE + (1 - HOLE) * radial(price, s));
+  return { x: outer + r * Math.cos(a), y: outer + r * Math.sin(a), cycle: c.index };
 }
 
 /** Ring labels: every power of ten in the scale. */
@@ -86,7 +94,7 @@ export function formatChange(from: number, to: number): string {
 }
 
 /** Index of the point nearest (x, y), or -1 if none is within `max`. */
-export function nearest(points: readonly { x: number; y: number }[], x: number, y: number, max: number): number {
+export function nearest(points: ReadonlyArray<{ x: number; y: number }>, x: number, y: number, max: number): number {
   let best = -1;
   let bestD = max * max;
   points.forEach((p, i) => {

@@ -21,19 +21,19 @@ export {
   type Preferences,
 } from "./prefs.ts";
 
-export type WidgetStorage = {
+export interface WidgetStorage {
   /** A value this card stored earlier, e.g. a chosen zoom level. */
   get(key: string): Promise<string | undefined>;
   /** Store (or with null, remove) a value. Quota-limited per card. */
   set(key: string, value: string | null): Promise<void>;
-};
+}
 
 /**
  * The card's typed local value: a message of the widget's `local` type that
  * this screen keeps for the card (a chosen zoom level, a dismissed hint). It
  * is ready before the first `update`, so the first draw already uses it.
  */
-export type Local<M> = {
+export interface Local<M> {
   /** The saved value, checked against its schema; the type's defaults if none was saved. */
   readonly value: M;
   /**
@@ -44,9 +44,9 @@ export type Local<M> = {
   set(value: M): Promise<void>;
   /** Forget the saved value; `this.value` goes back to the defaults. */
   clear(): Promise<void>;
-};
+}
 
-export type WidgetContext<L = never> = {
+export interface WidgetContext<L = never> {
   cardId: string;
   /** The element to render into. It fills the card. */
   root: HTMLElement;
@@ -66,19 +66,19 @@ export type WidgetContext<L = never> = {
    * here, and again by the host, before the widget sees it.
    */
   act(action: Message): void;
-};
+}
 
-export type View<S, D> = {
+export interface View<S, D> {
   /** Called with every accepted state; `delta` is set when a delta produced it. */
   update(state: S, delta?: D): void;
   destroy?(): void;
-};
+}
 
-export type WidgetDef<
+export interface WidgetDef<
   SD extends DescMessage,
   DD extends DescMessage = DescMessage,
   LD extends DescMessage = DescMessage,
-> = {
+> {
   state: SD;
   delta?: DD;
   /** The message `ctx.local` holds, if the view keeps typed local state. */
@@ -88,7 +88,7 @@ export type WidgetDef<
   /** Pure: the state after `delta`. Required when `delta` is given. */
   apply?: (state: MessageShape<SD>, delta: MessageShape<DD>) => MessageShape<SD>;
   mount(ctx: WidgetContext<MessageShape<LD>>): View<MessageShape<SD>, MessageShape<DD>>;
-};
+}
 
 /**
  * The part of a running card that doesn't touch the DOM: it turns board
@@ -113,6 +113,8 @@ export class CardCore<SD extends DescMessage, DD extends DescMessage, LD extends
     private makeView: (local: Local<MessageShape<LD>>, prefs: DisplayPrefs) => View<MessageShape<SD>, MessageShape<DD>>,
     private persist: (local: LocalBytes | null) => Promise<void> = async () => {},
   ) {
+    // The local object's getter needs `this` to be itself, so the core is named.
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const core = this;
     const schema = () => {
       if (!def.local) throw new Error("this widget declares no local type");
@@ -130,7 +132,7 @@ export class CardCore<SD extends DescMessage, DD extends DescMessage, LD extends
           core.localValue = value;
           return core.persist({ type: ld.typeName, value: toBinary(ld, value) });
         } catch (e) {
-          return Promise.reject(e);
+          return Promise.reject(e instanceof Error ? e : new Error(String(e)));
         }
       },
       clear() {
@@ -138,7 +140,7 @@ export class CardCore<SD extends DescMessage, DD extends DescMessage, LD extends
           core.localValue = create(schema());
           return core.persist(null);
         } catch (e) {
-          return Promise.reject(e);
+          return Promise.reject(e instanceof Error ? e : new Error(String(e)));
         }
       },
     };
@@ -155,37 +157,65 @@ export class CardCore<SD extends DescMessage, DD extends DescMessage, LD extends
 
   handle(m: ToFrame): void {
     switch (m.t) {
-      case "init":
-        return this.init(m);
+      case "init": {
+        this.init(m);
+        return;
+      }
       case "snapshot": {
         const r = decodeChecked(this.def.state, m.typeUrl, m.value);
-        if (!r.ok) return this.fault(r.error, m.cursor);
-        return this.accept(r.message, undefined, m.cursor);
+        if (!r.ok) {
+          this.fault(r.error, m.cursor);
+          return;
+        }
+        this.accept(r.message, undefined, m.cursor);
+        return;
       }
       case "delta": {
-        if (!this.def.delta || !this.def.apply) return this.fault("this view takes no deltas", m.cursor);
-        if (this.state === undefined) return this.fault("delta before any state", m.cursor);
+        if (!this.def.delta || !this.def.apply) {
+          this.fault("this view takes no deltas", m.cursor);
+          return;
+        }
+        if (this.state === undefined) {
+          this.fault("delta before any state", m.cursor);
+          return;
+        }
         const r = decodeChecked(this.def.delta, m.typeUrl, m.value);
-        if (!r.ok) return this.fault(r.error, m.cursor);
+        if (!r.ok) {
+          this.fault(r.error, m.cursor);
+          return;
+        }
         let next: MessageShape<SD>;
         try {
           next = this.def.apply(structuredCloneMessage(this.def.state, this.state), r.message);
         } catch (e) {
-          return this.fault(`apply failed: ${(e as Error).message}`, m.cursor);
+          this.fault(`apply failed: ${(e as Error).message}`, m.cursor);
+          return;
         }
         const v = validated(this.def.state, next);
-        if (!v.ok) return this.fault(`state after delta: ${v.error}`, m.cursor);
-        return this.accept(next, r.message, m.cursor);
+        if (!v.ok) {
+          this.fault(`state after delta: ${v.error}`, m.cursor);
+          return;
+        }
+        this.accept(next, r.message, m.cursor);
+        return;
       }
+      case "theme":
+      case "storage":
+        // The frame's message loop handles these; they never reach the core.
+        return;
     }
   }
 
   private init(m: Extract<ToFrame, { t: "init" }>): void {
     if (m.stateType !== this.def.state.typeName) {
-      return this.fault(`card sends ${m.stateType}, view expects ${this.def.state.typeName}`);
+      this.fault(`card sends ${m.stateType}, view expects ${this.def.state.typeName}`);
+      return;
     }
     if ((m.deltaType || undefined) !== this.def.delta?.typeName) {
-      return this.fault(`card sends deltas of ${m.deltaType || "nothing"}, view expects ${this.def.delta?.typeName ?? "none"}`);
+      this.fault(
+        `card sends deltas of ${m.deltaType || "nothing"}, view expects ${this.def.delta?.typeName ?? "none"}`,
+      );
+      return;
     }
     if (this.def.local) this.localValue = loadLocal(this.def.local, m.local);
     this.resolvedPrefs = decodePrefs(m.prefs);
@@ -284,7 +314,7 @@ function start<SD extends DescMessage, DD extends DescMessage, LD extends DescMe
     new Promise<Extract<ToFrame, { t: "storage" }>>((resolve) => {
       const id = nextId++;
       pending.set(id, resolve);
-      send({ ...m, id } as FromFrame);
+      send({ ...m, id });
     });
 
   let cardId = "";
@@ -311,7 +341,12 @@ function start<SD extends DescMessage, DD extends DescMessage, LD extends DescMe
     const r = await call({ t: "local-set", local });
     if (r.error) throw new Error(r.error);
   };
-  const core = new CardCore(def, send, (local, prefs) => def.mount({ cardId, root, storage, act, local, prefs }), persist);
+  const core = new CardCore(
+    def,
+    send,
+    (local, prefs) => def.mount({ cardId, root, storage, act, local, prefs }),
+    persist,
+  );
 
   const applyTheme = (theme: Record<string, string>) => {
     for (const [k, v] of Object.entries(theme)) {
@@ -322,13 +357,18 @@ function start<SD extends DescMessage, DD extends DescMessage, LD extends DescMe
   window.addEventListener("message", (e: MessageEvent) => {
     if (e.source !== parent) return;
     const m = e.data as ToFrame;
+    // From the board, but checked anyway: anything can postMessage a frame.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!m || typeof m !== "object") return;
     if (m.t === "storage") {
       pending.get(m.id)?.(m);
       pending.delete(m.id);
       return;
     }
-    if (m.t === "theme") return applyTheme(m.theme);
+    if (m.t === "theme") {
+      applyTheme(m.theme);
+      return;
+    }
     if (m.t === "init") {
       cardId = m.cardId;
       applyTheme(m.theme);

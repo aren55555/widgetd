@@ -7,8 +7,21 @@ import { defineWidget } from "@widgetd/sdk";
 
 import { Response, StateSchema, type Event, type State } from "./gen/calendar/v1/calendar_pb.ts";
 import {
-  clockLabel, dateOf, dayLabel, detectPrefs, duration, fortnight, hourLabels, lanes, nextTick, overlaps, segments, timeLabel,
-  type Cat, type Day, type Prefs,
+  clockLabel,
+  dateOf,
+  dayLabel,
+  detectPrefs,
+  duration,
+  fortnight,
+  hourLabels,
+  lanes,
+  nextTick,
+  overlaps,
+  segments,
+  timeLabel,
+  type Cat,
+  type Day,
+  type Prefs,
 } from "./model.ts";
 
 const C = {
@@ -37,23 +50,37 @@ const rgba = (hex: string, a: number) => {
 };
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-type Rect = { x: number; y: number; w: number; h: number };
-const lerpR = (a: Rect, b: Rect, t: number): Rect => ({ x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t), w: lerp(a.w, b.w, t), h: lerp(a.h, b.h, t) });
+interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+const lerpR = (a: Rect, b: Rect, t: number): Rect => ({
+  x: lerp(a.x, b.x, t),
+  y: lerp(a.y, b.y, t),
+  w: lerp(a.w, b.w, t),
+  h: lerp(a.h, b.h, t),
+});
 
 /** Truncates s with an ellipsis to fit width w in g's current font. */
 function fitText(g: CanvasRenderingContext2D, s: string, w: number): string {
   if (g.measureText(s).width <= w) return s;
-  let lo = 0, hi = s.length;
+  let lo = 0;
+  let hi = s.length;
   while (lo < hi) {
     const m = (lo + hi + 1) >> 1;
-    g.measureText(s.slice(0, m) + "…").width <= w ? (lo = m) : (hi = m - 1);
+    if (g.measureText(s.slice(0, m) + "…").width <= w) lo = m;
+    else hi = m - 1;
   }
   return lo ? s.slice(0, lo) + "…" : "";
 }
 
 /** Sizes a canvas to its box at the screen's pixel density; null if it has no size yet. */
 function context(cv: HTMLCanvasElement): { g: CanvasRenderingContext2D; W: number; H: number } | null {
-  const dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  const dpr = devicePixelRatio || 1;
+  const W = cv.clientWidth;
+  const H = cv.clientHeight;
   if (!W || !H) return null;
   cv.width = Math.round(W * dpr);
   cv.height = Math.round(H * dpr);
@@ -63,14 +90,19 @@ function context(cv: HTMLCanvasElement): { g: CanvasRenderingContext2D; W: numbe
 }
 
 /** What a day needs to draw itself, beyond its own data. */
-type DayProps = { d: Day; labels: ("left" | "right")[]; prefs: Prefs; wh: { start: number; end: number } };
+interface DayProps {
+  d: Day;
+  labels: Array<"left" | "right">;
+  prefs: Prefs;
+  wh: { start: number; end: number };
+}
 
 // ---------- <cal-day>: one day ----------
 // Drawn only from its props: it knows nothing about its neighbours or the
 // clock; the card works those out and hands them in.
 class CalDay extends HTMLElement {
   p?: DayProps;
-  cv!: HTMLCanvasElement;
+  cv?: HTMLCanvasElement;
   private lbl!: HTMLElement;
 
   connectedCallback() {
@@ -98,9 +130,12 @@ class CalDay extends HTMLElement {
   }
 
   draw() {
-    const p = this.p, c = this.cv && context(this.cv);
+    const p = this.p;
+    const c = this.cv && context(this.cv);
     if (!p || !c) return;
-    const { g, W, H } = c, { d } = p, y = (m: number) => (m / d.len) * H;
+    const { g, W, H } = c;
+    const { d } = p;
+    const y = (m: number) => (m / d.len) * H;
 
     // Box and working-hours band.
     g.fillStyle = C.surface;
@@ -110,7 +145,8 @@ class CalDay extends HTMLElement {
       g.fillRect(0, y(d.work[0]), W, y(d.work[1]) - y(d.work[0]));
       // Ticks down the left edge, every hour over the working hours.
       for (let t = Math.ceil(p.wh.start / C.tick) * C.tick; t <= p.wh.end; t += C.tick) {
-        const yy = Math.round(y(d.work[0] + t - p.wh.start)) + 0.5, major = t % C.major === 0;
+        const yy = Math.round(y(d.work[0] + t - p.wh.start)) + 0.5;
+        const major = t % C.major === 0;
         g.strokeStyle = major ? "#a1a1aa" : "#71717a";
         g.lineWidth = 1;
         g.beginPath();
@@ -154,8 +190,10 @@ class CalDay extends HTMLElement {
     // Working hours, on the edges the card asked for: start at the band's
     // top, end at its bottom. Inside a workday they clear the ticks.
     if (p.labels.length) {
-      const top = y(d.work[0]), bot = y(d.work[1]);
-      const a = clockLabel(p.wh.start, p.prefs.hour12), b = clockLabel(p.wh.end, p.prefs.hour12);
+      const top = y(d.work[0]);
+      const bot = y(d.work[1]);
+      const a = clockLabel(p.wh.start, p.prefs.hour12);
+      const b = clockLabel(p.wh.end, p.prefs.hour12);
       g.save();
       g.globalAlpha = C.textOp;
       g.fillStyle = "#e5e7eb";
@@ -182,20 +220,27 @@ customElements.define("cal-day", CalDay);
 // and each bar carries its title and time. Every piece is laid out twice,
 // as the strip it starts as and as the timeline, and drawn in between by
 // the eased progress. The back button (or Escape, or waiting) folds it back.
-type Layout = {
+interface Layout {
   box: Rect;
   band: Rect;
   ev: Rect[];
   past: Rect;
   now: Rect | null;
+}
+type Timeline = Layout & {
+  lo: number;
+  hi: number;
+  xh: (m: number) => number;
+  pad: number;
+  headH: number;
+  axisTop: number;
 };
-type Timeline = Layout & { lo: number; hi: number; xh: (m: number) => number; pad: number; headH: number; axisTop: number };
 
 class CalDetail extends HTMLElement {
   p: DayProps | null = null;
   sel = -1;
   onTap?: (j: number, at: { x: number; y: number }) => void;
-  private cv!: HTMLCanvasElement;
+  private cv?: HTMLCanvasElement;
   private back!: HTMLButtonElement;
   private from: Rect = { x: 0, y: 0, w: 0, h: 0 };
   private t = 0;
@@ -221,12 +266,15 @@ class CalDetail extends HTMLElement {
       this.arm();
       const j = this.hit(ev);
       if (j < 0) return;
-      const r = this.hz.ev[j]!;
+      const r = this.hz.ev[j];
       this.sel = j;
       this.draw();
       this.onTap?.(j, { x: r.x + r.w / 2, y: r.y + r.h / 2 });
     });
-    this.cv.addEventListener("pointermove", (ev) => (this.cv.style.cursor = this.t === 1 && this.hit(ev) >= 0 ? "pointer" : "default"));
+    this.cv.addEventListener(
+      "pointermove",
+      (ev) => (this.cv!.style.cursor = this.t === 1 && this.hit(ev) >= 0 ? "pointer" : "default"),
+    );
     new ResizeObserver(() => this.draw()).observe(this);
   }
 
@@ -237,9 +285,12 @@ class CalDetail extends HTMLElement {
   /** The bar under a pointer event (narrow bars get a 16px-wide target), or -1. */
   private hit(ev: MouseEvent): number {
     if (!this.hz) return -1;
-    const b = this.cv.getBoundingClientRect(), x = ev.clientX - b.left, y = ev.clientY - b.top;
+    const b = this.cv!.getBoundingClientRect();
+    const x = ev.clientX - b.left;
+    const y = ev.clientY - b.top;
     for (let j = this.hz.ev.length - 1; j >= 0; j--) {
-      const r = this.hz.ev[j]!, pad = Math.max(0, (16 - r.w) / 2);
+      const r = this.hz.ev[j];
+      const pad = Math.max(0, (16 - r.w) / 2);
       if (x >= r.x - pad && x <= r.x + r.w + pad && y >= r.y && y <= r.y + r.h) return j;
     }
     return -1;
@@ -268,7 +319,10 @@ class CalDetail extends HTMLElement {
   /** New data or a new minute: redraw the open day, if it's still shown. */
   update(p: DayProps | undefined) {
     if (!this.p) return;
-    if (!p) return this.close();
+    if (!p) {
+      this.close();
+      return;
+    }
     this.p = p;
     this.draw();
   }
@@ -301,22 +355,30 @@ class CalDetail extends HTMLElement {
     this.raf = requestAnimationFrame(step);
   }
 
-  /** The strip, as <cal-day> draws it, inside A. */
-  private strip(p: DayProps, A: Rect): Layout {
-    const d = p.d, yv = (m: number) => A.y + (Math.min(Math.max(m, 0), d.len) / d.len) * A.h, x0 = A.x + C.tickLen * 1.8 + 2;
+  /** The strip, as <cal-day> draws it, inside box. */
+  private strip(p: DayProps, box: Rect): Layout {
+    const d = p.d;
+    const yv = (m: number) => box.y + (Math.min(Math.max(m, 0), d.len) / d.len) * box.h;
+    const x0 = box.x + C.tickLen * 1.8 + 2;
     return {
-      box: A,
-      band: { x: A.x, y: yv(d.work[0]), w: A.w, h: yv(d.work[1]) - yv(d.work[0]) },
-      ev: d.spans.map((x) => ({ x: x0, y: yv(x.s), w: A.x + A.w - x0, h: Math.max(1, yv(x.e) - yv(x.s)) })),
-      past: { x: A.x, y: A.y, w: A.w, h: yv(d.pastUntil) - A.y },
-      now: d.now == null ? null : { x: A.x, y: yv(d.now), w: A.w, h: 1 },
+      box,
+      band: { x: box.x, y: yv(d.work[0]), w: box.w, h: yv(d.work[1]) - yv(d.work[0]) },
+      ev: d.spans.map((x) => ({ x: x0, y: yv(x.s), w: box.x + box.w - x0, h: Math.max(1, yv(x.e) - yv(x.s)) })),
+      past: { x: box.x, y: box.y, w: box.w, h: yv(d.pastUntil) - box.y },
+      now: d.now == null ? null : { x: box.x, y: yv(d.now), w: box.w, h: 1 },
     };
   }
 
-  /** The timeline, filling B. */
-  private timeline(p: DayProps, B: Rect): Timeline {
-    const d = p.d, pad = 12, headH = 40, allH = d.allDay.some((t) => t) ? 22 : 0, axisH = 16, top = B.y + headH + allH + axisH;
-    let lo = d.working ? d.work[0] : 8 * 60, hi = d.working ? d.work[1] : 20 * 60;
+  /** The timeline, filling box. */
+  private timeline(p: DayProps, box: Rect): Timeline {
+    const d = p.d;
+    const pad = 12;
+    const headH = 40;
+    const allH = d.allDay.some((t) => t) ? 22 : 0;
+    const axisH = 16;
+    const top = box.y + headH + allH + axisH;
+    let lo = d.working ? d.work[0] : 8 * 60;
+    let hi = d.working ? d.work[1] : 20 * 60;
     for (const x of d.spans) {
       lo = Math.min(lo, x.s);
       hi = Math.max(hi, x.e);
@@ -327,25 +389,42 @@ class CalDetail extends HTMLElement {
     }
     lo = Math.max(0, Math.floor(lo / 60) * 60);
     hi = Math.min(d.len, Math.ceil(hi / 60) * 60);
-    const xh = (m: number) => B.x + pad + ((Math.min(Math.max(m, lo), hi) - lo) / Math.max(1, hi - lo)) * (B.w - 2 * pad);
-    const { lane, count } = lanes(d.spans), gap = 4, avail = B.y + B.h - pad - top;
+    const xh = (m: number) =>
+      box.x + pad + ((Math.min(Math.max(m, lo), hi) - lo) / Math.max(1, hi - lo)) * (box.w - 2 * pad);
+    const { lane, count } = lanes(d.spans);
+    const gap = 4;
+    const avail = box.y + box.h - pad - top;
     const laneH = Math.max(14, (avail - gap * (count - 1)) / count);
     return {
-      box: B, lo, hi, xh, pad, headH, axisTop: B.y + headH + allH,
-      band: { x: xh(d.work[0]), y: B.y + headH + allH, w: xh(d.work[1]) - xh(d.work[0]), h: B.h - headH - allH },
-      ev: d.spans.map((x, j) => ({ x: xh(x.s), y: top + lane[j]! * (laneH + gap), w: Math.max(2, xh(x.e) - xh(x.s)), h: laneH })),
-      past: { x: B.x, y: B.y, w: d.pastUntil >= d.len ? B.w : Math.max(0, xh(d.pastUntil) - B.x), h: B.h },
-      now: d.now == null ? null : { x: xh(d.now), y: B.y + headH + allH, w: 1, h: B.h - headH - allH },
+      box,
+      lo,
+      hi,
+      xh,
+      pad,
+      headH,
+      axisTop: box.y + headH + allH,
+      band: { x: xh(d.work[0]), y: box.y + headH + allH, w: xh(d.work[1]) - xh(d.work[0]), h: box.h - headH - allH },
+      ev: d.spans.map((x, j) => ({
+        x: xh(x.s),
+        y: top + lane[j] * (laneH + gap),
+        w: Math.max(2, xh(x.e) - xh(x.s)),
+        h: laneH,
+      })),
+      past: { x: box.x, y: box.y, w: d.pastUntil >= d.len ? box.w : Math.max(0, xh(d.pastUntil) - box.x), h: box.h },
+      now: d.now == null ? null : { x: xh(d.now), y: box.y + headH + allH, w: 1, h: box.h - headH - allH },
     };
   }
 
   draw() {
     const c = this.cv && context(this.cv);
     if (!c) return;
-    const { g, W, H } = c, p = this.p;
+    const { g, W, H } = c;
+    const p = this.p;
     if (!p) return;
-    const { d, prefs } = p, t = ease(this.t);
-    const V = this.strip(p, this.from), Hz = this.timeline(p, { x: 0, y: 0, w: W, h: H });
+    const { d, prefs } = p;
+    const t = ease(this.t);
+    const V = this.strip(p, this.from);
+    const Hz = this.timeline(p, { x: 0, y: 0, w: W, h: H });
     this.hz = Hz;
     const box = lerpR(V.box, Hz.box, t);
     g.save();
@@ -386,9 +465,10 @@ class CalDetail extends HTMLElement {
     // Events: the strip's bands become solid bars with their title and
     // time on them, in dark ink.
     d.spans.forEach((x, j) => {
-      let r = lerpR(V.ev[j]!, Hz.ev[j]!, t);
+      let r = lerpR(V.ev[j], Hz.ev[j], t);
       const c = x.k ? C.tent : overlaps(d.spans, j).length ? C.dbl : C.hue;
-      const sel = this.sel === j, dim = this.sel >= 0 && !sel;
+      const sel = this.sel === j;
+      const dim = this.sel >= 0 && !sel;
       g.fillStyle = rgba(c, lerp(1, dim ? 0.3 : 0.9, t));
       g.fillRect(r.x, r.y, r.w, r.h);
       if (sel) {
@@ -402,7 +482,8 @@ class CalDetail extends HTMLElement {
       }
       const la = Math.max(0, (t - 0.6) / 0.4);
       if (la <= 0 || Math.max(r.w, r.h) < 22 || Math.min(r.w, r.h) < 10) return;
-      const title = x.ev?.title ?? "", when = `${timeLabel(x.from, prefs)}–${timeLabel(x.to, prefs)}`;
+      const title = x.ev?.title ?? "";
+      const when = `${timeLabel(x.from, prefs)}–${timeLabel(x.to, prefs)}`;
       g.save();
       g.beginPath();
       g.rect(r.x, r.y, r.w, r.h);
@@ -418,8 +499,11 @@ class CalDetail extends HTMLElement {
         g.rotate(-Math.PI / 2);
         r = { x: 0, y: 0, w: r.h, h: r.w };
       }
-      const fs = Math.min(13, Math.max(9, Math.floor(Math.min(r.h / 2.6, 13)))), px = r.x + 5, pw = r.w - 9;
-      const two = !!title && r.h >= fs * 2 + 8, y0 = two ? r.y + (r.h - (fs * 2 + 3)) / 2 : r.y + (r.h - fs) / 2;
+      const fs = Math.min(13, Math.max(9, Math.floor(Math.min(r.h / 2.6, 13))));
+      const px = r.x + 5;
+      const pw = r.w - 9;
+      const two = !!title && r.h >= fs * 2 + 8;
+      const y0 = two ? r.y + (r.h - (fs * 2 + 3)) / 2 : r.y + (r.h - fs) / 2;
       g.font = `600 ${fs}px ${FONT}`;
       if (two) {
         g.fillText(fitText(g, title, pw), px, y0);
@@ -456,7 +540,11 @@ class CalDetail extends HTMLElement {
       g.textAlign = "left";
       g.fillStyle = "#e5e7eb";
       g.font = `600 13px ${FONT}`;
-      g.fillText(dayLabel(d.day, prefs.locale, { weekday: "long", month: "short", day: "numeric" }), this.back.offsetWidth + 18, Hz.headH / 2 + 2);
+      g.fillText(
+        dayLabel(d.day, prefs.locale, { weekday: "long", month: "short", day: "numeric" }),
+        this.back.offsetWidth + 18,
+        Hz.headH / 2 + 2,
+      );
       g.textAlign = "right";
       g.fillStyle = "#a1a1aa";
       g.font = `11px ${FONT}`;
@@ -490,17 +578,23 @@ customElements.define("cal-detail", CalDetail);
 // fade in: when, where, video, organizer, your response, overlaps, notes
 // and the guest list. Back dissolves it into the same point.
 const RSVP: Record<number, string> = {
-  [Response.ACCEPTED]: "accepted", [Response.TENTATIVE]: "maybe", [Response.DECLINED]: "declined", [Response.NEEDS_ACTION]: "not answered",
+  [Response.ACCEPTED]: "accepted",
+  [Response.TENTATIVE]: "maybe",
+  [Response.DECLINED]: "declined",
+  [Response.NEEDS_ACTION]: "not answered",
 };
 const MARK: Record<number, [string, string]> = {
-  [Response.ACCEPTED]: ["yes", "✓"], [Response.TENTATIVE]: ["maybe", "?"], [Response.DECLINED]: ["no", "✕"],
-  [Response.NEEDS_ACTION]: ["none", "·"], [Response.UNSPECIFIED]: ["none", "·"],
+  [Response.ACCEPTED]: ["yes", "✓"],
+  [Response.TENTATIVE]: ["maybe", "?"],
+  [Response.DECLINED]: ["no", "✕"],
+  [Response.NEEDS_ACTION]: ["none", "·"],
+  [Response.UNSPECIFIED]: ["none", "·"],
 };
 
 class CalEvent extends HTMLElement {
   onActivity?: () => void;
   onClosing?: () => void;
-  private panel!: HTMLElement;
+  private panel?: HTMLElement;
   private at = { x: 0, y: 0 };
   private k = 0;
   private way = 0;
@@ -561,20 +655,29 @@ class CalEvent extends HTMLElement {
 
   /** A soft-edged circle growing from the bar until it covers the card. */
   private paint() {
-    const W = this.clientWidth, H = this.clientHeight, { x, y } = this.at, feather = 90;
+    const W = this.clientWidth;
+    const H = this.clientHeight;
+    const { x, y } = this.at;
+    const feather = 90;
     const far = Math.max(Math.hypot(x, y), Math.hypot(W - x, y), Math.hypot(x, H - y), Math.hypot(W - x, H - y));
     const r = ease(this.k) * (far + feather);
     this.classList.toggle("shown", this.way > 0 && this.k > 0.45);
-    const mask = this.k >= 1 ? "none" : `radial-gradient(circle at ${x}px ${y}px, #000 ${Math.max(0, r - feather)}px, transparent ${r}px)`;
+    const mask =
+      this.k >= 1
+        ? "none"
+        : `radial-gradient(circle at ${x}px ${y}px, #000 ${Math.max(0, r - feather)}px, transparent ${r}px)`;
+    if (!this.panel) return;
     this.panel.style.maskImage = mask;
     this.panel.style.setProperty("-webkit-mask-image", mask);
     this.panel.style.opacity = String(Math.min(1, this.k * 2.5));
   }
 
   private fill(p: DayProps, j: number) {
-    const { d, prefs } = p, x = d.spans[j]!, e: Partial<Event> = x.ev ?? {};
+    const { d, prefs } = p;
+    const x = d.spans[j];
+    const e: Partial<Event> = x.ev ?? {};
     const dbl = overlaps(d.spans, j);
-    const $ = <T extends HTMLElement>(s: string) => this.querySelector<T>(s)!;
+    const $ = (s: string) => this.querySelector<HTMLElement>(s)!;
     this.style.setProperty("--ev", x.k ? C.tent : dbl.length ? C.dbl : C.hue);
     $(".ev-title").textContent = e.title || (x.k ? "Tentative" : "Busy");
     $(".ev-back").textContent = `${dayLabel(d.day, prefs.locale, { weekday: "short" })} ${dateOf(d.day)}`;
@@ -582,8 +685,9 @@ class CalEvent extends HTMLElement {
       `${dayLabel(d.day, prefs.locale, { weekday: "long", month: "short", day: "numeric" })} · ` +
       `${timeLabel(x.from, prefs)}–${timeLabel(x.to, prefs)} · ${duration(Math.round((x.to - x.from) / MIN))}`;
 
-    const chips: [string, string][] = [];
-    if (x.k) chips.push([e.you === Response.TENTATIVE || e.you === Response.NEEDS_ACTION ? "tentative" : "free", C.tent]);
+    const chips: Array<[string, string]> = [];
+    if (x.k)
+      chips.push([e.you === Response.TENTATIVE || e.you === Response.NEEDS_ACTION ? "tentative" : "free", C.tent]);
     if (dbl.length) chips.push(["double-booked", C.dbl]);
     $(".ev-chips").replaceChildren(
       ...chips.map(([t, col]) => {
@@ -595,7 +699,8 @@ class CalEvent extends HTMLElement {
     );
 
     // Where this event sits in its day.
-    const lo = Math.min(...d.spans.map((y) => y.s)), hi = Math.max(...d.spans.map((y) => y.e));
+    const lo = Math.min(...d.spans.map((y) => y.s));
+    const hi = Math.max(...d.spans.map((y) => y.e));
     const pos = (m: number) => ((m - lo) / Math.max(1, hi - lo)) * 100;
     const track = $(".ev-track");
     track.replaceChildren(
@@ -606,7 +711,10 @@ class CalEvent extends HTMLElement {
         i.style.width = `${Math.max(0.6, pos(y.e) - pos(y.s))}%`;
         return i;
       }),
-      ...[["left", lo], ["right", hi]].map(([side, m]) => {
+      ...[
+        ["left", lo],
+        ["right", hi],
+      ].map(([side, m]) => {
         const b = document.createElement("b");
         b.style[side as "left" | "right"] = "0";
         b.textContent = timeLabel(d.start + (m as number) * MIN, prefs);
@@ -614,17 +722,22 @@ class CalEvent extends HTMLElement {
       }),
     );
 
-    const facts: [string, string][] = (
+    const facts: Array<[string, string]> = (
       [
-        ["Where", e.where ?? ""], ["Video", e.video ?? ""], ["Organizer", e.organizer ?? ""],
-        ["You", RSVP[e.you ?? 0] ?? ""], ["Overlaps", dbl.map((y) => y.ev?.title || "Busy").join(", ")], ["Notes", e.notes ?? ""],
-      ] as [string, string][]
+        ["Where", e.where ?? ""],
+        ["Video", e.video ?? ""],
+        ["Organizer", e.organizer ?? ""],
+        ["You", (RSVP[e.you ?? 0] as string | undefined) ?? ""],
+        ["Overlaps", dbl.map((y) => y.ev?.title || "Busy").join(", ")],
+        ["Notes", e.notes ?? ""],
+      ] as Array<[string, string]>
     ).filter(([, v]) => v);
     const dl = $(".ev-facts");
     if (facts.length) {
       dl.replaceChildren(
         ...facts.flatMap(([k, v]) => {
-          const dt = document.createElement("dt"), dd = document.createElement("dd");
+          const dt = document.createElement("dt");
+          const dd = document.createElement("dd");
           dt.textContent = k;
           dd.textContent = v;
           if (k === "Notes") dd.className = "notes";
@@ -638,7 +751,8 @@ class CalEvent extends HTMLElement {
       dl.replaceChildren(document.createElement("dt"), dd);
     }
 
-    const guests = e.guests ?? [], people = $(".ev-people");
+    const guests = e.guests ?? [];
+    const people = $(".ev-people");
     people.hidden = !guests.length;
     const n = (r: Response) => guests.filter((gu) => gu.response === r).length;
     const total = Math.max(e.guestCount ?? 0, guests.length);
@@ -648,11 +762,14 @@ class CalEvent extends HTMLElement {
       n(Response.TENTATIVE) ? `${n(Response.TENTATIVE)} maybe` : "",
       n(Response.DECLINED) ? `${n(Response.DECLINED)} no` : "",
       n(Response.NEEDS_ACTION) ? `${n(Response.NEEDS_ACTION)} awaiting` : "",
-    ].filter(Boolean).join(" · ");
+    ]
+      .filter(Boolean)
+      .join(" · ");
     people.querySelector("ul")!.replaceChildren(
       ...guests.map((gu) => {
-        const [cls, mark] = MARK[gu.response] ?? MARK[0]!;
-        const li = document.createElement("li"), m = document.createElement("span");
+        const [cls, mark] = (MARK[gu.response] as [string, string] | undefined) ?? MARK[0];
+        const li = document.createElement("li");
+        const m = document.createElement("span");
         li.className = cls;
         m.className = "mark";
         m.textContent = mark;
@@ -678,11 +795,13 @@ function labelWidth(prefs: Prefs, wh: { start: number; end: number }): number {
     g.font = `${font} ${FONT}`;
     return g.measureText(s).width;
   };
-  return Math.ceil(Math.max(
-    w("600 11px", `${dayLabel(0, prefs.locale, { weekday: "short" })} 30`) + 12,
-    w("600 9px", clockLabel(wh.start, prefs.hour12)) + 8,
-    w("600 9px", clockLabel(wh.end, prefs.hour12)) + 8,
-  ));
+  return Math.ceil(
+    Math.max(
+      w("600 11px", `${dayLabel(0, prefs.locale, { weekday: "short" })} 30`) + 12,
+      w("600 9px", clockLabel(wh.start, prefs.hour12)) + 8,
+      w("600 9px", clockLabel(wh.end, prefs.hour12)) + 8,
+    ),
+  );
 }
 
 defineWidget({
@@ -709,16 +828,20 @@ defineWidget({
     let days: Day[] = [];
     let timer = 0;
     const wh = () => ({ start: st?.workingHours?.start ?? 540, end: st?.workingHours?.end ?? 1050 });
-    const props = (i: number): DayProps => ({ d: days[i]!, labels: hourLabels(days, i, C.cols), prefs, wh: wh() });
+    const props = (i: number): DayProps => ({ d: days[i], labels: hourLabels(days, i, C.cols), prefs, wh: wh() });
 
     const render = () => {
       if (!st) return;
       days = fortnight(st, Date.now(), prefs);
       // Weekend columns are narrower, and shrink to their labels when
       // neither of their days has anything on.
-      const quiet = (col: number) => [col, col + C.cols].every((i) => !days[i]!.spans.length && !days[i]!.allDay.length);
+      const quiet = (col: number) => [col, col + C.cols].every((i) => !days[i].spans.length && !days[i].allDay.length);
       grid.style.gridTemplateColumns = Array.from({ length: C.cols }, (_, col) =>
-        !days[col]!.weekend ? "minmax(0,1fr)" : quiet(col) ? `${labelWidth(prefs, wh())}px` : `minmax(0,${C.weekendW}fr)`,
+        !days[col].weekend
+          ? "minmax(0,1fr)"
+          : quiet(col)
+            ? `${labelWidth(prefs, wh())}px`
+            : `minmax(0,${C.weekendW}fr)`,
       ).join(" ");
       cells.forEach((el, i) => (el.props = props(i)));
       empty.hidden = days.some((d) => d.spans.length || d.allDay.length);
@@ -739,9 +862,13 @@ defineWidget({
 
     cells.forEach((el, i) =>
       el.addEventListener("click", () => {
-        if (detail.isOpen) return detail.close();
+        if (detail.isOpen) {
+          detail.close();
+          return;
+        }
         if (!days[i]) return;
-        const b = detail.getBoundingClientRect(), r = el.cv.getBoundingClientRect();
+        const b = detail.getBoundingClientRect();
+        const r = el.cv!.getBoundingClientRect();
         detail.open(props(i), { x: r.left - b.left, y: r.top - b.top, w: r.width, h: r.height });
       }),
     );
@@ -753,7 +880,9 @@ defineWidget({
       detail.draw();
     };
     window.addEventListener("keydown", (ev) => {
-      if (ev.key === "Escape") eventView.isOpen ? eventView.close() : detail.close();
+      if (ev.key !== "Escape") return;
+      if (eventView.isOpen) eventView.close();
+      else detail.close();
     });
 
     return {

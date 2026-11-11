@@ -39,10 +39,10 @@ type ProviderManifest struct {
 		// Flow is "browser" (authorization code + PKCE, RFC 6749 and 7636:
 		// a QR code to the consent page on a phone) or "device" (RFC 8628:
 		// a code to enter on the provider's site).
-		Flow      string            `toml:"flow"`
-		AuthURL   string            `toml:"auth_url"`
-		DeviceURL string            `toml:"device_url"`
-		TokenURL  string            `toml:"token_url"`
+		Flow       string            `toml:"flow"`
+		AuthURL    string            `toml:"auth_url"`
+		DeviceURL  string            `toml:"device_url"`
+		TokenURL   string            `toml:"token_url"`
 		AuthParams map[string]string `toml:"auth_params"`
 		// Revoke is "rfc7009" (POST the token to RevokeURL), "github-grant"
 		// (DELETE RevokeURL, with {client_id} filled in, and the token in a
@@ -180,8 +180,11 @@ func parseProvider(b []byte) (*provider, error) {
 	}
 	if m.Scopes.RejectedPattern != "" {
 		re, err := regexp.Compile(m.Scopes.RejectedPattern)
-		if err != nil || re.NumSubexp() < 1 {
-			return nil, fmt.Errorf("scopes.rejected_pattern: want a regexp with a group: %v", err)
+		if err != nil {
+			return nil, fmt.Errorf("scopes.rejected_pattern: %w", err)
+		}
+		if re.NumSubexp() < 1 {
+			return nil, errors.New("scopes.rejected_pattern: want a regexp with a group")
 		}
 		p.rejected = re
 	}
@@ -392,7 +395,7 @@ func (p *provider) revoke(ctx context.Context, s *Server, c signInClient, t *tok
 		} else {
 			form.Set("client_id", c.id)
 		}
-		return s.providerForm(ctx, http.MethodPost, p.m.SignIn.RevokeURL, form, hdr, nil)
+		return s.providerForm(ctx, p.m.SignIn.RevokeURL, form, hdr, nil)
 	case "github-grant":
 		if c.secret == "" {
 			return errors.New("revoking needs the client secret")

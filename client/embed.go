@@ -6,5 +6,7 @@ package client
 
 import "embed"
 
+// Dist holds dist/, the bundles and styles the host serves.
+//
 //go:embed all:dist
 var Dist embed.FS

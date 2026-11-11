@@ -157,6 +157,8 @@ func (g *games) tick(ctx context.Context) time.Duration {
 				g.setEnd(s.id, end)
 				_, until = window(at(s.start), at(end), true, g.before, g.after, g.typical, at(now))
 			}
+		case pb.State_PHASE_UNSPECIFIED:
+			// ESPN said nothing we understand: keep the usual pace.
 		}
 		if err := g.show(s.id, st, time.Unix(0, int64(until))); err != nil {
 			log.Warn("sports-game: card update failed", "game", s.id, "err", err)
@@ -165,7 +167,7 @@ func (g *games) tick(ctx context.Context) time.Duration {
 
 	for id := range g.cards {
 		if !open[id] {
-			g.h.Unmount("game-" + id) // the host may already have expired it
+			_ = g.h.Unmount("game-" + id) // the host may already have expired it
 			delete(g.cards, id)
 			delete(g.last, id)
 			delete(g.until, id)
@@ -214,7 +216,9 @@ func (g *games) end(id string) time.Time {
 }
 
 func (g *games) setEnd(id string, t time.Time) {
-	g.h.KV().Put("end:"+id, []byte(strconv.FormatInt(t.UnixMilli(), 10)))
+	if err := g.h.KV().Put("end:"+id, []byte(strconv.FormatInt(t.UnixMilli(), 10))); err != nil {
+		g.h.Logger().Warn("sports-game: couldn't save when a game ended", "game", id, "err", err)
+	}
 }
 
 // at is a time as a Duration since the epoch (0 for the zero time), which

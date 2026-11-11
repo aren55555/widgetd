@@ -30,7 +30,8 @@ func (s *streamService) StreamWidgets(ctx context.Context, req *connect.Request[
 	}
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	defer s.srv.auth.trackStream(who.subject, cancel)()
+	untrack := s.srv.auth.trackStream(who.subject, cancel)
+	defer untrack()
 
 	resume := make(map[string]*widgetdv1.Resume, len(req.Msg.GetResume()))
 	for _, r := range req.Msg.GetResume() {
@@ -89,7 +90,7 @@ func (s *streamService) SendAction(ctx context.Context, req *connect.Request[wid
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("not this card's action type"))
 	}
 	name := protoreflect.FullName(strings.TrimPrefix(c.actionURL, "type.googleapis.com/"))
-	if _, err := c.host.in.w.schema.check(name, req.Msg.GetValue()); err != nil {
+	if err := c.host.in.w.schema.check(name, req.Msg.GetValue()); err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if !c.host.deliver(c, req.Msg.GetValue()) {

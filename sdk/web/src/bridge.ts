@@ -7,13 +7,19 @@
 // against its own schema, since only the widget's code has that schema.
 
 /** A card cursor. Strings, because epoch and seq are uint64. */
-export type Cursor = { epoch: string; seq: string };
+export interface Cursor {
+  epoch: string;
+  seq: string;
+}
 
 /**
  * A view's typed local value as the board keeps it: the message's full type
  * name next to its bytes, so a build that declares a different type ignores it.
  */
-export type Local = { type: string; value: Uint8Array };
+export interface Local {
+  type: string;
+  value: Uint8Array;
+}
 
 /** Board → frame. */
 export type ToFrame =

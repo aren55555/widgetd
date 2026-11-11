@@ -20,16 +20,19 @@ export function solid(opts: { filter?: RegExp } = {}): BunPlugin {
       // of this module needs none of Babel.
       const { transformAsync } = await import("@babel/core");
       // @ts-expect-error: no type declarations
-      const { default: solidPreset } = await import("babel-preset-solid");
+      const solidPreset = ((await import("babel-preset-solid")) as { default: unknown }).default;
       // @ts-expect-error: no type declarations
-      const { default: typescript } = await import("@babel/preset-typescript");
+      const typescript = ((await import("@babel/preset-typescript")) as { default: unknown }).default;
       build.onLoad({ filter: opts.filter ?? /\.[jt]sx$/ }, async ({ path }) => {
         const out = await transformAsync(await Bun.file(path).text(), {
           filename: path,
           babelrc: false,
           configFile: false,
           // Presets run last to first: strip types, then compile JSX.
-          presets: [[solidPreset, { generate: "dom" }], [typescript, {}]],
+          presets: [
+            [solidPreset, { generate: "dom" }],
+            [typescript, {}],
+          ],
         });
         if (!out?.code) throw new Error(`babel produced nothing for ${path}`);
         return { contents: out.code, loader: "js" };

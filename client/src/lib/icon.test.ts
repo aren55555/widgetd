@@ -25,8 +25,8 @@ describe("widgetIcon", () => {
     expect(svg.getAttribute("stroke")).toBe("currentColor");
     expect(svg.getAttribute("aria-hidden")).toBe("true");
     expect([...svg.children].map((c) => c.tagName.toLowerCase())).toEqual(["path", "circle", "polyline"]);
-    expect(svg.children[0]!.getAttribute("d")).toBe("M12 2v2");
-    expect(svg.children[1]!.getAttribute("fill")).toBe("currentColor");
+    expect(svg.children[0].getAttribute("d")).toBe("M12 2v2");
+    expect(svg.children[1].getAttribute("fill")).toBe("currentColor");
   });
 
   test("no icon, no <svg>", () => {
@@ -36,13 +36,13 @@ describe("widgetIcon", () => {
 
   // The host refuses all of these; the page refuses them again.
   const spoiled: Record<string, (i: ReturnType<typeof cloudSun>) => void> = {
-    "a script": (i) => void (i.shapes[0]!.tag = "script"),
-    "an image": (i) => void (i.shapes[0] = { ...i.shapes[0]!, tag: "image", attrs: { href: "x" } }),
-    "an event handler": (i) => void (i.shapes[0]!.attrs.onload = "alert(1)"),
-    "a style": (i) => void (i.shapes[0]!.attrs.style = "x"),
-    "markup in geometry": (i) => void (i.shapes[0]!.attrs.d = `M0"/><script>`),
-    "a fill colour": (i) => void (i.shapes[1]!.attrs.fill = "url(#x)"),
-    "another shape's attribute": (i) => void (i.shapes[0]!.attrs.r = "1"),
+    "a script": (i) => void (i.shapes[0].tag = "script"),
+    "an image": (i) => void (i.shapes[0] = { ...i.shapes[0], tag: "image", attrs: { href: "x" } }),
+    "an event handler": (i) => void (i.shapes[0].attrs.onload = "alert(1)"),
+    "a style": (i) => void (i.shapes[0].attrs.style = "x"),
+    "markup in geometry": (i) => void (i.shapes[0].attrs.d = `M0"/><script>`),
+    "a fill colour": (i) => void (i.shapes[1].attrs.fill = "url(#x)"),
+    "another shape's attribute": (i) => void (i.shapes[0].attrs.r = "1"),
   };
   for (const [what, spoil] of Object.entries(spoiled)) {
     test(`refuses ${what}`, () => {

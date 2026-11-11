@@ -161,7 +161,8 @@ func (a *auth) callerOf(h http.Header) caller {
 		return caller{}
 	}
 	if widgetdv1.Role(role) == widgetdv1.Role_ROLE_DEVICE {
-		a.db.Exec(`UPDATE devices SET last_seen = ? WHERE id = ?`, time.Now().Unix(), subject)
+		// Best effort: last_seen is only shown to admins.
+		_, _ = a.db.Exec(`UPDATE devices SET last_seen = ? WHERE id = ?`, time.Now().Unix(), subject)
 	}
 	return caller{role: widgetdv1.Role(role), subject: subject}
 }
@@ -175,7 +176,9 @@ func (a *auth) startSession(role widgetdv1.Role, subject string, ttl time.Durati
 	if err != nil {
 		return nil, err
 	}
-	return &http.Cookie{
+	// Secure whenever the request came over TLS; plain http is only allowed
+	// for localhost development (see PublicURL).
+	return &http.Cookie{ //nolint:gosec // G124: Secure is set from the request.
 		Name: sessionCookie, Value: token, Path: "/", Expires: expires,
 		HttpOnly: true, Secure: secure, SameSite: http.SameSiteLaxMode,
 	}, nil
@@ -293,7 +296,8 @@ func (s *authService) GetSession(ctx context.Context, req *connect.Request[widge
 	out.NeedsEnrollment = s.a.setupToken != ""
 	s.a.mu.Unlock()
 	if c.role == widgetdv1.Role_ROLE_DEVICE {
-		s.a.db.QueryRow(`SELECT name FROM devices WHERE id = ?`, c.subject).Scan(&out.DeviceName)
+		// The name is a nicety; without it the screen shows none.
+		_ = s.a.db.QueryRow(`SELECT name FROM devices WHERE id = ?`, c.subject).Scan(&out.DeviceName)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -427,7 +431,9 @@ func (s *authService) FinishLogin(ctx context.Context, req *connect.Request[widg
 		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("passkey not recognised"))
 	}
 	data, _ := json.Marshal(cred)
-	a.db.Exec(`UPDATE credentials SET data = ? WHERE id = ?`, data, cred.ID)
+	// Best effort: a stale sign count only weakens clone detection, and
+	// shouldn't block a sign-in.
+	_, _ = a.db.Exec(`UPDATE credentials SET data = ? WHERE id = ?`, data, cred.ID)
 	ck, err := a.startSession(widgetdv1.Role_ROLE_ADMIN, hex.EncodeToString(adminID), adminSessionTTL, secureRequest(req.Header(), strings.HasPrefix(a.publicURL, "https:")))
 	if err != nil {
 		return nil, err

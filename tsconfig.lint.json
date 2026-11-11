@@ -1,0 +1,18 @@
+{
+  // Every hand-written TS file in the repo, for ESLint's type-aware rules
+  // and `tsc -p tsconfig.lint.json`. Not named tsconfig.json because Bun's
+  // bundler would read it (its "jsx" setting breaks the SDK's Preact and
+  // React test bundles). client/tsconfig.json, which this extends,
+  // stays the one `just client-build` checks.
+  "extends": "./client/tsconfig.json",
+  "include": [
+    "client/src",
+    "client/build.ts",
+    "sdk/web/src",
+    "sdk/web/test",
+    "examples/*/view/*.ts",
+    "cmd/widgetc/*.ts",
+    "eslint.config.ts"
+  ],
+  "exclude": ["**/node_modules", "**/dist"]
+}

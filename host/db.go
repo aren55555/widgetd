@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	_ "modernc.org/sqlite"
+	_ "modernc.org/sqlite" // registers the "sqlite" driver
 )
 
 const schemaSQL = `
@@ -133,7 +133,7 @@ func (k instanceKV) Get(key string) ([]byte, bool, error) {
 }
 
 func (k instanceKV) Put(key string, value []byte) error {
-	if len(key) == 0 || len(key) > maxKVKey {
+	if key == "" || len(key) > maxKVKey {
 		return fmt.Errorf("kv key must be 1..%d bytes", maxKVKey)
 	}
 	if len(value) > maxKVValue {
@@ -147,4 +147,20 @@ func (k instanceKV) Put(key string, value []byte) error {
 func (k instanceKV) Delete(key string) error {
 	_, err := k.db.Exec(`DELETE FROM kv WHERE instance = ? AND key = ?`, k.instance, key)
 	return err
+}
+
+// collect reads every row through scan and closes rows. Use it to read a
+// whole result before querying again: the pool has one connection, and open
+// rows hold it.
+func collect[T any](rows *sql.Rows, scan func(*sql.Rows) (T, error)) ([]T, error) {
+	defer rows.Close()
+	var out []T
+	for rows.Next() {
+		v, err := scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, v)
+	}
+	return out, rows.Err()
 }

@@ -19,14 +19,29 @@ const units = (language: string): Units => {
   return { temperature, speed, mass, distance };
 };
 
-const metric: Units = { temperature: TemperatureUnit.CELSIUS, speed: SpeedUnit.KPH, mass: MassUnit.KG, distance: DistanceUnit.KM };
-const us: Units = { temperature: TemperatureUnit.FAHRENHEIT, speed: SpeedUnit.MPH, mass: MassUnit.LB, distance: DistanceUnit.MI };
+const metric: Units = {
+  temperature: TemperatureUnit.CELSIUS,
+  speed: SpeedUnit.KPH,
+  mass: MassUnit.KG,
+  distance: DistanceUnit.KM,
+};
+const us: Units = {
+  temperature: TemperatureUnit.FAHRENHEIT,
+  speed: SpeedUnit.MPH,
+  mass: MassUnit.LB,
+  distance: DistanceUnit.MI,
+};
 
 describe("units from the region", () => {
   test("CA is metric", () => expect(units("en-CA")).toEqual(metric));
   test("US is US customary", () => expect(units("en-US")).toEqual(us));
   test("GB: °C, mph, kg, mi", () =>
-    expect(units("en-GB")).toEqual({ temperature: TemperatureUnit.CELSIUS, speed: SpeedUnit.MPH, mass: MassUnit.KG, distance: DistanceUnit.MI }));
+    expect(units("en-GB")).toEqual({
+      temperature: TemperatureUnit.CELSIUS,
+      speed: SpeedUnit.MPH,
+      mass: MassUnit.KG,
+      distance: DistanceUnit.MI,
+    }));
   test("a bare language takes its likely region (en → US)", () => expect(units("en")).toEqual(us));
   test("fr → FR, metric", () => expect(units("fr")).toEqual(metric));
   test("-u-rg- overrides the region", () => expect(units("en-US-u-rg-cazzzz")).toEqual(metric));
@@ -87,13 +102,19 @@ describe("set values win", () => {
       }),
       { language: "fr-FR", timeZone: "Europe/Paris" },
     );
-    expect(r.prefs).toMatchObject({ locale: "en-US", timeZone: "Asia/Tokyo", hourCycle: HourCycle.H24, speed: SpeedUnit.MPS });
+    expect(r.prefs).toMatchObject({
+      locale: "en-US",
+      timeZone: "Asia/Tokyo",
+      hourCycle: HourCycle.H24,
+      speed: SpeedUnit.MPS,
+    });
     expect(r.prefs.temperature).toBe(TemperatureUnit.FAHRENHEIT); // from the set locale's region
     expect(r.sources.speed).toEqual({ kind: "set" });
     expect(r.sources.temperature.kind).toBe("detected");
   });
 
   test("an enum value this build doesn't know counts as unset", () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment -- deliberately not a SpeedUnit
     const r = resolvePrefs(create(PreferencesSchema, { speed: 42 as SpeedUnit }), { language: "en-CA" });
     expect(r.prefs.speed).toBe(SpeedUnit.KPH);
   });

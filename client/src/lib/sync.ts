@@ -13,19 +13,18 @@ export const toBridgeCursor = (c: WireCursor | undefined): Cursor => ({
 });
 
 export const sameCursor = (a: Cursor | undefined, b: Cursor | undefined) =>
-  a !== undefined && b !== undefined && a.epoch === b.epoch && a.seq === b.seq;
+  a !== undefined && a.epoch === b?.epoch && a.seq === b.seq;
 
 /**
  * Whether a delta can be applied by a view last handed `last`. If not, the
  * board has missed something (it fell behind and was disconnected, say) and
  * must reconnect with its stored cursors to be sent what it is missing.
  */
-export const deltaFollows = (last: Cursor | undefined, delta: Payload) =>
-  sameCursor(last, toBridgeCursor(delta.prev));
+export const deltaFollows = (last: Cursor | undefined, delta: Payload) => sameCursor(last, toBridgeCursor(delta.prev));
 
 /** The stored state a card may start from: only if the same build wrote it. */
 export const usableStored = (stored: Stored | undefined, digest: string, stateType: string) =>
-  stored && stored.digest === digest && stored.stateType === stateType ? stored : undefined;
+  stored?.digest === digest && stored.stateType === stateType ? stored : undefined;
 
 /** Grid placement for a card's layout hint, capped to the board's columns. */
 export const gridSpan = (cols: number, rows: number, maxCols: number) => ({

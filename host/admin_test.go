@@ -211,7 +211,7 @@ func TestRenameAndDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 	var purged, removed bool
-	for !(purged && removed) {
+	for !purged || !removed {
 		fr := f.nextAny()
 		if u := fr.GetUnmounted(); u != nil && fr.GetCardId() == "one/main" {
 			purged = u.GetPurge()

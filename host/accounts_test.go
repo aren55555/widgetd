@@ -24,11 +24,11 @@ import (
 	"github.com/aren55555/widgetd/sdk/go/widget"
 )
 
-// fakeIdP is an OAuth provider (browser and device flows) and the API it
+// fakeIDP is an OAuth provider (browser and device flows) and the API it
 // guards, on one TLS server every host name resolves to.
-type fakeIdP struct {
+type fakeIDP struct {
 	mu        sync.Mutex
-	revoked   []string // tokens revoked, in order
+	revoked   []string          // tokens revoked, in order
 	codes     map[string]string // code → PKCE challenge it was issued for
 	scopeFor  map[string]string // code → scopes it grants
 	approved  atomic.Bool
@@ -39,20 +39,20 @@ type fakeIdP struct {
 	whoFor    map[string]string // code or token → person
 }
 
-func (f *fakeIdP) person() string {
+func (f *fakeIDP) person() string {
 	if w, ok := f.who.Load().(string); ok {
 		return w
 	}
 	return "me@work"
 }
 
-func (f *fakeIdP) handler() http.Handler {
+func (f *fakeIDP) handler() http.Handler {
 	f.codes, f.scopeFor, f.whoFor = map[string]string{}, map[string]string{}, map[string]string{}
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /token", func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		mint := func(scope, who string) {
-			tok := "tok-" + string(rune('a'+f.tokenSeq.Add(1)))
+			tok := "tok-" + string('a'+f.tokenSeq.Add(1))
 			f.lastToken.Store(tok)
 			f.mu.Lock()
 			f.whoFor[tok] = who
@@ -118,7 +118,7 @@ func (f *fakeIdP) handler() http.Handler {
 
 // issue plays the provider's consent page: it reads the consent URL the
 // host sent the phone to and returns where the provider redirects back.
-func (f *fakeIdP) issue(t *testing.T, consent *url.URL) string {
+func (f *fakeIDP) issue(t *testing.T, consent *url.URL) string {
 	t.Helper()
 	q := consent.Query()
 	code := "code-" + q.Get("state")
@@ -128,13 +128,13 @@ func (f *fakeIdP) issue(t *testing.T, consent *url.URL) string {
 	return q.Get("redirect_uri") + "?state=" + url.QueryEscape(q.Get("state")) + "&code=" + code
 }
 
-func (f *fakeIdP) revokedTokens() []string {
+func (f *fakeIDP) revokedTokens() []string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return slices.Clone(f.revoked)
 }
 
-const fakeIdPManifest = `
+const fakeIDPManifest = `
 name = "idp"
 title = "IdP"
 [sign_in]
@@ -174,7 +174,7 @@ b = ["https://devapi.example.com/"]
 func fakeProviders(t *testing.T) map[string]*provider {
 	t.Helper()
 	out := map[string]*provider{}
-	for _, m := range []string{fakeIdPManifest, fakeDevManifest} {
+	for _, m := range []string{fakeIDPManifest, fakeDevManifest} {
 		p, err := parseProvider([]byte(m))
 		if err != nil {
 			t.Fatal(err)
@@ -188,14 +188,14 @@ func fakeProviders(t *testing.T) map[string]*provider {
 // instance of each. Their runs report signed fetches on results.
 type accountHarness struct {
 	*harness
-	idp     *fakeIdP
+	idp     *fakeIDP
 	results chan string
 }
 
 func newAccountHarness(t *testing.T, extra ...widget.Spec) *accountHarness {
 	t.Helper()
-	idp := &fakeIdP{}
-	_, tr := publicTLS(t, idp.handler(), true)
+	idp := &fakeIDP{}
+	tr := publicTLS(t, idp.handler(), true)
 	results := make(chan string, 64)
 	mk := func(name, scope, path string) widget.Spec {
 		return widget.Spec{
@@ -204,7 +204,7 @@ func newAccountHarness(t *testing.T, extra ...widget.Spec) *accountHarness {
 			Config: &testwidgetv1.Config{},
 			View:   testSpec(nil).View,
 			Run: func(ctx context.Context, h widget.Host) error {
-				req, _ := http.NewRequestWithContext(ctx, "GET", "https://api.example.com"+path, nil)
+				req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.example.com"+path, http.NoBody)
 				resp, err := h.Fetch(widget.Authorize(req))
 				if err != nil {
 					results <- name + ": " + err.Error()
@@ -318,7 +318,7 @@ func (h *accountHarness) bind(instance, acct string) {
 
 // signInAgain signs an existing account in again, as person, from a
 // screen (or the admin page, with the admin cookie).
-func (h *accountHarness) signInAgain(acct, person string, cookie string) (int, string) {
+func (h *accountHarness) signInAgain(acct, person, cookie string) (int, string) {
 	h.t.Helper()
 	start, err := h.adminClient().BeginSignIn(context.Background(), withCookie(&widgetdv1.BeginSignInRequest{Provider: "idp", AccountId: acct}, cookie))
 	if err != nil {

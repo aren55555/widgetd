@@ -48,8 +48,8 @@ func TestParityFolders(t *testing.T) {
 	if len(tomls) == 0 {
 		t.Fatal("no example folders")
 	}
-	for _, toml := range tomls {
-		dir := filepath.Dir(toml)
+	for _, manifest := range tomls {
+		dir := filepath.Dir(manifest)
 		base := filepath.Base(dir)
 		t.Run(base, func(t *testing.T) {
 			m, err := build(dir)
@@ -278,7 +278,7 @@ func TestFixture(t *testing.T) {
 		if err == nil {
 			t.Fatal("broken server built")
 		}
-		i := strings.Index(string(src), "return n + 1")
+		i := bytes.Index(src, []byte("return n + 1"))
 		want := "/widget/broken.widget:" + strconv.Itoa(strings.Count(string(src)[:i], "\n")+1)
 		if !strings.Contains(string(out), want) {
 			t.Errorf("want %q in:\n%s", want, out)

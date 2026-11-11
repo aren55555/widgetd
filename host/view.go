@@ -54,7 +54,7 @@ func (s *Server) serveFrame(w http.ResponseWriter, r *http.Request, name, digest
 	h.Set("Content-Security-Policy", frameCSP(assets, lw.policy.Load().imageSources()))
 	h.Set("Cache-Control", "public, max-age=31536000, immutable")
 	h.Set("X-Content-Type-Options", "nosniff")
-	frameTmpl.Execute(w, struct {
+	_ = frameTmpl.Execute(w, struct { // headers are sent: a failure means the client went away
 		Assets string
 		CSS    bool
 	}{assets, cssErr == nil})
@@ -82,7 +82,7 @@ func (s *Server) serveAsset(w http.ResponseWriter, r *http.Request, name, digest
 	// Requested from an opaque origin, so CORS must allow "null" to load
 	// fonts; scripts and styles don't need it but it costs nothing.
 	h.Set("Access-Control-Allow-Origin", "*")
-	w.Write(b)
+	_, _ = w.Write(b) //nolint:gosec // G705: a static asset, served with its own type and nosniff
 }
 
 var pageTmpl = template.Must(template.New("page").Parse(`<!doctype html>
@@ -98,13 +98,13 @@ var pageTmpl = template.Must(template.New("page").Parse(`<!doctype html>
 // servePage serves the admin app shell for the pages a phone opens from a QR
 // code (enroll, pair) and the device list. The page reads its route from
 // location itself.
-func (s *Server) servePage(w http.ResponseWriter, r *http.Request) {
+func (s *Server) servePage(w http.ResponseWriter) {
 	h := w.Header()
 	h.Set("Content-Type", "text/html; charset=utf-8")
 	h.Set("Cache-Control", "no-store")
 	h.Set("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'")
 	h.Set("Referrer-Policy", "no-referrer")
-	pageTmpl.Execute(w, struct{ Base string }{s.base})
+	_ = pageTmpl.Execute(w, struct{ Base string }{s.base})
 }
 
 // routes serves everything under the base path.
@@ -119,7 +119,7 @@ func (s *Server) routes(w http.ResponseWriter, r *http.Request) {
 	case parts[0] == "oauth":
 		s.serveOAuth(w, r, strings.TrimPrefix(rest, "oauth/"))
 	case phonePages[parts[0]]:
-		s.servePage(w, r)
+		s.servePage(w)
 	default:
 		s.serveClient(w, r, rest)
 	}

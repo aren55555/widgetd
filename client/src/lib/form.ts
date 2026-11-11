@@ -12,7 +12,11 @@ import { create, ScalarType, type DescEnum, type DescField } from "@bufbuild/pro
 
 /** "time_zone" → "Time zone". */
 export function humanize(name: string): string {
-  const s = name.replace(/_/g, " ").replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase().trim();
+  const s = name
+    .replace(/_/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .toLowerCase()
+    .trim();
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
@@ -48,7 +52,8 @@ export function parseScalar(t: ScalarType, text: string): Parsed {
       if (!/^-?\d+$/.test(s)) return { ok: false, error: "not a whole number" };
       const n = BigInt(s);
       const unsigned = t === ScalarType.UINT64 || t === ScalarType.FIXED64;
-      if (unsigned ? n < 0n || n > 2n ** 64n - 1n : n < -(2n ** 63n) || n > 2n ** 63n - 1n) return { ok: false, error: "out of range" };
+      if (unsigned ? n < 0n || n > 2n ** 64n - 1n : n < -(2n ** 63n) || n > 2n ** 63n - 1n)
+        return { ok: false, error: "out of range" };
       return { ok: true, value: n };
     }
     case ScalarType.BYTES:
@@ -59,7 +64,8 @@ export function parseScalar(t: ScalarType, text: string): Parsed {
       if (!/^-?\d+$/.test(s)) return { ok: false, error: "not a whole number" };
       const n = Number(s);
       const unsigned = t === ScalarType.UINT32 || t === ScalarType.FIXED32;
-      if (unsigned ? n < 0 || n > 4294967295 : n < -2147483648 || n > 2147483647) return { ok: false, error: "out of range" };
+      if (unsigned ? n < 0 || n > 4294967295 : n < -2147483648 || n > 2147483647)
+        return { ok: false, error: "out of range" };
       return { ok: true, value: n };
     }
   }
@@ -68,13 +74,20 @@ export function parseScalar(t: ScalarType, text: string): Parsed {
 /** Field paths the way both validators can agree on: "teams.league", no indexes. */
 export const normalizePath = (p: string) => p.replace(/\[[^\]]*\]/g, "");
 
-export type FieldChoice = { value: string; label: string };
+export interface FieldChoice {
+  value: string;
+  label: string;
+}
 
 /** Pick-lists by field path ("team", "location.city"), as the widget offered them. */
 export type Choices = ReadonlyMap<string, readonly FieldChoice[]>;
 
 /** Write-only fields: which they are, which have a stored value, and which the user asked to remove. */
-export type Secrets = { fields: ReadonlySet<string>; set: ReadonlySet<string>; clear: Set<string> };
+export interface Secrets {
+  fields: ReadonlySet<string>;
+  set: ReadonlySet<string>;
+  clear: Set<string>;
+}
 
 /** A new list item: an empty message, the first enum value, or a scalar's zero. */
 export function defaultItem(f: DescField): unknown {
@@ -92,7 +105,8 @@ export function defaultItem(f: DescField): unknown {
 /** The options a pick-list shows: the widget's, plus the current value if it's not among them. */
 export function choiceOptions(picks: readonly FieldChoice[], current: string): FieldChoice[] {
   const out = picks.map((p) => ({ value: p.value, label: p.label || p.value }));
-  if (current && !picks.some((p) => p.value === current)) out.unshift({ value: current, label: `${current} (current)` });
+  if (current && !picks.some((p) => p.value === current))
+    out.unshift({ value: current, label: `${current} (current)` });
   return out;
 }
 
@@ -101,7 +115,7 @@ export function sameChoices(a: Choices, b: Choices): boolean {
   if (a.size !== b.size) return false;
   for (const [k, v] of a) {
     const w = b.get(k);
-    if (!w || w.length !== v.length || v.some((c, i) => c.value !== w[i]!.value || c.label !== w[i]!.label)) return false;
+    if (w?.length !== v.length || v.some((c, i) => c.value !== w[i].value || c.label !== w[i].label)) return false;
   }
   return true;
 }

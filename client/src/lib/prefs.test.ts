@@ -30,10 +30,14 @@ describe("settings rows", () => {
   test("values and sources", () => {
     const r = resolvePrefs(create(PreferencesSchema, { timeZone: "Asia/Tokyo" }), { language: "en-CA" });
     const rows = Object.fromEntries(prefsRows(r).map((x) => [x.label, x]));
-    expect(rows["Language & format"]).toEqual({ label: "Language & format", value: "Canadian English (en-CA)", source: "detected · browser" });
+    expect(rows["Language & format"]).toEqual({
+      label: "Language & format",
+      value: "Canadian English (en-CA)",
+      source: "detected · browser",
+    });
     expect(rows["Time zone"]).toMatchObject({ value: "Asia/Tokyo", source: "set" });
-    expect(rows["Temperature"]).toMatchObject({ value: "Celsius (°C)", source: "detected · Canada" });
-    expect(rows["Speed"]?.value).toBe("km/h");
+    expect(rows.Temperature).toMatchObject({ value: "Celsius (°C)", source: "detected · Canada" });
+    expect(rows.Speed.value).toBe("km/h");
   });
 
   test("durationText", () => {

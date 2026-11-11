@@ -83,7 +83,17 @@ describe("nearest", () => {
   });
 
   test("prefers the later of two equally near points", () => {
-    expect(nearest([{ x: 0, y: 0 }, { x: 0, y: 0 }], 0, 0, 8)).toBe(1);
+    expect(
+      nearest(
+        [
+          { x: 0, y: 0 },
+          { x: 0, y: 0 },
+        ],
+        0,
+        0,
+        8,
+      ),
+    ).toBe(1);
   });
 });
 

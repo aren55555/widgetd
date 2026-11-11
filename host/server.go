@@ -83,22 +83,22 @@ type Instance struct {
 
 // Server is a running widget host.
 type Server struct {
-	base      string
-	log       *slog.Logger
-	db        *sql.DB
-	auth      *auth
-	board     *board
-	widgets   map[string]*loadedWidget
-	policies  map[string]NetworkPolicy
-	transport http.RoundTripper
-	sealer    *sealer
-	wasm      *wasmHost // nil unless a widget is sandboxed
-	tickets   *tickets
+	base         string
+	log          *slog.Logger
+	db           *sql.DB
+	auth         *auth
+	board        *board
+	widgets      map[string]*loadedWidget
+	policies     map[string]NetworkPolicy
+	transport    http.RoundTripper
+	sealer       *sealer
+	wasm         *wasmHost // nil unless a widget is sandboxed
+	tickets      *tickets
 	accountErrMu sync.Mutex
 	accountErr   map[string]string // the last sign-in failure, by provider
-	providers map[string]*provider
-	signIns   signIns
-	choices   choiceCache
+	providers    map[string]*provider
+	signIns      signIns
+	choices      choiceCache
 
 	mu            sync.Mutex // guards instances, instanceOrder, runCtx and each instance's run
 	instances     map[string]*instance
@@ -270,7 +270,7 @@ func (s *Server) serveClient(w http.ResponseWriter, r *http.Request, name string
 	}
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Write(b)
+	_, _ = w.Write(b) //nolint:gosec // G705: a static asset, served with its own type and nosniff
 }
 
 // compileWasm sets up the sandbox runtime if any widget needs it. Modules

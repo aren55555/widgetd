@@ -82,7 +82,7 @@ func (s *Server) verifyConfig(ctx context.Context, in *instance, cfg []byte) ([]
 	}
 	if c := verdict.GetConfig(); len(c) > 0 {
 		name := in.w.spec.Config.ProtoReflect().Descriptor().FullName()
-		if _, err := in.w.schema.check(name, c); err != nil {
+		if err := in.w.schema.check(name, c); err != nil {
 			return nil, nil, fmt.Errorf("the widget tidied these settings into something its own rules reject: %w", err)
 		}
 		return nil, c, nil

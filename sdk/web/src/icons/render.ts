@@ -11,14 +11,14 @@ export const ICON_SIZES = { sm: 16, md: 24, lg: 32, xl: 48 } as const;
 /** A named step, or a size in pixels. */
 export type IconSize = keyof typeof ICON_SIZES | number | `${number}`;
 
-export type IconOptions = {
+export interface IconOptions {
   /** Default "md". */
   size?: IconSize;
   /** Overrides the board theme's `--wd-icon-stroke` for this icon. */
   strokeWidth?: number | string;
   /** Names the icon for screen readers; without it the icon is decorative. */
   label?: string;
-};
+}
 
 /** Pixels for a size (or an attribute's text), or undefined if it is neither a step nor a positive number. */
 export function iconPixels(size: IconSize | (string & {}) | null | undefined): number | undefined {
@@ -71,7 +71,11 @@ const looseKey = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 /** Whether `v` looks like a Lucide icon: a list of [tag, attributes]. */
 export function isIconNode(v: unknown): v is IconNode {
-  return Array.isArray(v) && v.length > 0 && v.every((s) => Array.isArray(s) && typeof s[0] === "string" && typeof s[1] === "object");
+  return (
+    Array.isArray(v) &&
+    v.length > 0 &&
+    v.every((s) => Array.isArray(s) && typeof s[0] === "string" && typeof s[1] === "object")
+  );
 }
 
 // The theme's stroke applies only where an icon doesn't set its own, and at

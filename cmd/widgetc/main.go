@@ -575,18 +575,28 @@ func writeSpecFile(p string, data map[string]any) error {
 
 // dirPackage is the package name of the non-test Go files in dir, or "".
 func dirPackage(dir string) (string, error) {
-	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, dir, func(fi fs.FileInfo) bool { return !strings.HasSuffix(fi.Name(), "_test.go") }, parser.PackageClauseOnly)
+	files, err := filepath.Glob(filepath.Join(dir, "*.go"))
 	if err != nil {
 		return "", err
 	}
-	if len(pkgs) > 1 {
-		return "", fmt.Errorf("%s: Go files of more than one package", dir)
+	fset := token.NewFileSet()
+	pkg := ""
+	for _, file := range files {
+		if strings.HasSuffix(file, "_test.go") {
+			continue
+		}
+		f, err := parser.ParseFile(fset, file, nil, parser.PackageClauseOnly)
+		if err != nil {
+			return "", err
+		}
+		switch name := f.Name.Name; {
+		case pkg == "":
+			pkg = name
+		case name != pkg:
+			return "", fmt.Errorf("%s: Go files of more than one package", dir)
+		}
 	}
-	for name := range pkgs {
-		return name, nil
-	}
-	return "", nil
+	return pkg, nil
 }
 
 // goName is a widget name as an exported Go identifier: bitcoin-spiral is
@@ -625,17 +635,22 @@ func readManifest(dir string, m *manifest) error {
 // exportsFunc reports whether the Go package in dir declares a top-level
 // function name (Choices, so a widget opts in just by writing it).
 func exportsFunc(dir, name string) (bool, error) {
-	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, dir, func(fi fs.FileInfo) bool { return !strings.HasSuffix(fi.Name(), "_test.go") }, parser.SkipObjectResolution)
+	files, err := filepath.Glob(filepath.Join(dir, "*.go"))
 	if err != nil {
 		return false, err
 	}
-	for _, p := range pkgs {
-		for _, f := range p.Files {
-			for _, d := range f.Decls {
-				if fd, ok := d.(*ast.FuncDecl); ok && fd.Recv == nil && fd.Name.Name == name {
-					return true, nil
-				}
+	fset := token.NewFileSet()
+	for _, file := range files {
+		if strings.HasSuffix(file, "_test.go") {
+			continue
+		}
+		f, err := parser.ParseFile(fset, file, nil, parser.SkipObjectResolution)
+		if err != nil {
+			return false, err
+		}
+		for _, d := range f.Decls {
+			if fd, ok := d.(*ast.FuncDecl); ok && fd.Recv == nil && fd.Name.Name == name {
+				return true, nil
 			}
 		}
 	}

@@ -1,0 +1,211 @@
+# golangci-lint v2. Strict, in the spirit of Google's Go style guide
+# (https://google.github.io/styleguide/go/): gofmt'd and goimports'd code,
+# doc comments on everything exported, conventional names, errors that are
+# wrapped and compared properly, and no silently dropped errors.
+#
+#   just lint          # Go and TS
+#   just lint-fix      # apply the fixes the linters know how to make
+version: "2"
+
+run:
+  # The wasm build of the SDK and test widget is vetted separately in
+  # `just test`; lint the host build here.
+  tests: true
+
+linters:
+  default: none
+  enable:
+    # The defaults.
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    # Style: Google's naming, doc-comment and control-flow rules.
+    - revive
+    - gocritic
+    - godot
+    - misspell
+    - predeclared
+    - nakedret
+    - nolintlint
+    - unconvert
+    - usestdlibvars
+    - intrange
+    - copyloopvar
+    - perfsprint
+    - mirror
+    # Errors.
+    - errorlint
+    - errname
+    - nilerr
+    # Correctness.
+    - bodyclose
+    - noctx
+    - durationcheck
+    - makezero
+    - wastedassign
+    - unparam
+    - exhaustive
+    - gosec
+    - fatcontext
+    - sqlclosecheck
+    - rowserrcheck
+    - gocheckcompilerdirectives
+    # Tests.
+    - thelper
+    - usetesting
+
+  settings:
+    govet:
+      enable-all: true
+      disable:
+        # Struct field order is chosen for readability, not padding.
+        - fieldalignment
+        # Shadowing `err` in a nested scope is idiomatic Go.
+        - shadow
+
+    staticcheck:
+      checks: ["all"]
+
+    errcheck:
+      exclude-functions:
+        # Deferred after a commit, where it always returns sql.ErrTxDone.
+        - (*database/sql.Tx).Rollback
+
+    revive:
+      enable-all-rules: false
+      rules:
+        # Go's core review comments, as golint enforced them.
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+        - name: increment-decrement
+        - name: var-naming
+        - name: var-declaration
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: empty-block
+        - name: superfluous-else
+        - name: unreachable-code
+        - name: redefines-builtin-id
+        # Beyond golint.
+        - name: early-return
+        - name: if-return
+        - name: use-any
+        - name: defer
+        - name: unnecessary-stmt
+        - name: struct-tag
+        - name: modifies-value-receiver
+        - name: bare-return
+        - name: identical-branches
+        - name: redundant-import-alias
+        - name: comment-spacings
+        - name: import-shadowing
+        - name: confusing-results
+        - name: datarace
+        - name: atomic
+        - name: string-of-int
+        - name: waitgroup-by-value
+        - name: unconditional-recursion
+        - name: constant-logical-expr
+        - name: useless-break
+
+    gocritic:
+      enabled-tags: [diagnostic, style, performance]
+      disabled-checks:
+        # Named results are documentation, not a smell.
+        - unnamedResult
+        # Passing protobuf messages and config structs by value is fine.
+        - hugeParam
+        - rangeValCopy
+        # `if x := f(); x {` is fine; so is the long form.
+        - ifElseChain
+        - whyNoLint
+        # Inverting a loop body is a judgement call.
+        - nestingReduce
+
+    godot:
+      # Doc comments only: a trailing remark inside a function needn't be a
+      # sentence.
+      scope: declarations
+
+    exhaustive:
+      # A `default:` case is an explicit choice to handle the rest.
+      default-signifies-exhaustive: true
+
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+
+    gosec:
+      excludes:
+        # Unchecked errors: errcheck reports these, with its own exclusions.
+        - G104
+        # Integer conversions are checked where they matter; this rule flags
+        # every uint64↔int64 cast in the cursor code.
+        - G115
+
+    usetesting:
+      os-temp-dir: true
+
+  exclusions:
+    generated: lax
+    paths:
+      - (^|/)gen/
+      - _gen\.go$
+      # Throwaway experiments, not shipped.
+      - ^spikes/
+    presets:
+      - std-error-handling
+    rules:
+      # Tests may use the simpler forms, and fixtures needn't be secrets.
+      - path: _test\.go$
+        linters: [gosec, noctx, bodyclose, errcheck]
+      # The CLIs read the files, write the outputs and run the tools they are
+      # told to, and build outputs are meant to be world-readable.
+      - path: ^cmd/
+        linters: [gosec]
+        text: "G(122|204|301|304|306|703)"
+      # The CLIs run go, buf and bun to completion; there's no context to
+      # cancel them with.
+      - path: ^cmd/
+        linters: [noctx]
+        text: os/exec
+      # Threading contexts through the storage layer is a follow-up; noctx
+      # still covers every outbound HTTP request.
+      - linters: [noctx]
+        text: database/sql
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+      rewrite-rules:
+        - pattern: "interface{}"
+          replacement: "any"
+    goimports:
+      local-prefixes:
+        - github.com/aren55555/widgetd
+  exclusions:
+    generated: lax
+    paths:
+      - (^|/)gen/
+      - _gen\.go$
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

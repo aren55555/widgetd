@@ -9,10 +9,10 @@ package widget
 
 import (
 	"context"
-	"strings"
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/proto"

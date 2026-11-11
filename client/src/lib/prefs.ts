@@ -16,7 +16,11 @@ import {
 
 import type { Layout, LayoutSource } from "./options.ts";
 
-export type Row = { label: string; value: string; source: string };
+export interface Row {
+  label: string;
+  value: string;
+  source: string;
+}
 
 export const sourceText = (s: Source | LayoutSource): string => {
   if (typeof s === "string") return s;
@@ -128,5 +132,5 @@ export function offlineText(lastLive: number | undefined, now: number, p: Displa
 
 /** The display app's version, from the `widgetd-display/<version>` user-agent suffix. */
 export function appVersion(userAgent: string): string | undefined {
-  return userAgent.match(/\bwidgetd-display\/(\S+)/)?.[1];
+  return /\bwidgetd-display\/(\S+)/.exec(userAgent)?.[1];
 }

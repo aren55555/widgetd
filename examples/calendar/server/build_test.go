@@ -33,6 +33,7 @@ func fixture(t *testing.T, name string) []gEvent {
 }
 
 func both(t *testing.T) [][]gEvent {
+	t.Helper()
 	return [][]gEvent{fixture(t, "work.json"), fixture(t, "personal.json")}
 }
 
@@ -116,7 +117,7 @@ func TestBuildTimeline(t *testing.T) {
 	}
 
 	offsite := time.Date(2026, 11, 16, 0, 0, 0, 0, time.UTC).Unix() / 86400
-	if len(st.AllDay) != 1 || st.AllDay[0].FirstDay != int32(offsite) || st.AllDay[0].Days != 2 || st.AllDay[0].Title != "Team offsite" {
+	if len(st.AllDay) != 1 || int64(st.AllDay[0].FirstDay) != offsite || st.AllDay[0].Days != 2 || st.AllDay[0].Title != "Team offsite" {
 		t.Errorf("all day %v", st.AllDay)
 	}
 }

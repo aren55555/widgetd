@@ -66,25 +66,25 @@ func (s *schema) message(name protoreflect.FullName) (protoreflect.MessageDescri
 // check decodes b as message `name` and enforces the schema's validation
 // rules. Bytes that don't decode, carry fields the schema doesn't define, or
 // break a rule are refused.
-func (s *schema) check(name protoreflect.FullName, b []byte) (proto.Message, error) {
+func (s *schema) check(name protoreflect.FullName, b []byte) error {
 	if len(b) > maxPayloadBytes {
-		return nil, fmt.Errorf("%s is %d bytes, over the %d limit", name, len(b), maxPayloadBytes)
+		return fmt.Errorf("%s is %d bytes, over the %d limit", name, len(b), maxPayloadBytes)
 	}
 	md, err := s.message(name)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	msg := dynamicpb.NewMessage(md)
 	if err := proto.Unmarshal(b, msg); err != nil {
-		return nil, fmt.Errorf("decode %s: %w", name, err)
+		return fmt.Errorf("decode %s: %w", name, err)
 	}
 	if hasUnknown(msg) {
-		return nil, fmt.Errorf("%s carries fields its schema doesn't define", name)
+		return fmt.Errorf("%s carries fields its schema doesn't define", name)
 	}
 	if err := s.validator.Validate(msg); err != nil {
-		return nil, fmt.Errorf("validate %s: %w", name, err)
+		return fmt.Errorf("validate %s: %w", name, err)
 	}
-	return msg, nil
+	return nil
 }
 
 // hasUnknown reports whether m, or any message inside it, has unknown fields.

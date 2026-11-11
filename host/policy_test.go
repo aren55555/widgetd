@@ -107,7 +107,7 @@ func TestForbiddenAddresses(t *testing.T) {
 // were any of `hosts` on port 443. allowLoopback controls whether the
 // guarded dialer lets the connection through, so the same setup tests both
 // the policy (allowed) and the hard rules (refused).
-func publicTLS(t *testing.T, h http.Handler, allowLoopback bool) (*httptest.Server, http.RoundTripper) {
+func publicTLS(t *testing.T, h http.Handler, allowLoopback bool) http.RoundTripper {
 	t.Helper()
 	srv := httptest.NewTLSServer(h)
 	t.Cleanup(srv.Close)
@@ -122,7 +122,7 @@ func publicTLS(t *testing.T, h http.Handler, allowLoopback bool) (*httptest.Serv
 		// would make a public name resolve to loopback.
 		return d.DialContext(ctx, network, srv.Listener.Addr().String())
 	}
-	return srv, tr
+	return tr
 }
 
 func newTestFetcher(t *testing.T, tr http.RoundTripper, req widget.NetworkRequest, grant NetworkPolicy) *fetcher {
@@ -136,7 +136,7 @@ func newTestFetcher(t *testing.T, tr http.RoundTripper, req widget.NetworkReques
 
 func get(t *testing.T, f *fetcher, url string, hdr ...string) (*http.Response, error) {
 	t.Helper()
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	req, _ := http.NewRequest(http.MethodGet, url, http.NoBody)
 	for i := 0; i+1 < len(hdr); i += 2 {
 		req.Header.Set(hdr[i], hdr[i+1])
 	}
@@ -144,7 +144,7 @@ func get(t *testing.T, f *fetcher, url string, hdr ...string) (*http.Response, e
 }
 
 func denied(err error) string {
-	var pd *PolicyDenied
+	var pd *PolicyDeniedError
 	if errors.As(err, &pd) {
 		return pd.Rule
 	}
@@ -165,7 +165,7 @@ func TestFetchThroughPolicy(t *testing.T) {
 	mux.HandleFunc("/to-allowed", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "https://api.example.com/ok", http.StatusFound)
 	})
-	_, tr := publicTLS(t, mux, true)
+	tr := publicTLS(t, mux, true)
 	f := newTestFetcher(t, tr, widget.NetworkRequest{Hosts: []string{"api.example.com"}}, NetworkPolicy{MaxResponseBytes: 1024, RequestsPerMinute: 600})
 
 	resp, err := get(t, f, "https://api.example.com/ok", "Cookie", "session=stolen", "Authorization", "Bearer x")
@@ -210,7 +210,7 @@ func TestFetchThroughPolicy(t *testing.T) {
 }
 
 func TestRebindingToLoopbackIsRefused(t *testing.T) {
-	_, tr := publicTLS(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	tr := publicTLS(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Error("the request must never reach a loopback server")
 	}), false)
 	f := newTestFetcher(t, tr, widget.NetworkRequest{Hosts: []string{"api.example.com"}}, NetworkPolicy{})
@@ -221,7 +221,7 @@ func TestRebindingToLoopbackIsRefused(t *testing.T) {
 }
 
 func TestRateLimit(t *testing.T) {
-	_, tr := publicTLS(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}), true)
+	tr := publicTLS(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}), true)
 	f := newTestFetcher(t, tr, widget.NetworkRequest{Hosts: []string{"api.example.com"}}, NetworkPolicy{RequestsPerMinute: 6})
 	var refused int
 	for range 5 {

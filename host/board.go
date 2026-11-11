@@ -93,12 +93,12 @@ func (b *board) mount(c *card) {
 }
 
 // unmount removes a card if it is still the one given (nil: whichever).
-func (b *board) unmount(id string, only *card, purge bool) bool {
+func (b *board) unmount(id string, only *card, purge bool) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	c, ok := b.cards[id]
 	if !ok || (only != nil && c != only) {
-		return false
+		return
 	}
 	if c.expiry != nil {
 		c.expiry.Stop()
@@ -109,7 +109,6 @@ func (b *board) unmount(id string, only *card, purge bool) bool {
 		CardId:     id,
 		Body:       &widgetdv1.WidgetFrame_Unmounted{Unmounted: &widgetdv1.Unmounted{Purge: purge}},
 	})
-	return true
 }
 
 // unmountInstance removes every card of an instance.

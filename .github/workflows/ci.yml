@@ -21,6 +21,11 @@ jobs:
       - name: Run checks
         run: just test
 
+      # golangci-lint, tsc, ESLint and Prettier. After the tests, so a lint
+      # failure doesn't hide a test failure.
+      - name: Lint
+        run: just lint
+
       # gen/, client/dist and the example .wpkg files are committed, because
       # anyone importing this module runs them as they are and can't rebuild
       # them. A change that didn't rebuild them would ship stale code that no

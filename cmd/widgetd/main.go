@@ -38,8 +38,8 @@ import (
 	"github.com/aren55555/widgetd/examples"
 	bitcoinspiral "github.com/aren55555/widgetd/examples/bitcoin-spiral"
 	"github.com/aren55555/widgetd/examples/calendar"
-	sportsgame "github.com/aren55555/widgetd/examples/sports-game"
 	githubnotifications "github.com/aren55555/widgetd/examples/github-notifications"
+	sportsgame "github.com/aren55555/widgetd/examples/sports-game"
 	"github.com/aren55555/widgetd/host"
 	"github.com/aren55555/widgetd/sdk/go/widget"
 )
@@ -218,9 +218,15 @@ func run(log *slog.Logger, addr, stateDir, publicURL, configPath, acmeDomain str
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	hs.Shutdown(ctx)
+	// Screens hold streams open, so a shutdown can run out of time; say so,
+	// but close the server anyway.
+	if err := hs.Shutdown(ctx); err != nil {
+		log.Warn("shutdown", "err", err)
+	}
 	if redirect != nil {
-		redirect.Shutdown(ctx)
+		if err := redirect.Shutdown(ctx); err != nil {
+			log.Warn("shutdown http redirect", "err", err)
+		}
 	}
 	return srv.Close(ctx)
 }

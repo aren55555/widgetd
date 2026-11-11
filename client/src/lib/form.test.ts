@@ -47,9 +47,15 @@ test("paths drop indexes so both validators agree", () => {
 });
 
 describe("choices", () => {
-  const picks = [{ value: "SJ", label: "San Jose Sharks" }, { value: "ANA", label: "" }];
+  const picks = [
+    { value: "SJ", label: "San Jose Sharks" },
+    { value: "ANA", label: "" },
+  ];
   test("labels default to values", () => {
-    expect(choiceOptions(picks, "SJ")).toEqual([{ value: "SJ", label: "San Jose Sharks" }, { value: "ANA", label: "ANA" }]);
+    expect(choiceOptions(picks, "SJ")).toEqual([
+      { value: "SJ", label: "San Jose Sharks" },
+      { value: "ANA", label: "ANA" },
+    ]);
   });
   test("a saved value off the list stays", () => {
     expect(choiceOptions(picks, "SJS")[0]).toEqual({ value: "SJS", label: "SJS (current)" });

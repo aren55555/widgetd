@@ -19,7 +19,7 @@ func viewDir(t *testing.T, files map[string]string) string {
 	if err := os.MkdirAll("testdata", 0o755); err != nil {
 		t.Fatal(err)
 	}
-	dir, err := os.MkdirTemp("testdata", "view-")
+	dir, err := os.MkdirTemp("testdata", "view-") //nolint:usetesting // must be inside the repo, see above
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -31,9 +31,9 @@ function fail(msg: string): never {
 let plugins: BunPlugin[] = [];
 const hook = join(viewDir, "plugins.ts");
 if (existsSync(hook)) {
-  const exported = (await import(hook)).default;
+  const exported = ((await import(hook)) as { default?: unknown }).default;
   if (!Array.isArray(exported)) fail("view/plugins.ts: export default an array of Bun plugins");
-  plugins = exported;
+  plugins = exported as BunPlugin[];
 }
 
 const result = await Bun.build({
@@ -59,21 +59,25 @@ if (extra.length) {
       `A card loads only view.js and view.css: inline images and fonts as data: URIs, or draw icons with @widgetd/sdk/icons.`,
   );
 }
-const js = result.outputs[0]!;
+const js = result.outputs[0];
 console.log(`  view.js  ${(js.size / 1024).toFixed(1)} KB`);
 
 if (iconName) {
   // Only after bundling: once this process has imported lucide, Bun.build
   // in it no longer tree-shakes lucide (seen with Bun 1.4.0).
-  let icons: Record<string, unknown> & { IconRegistry: new () => { add(i: Record<string, unknown>): void; get(n: string): unknown } };
+  let icons: Record<string, unknown> & {
+    IconRegistry: new () => { add(i: Record<string, unknown>): void; get(n: string): unknown };
+  };
   try {
-    icons = await import(Bun.resolveSync("@widgetd/sdk/icons", viewDir));
+    icons = (await import(Bun.resolveSync("@widgetd/sdk/icons", viewDir))) as typeof icons;
   } catch (e) {
-    fail(`widget.toml: icon = "${iconName}" needs @widgetd/sdk (with /icons) among the view's dependencies: ${(e as Error).message}`);
+    fail(
+      `widget.toml: icon = "${iconName}" needs @widgetd/sdk (with /icons) among the view's dependencies: ${(e as Error).message}`,
+    );
   }
   const registry = new icons.IconRegistry();
   registry.add(icons);
-  const node = registry.get(iconName) as [string, Record<string, string | number>][] | undefined;
+  const node = registry.get(iconName) as Array<[string, Record<string, string | number>]> | undefined;
   if (!node) fail(`widget.toml: icon "${iconName}" isn't a Lucide icon; see https://lucide.dev/icons for names`);
   const shapes = node.map(([tag, attrs]) => ({
     tag,

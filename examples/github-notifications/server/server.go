@@ -63,13 +63,13 @@ func Run(ctx context.Context, h widget.Host) error {
 				FullName string `json:"full_name"`
 			} `json:"repository"`
 		}
-		resp, changed, err := get(ctx, h, path, lastModified, &raw)
+		hdr, changed, err := get(ctx, h, path, lastModified, &raw)
 		wait := defaultPoll
-		if resp != nil {
-			if s, err := strconv.Atoi(resp.Header.Get("X-Poll-Interval")); err == nil && s > 0 {
+		if hdr != nil {
+			if s, err := strconv.Atoi(hdr.Get("X-Poll-Interval")); err == nil && s > 0 {
 				wait = time.Duration(s) * time.Second
 			}
-			if lm := resp.Header.Get("Last-Modified"); lm != "" {
+			if lm := hdr.Get("Last-Modified"); lm != "" {
 				lastModified = lm
 			}
 		}
@@ -102,11 +102,12 @@ func Run(ctx context.Context, h widget.Host) error {
 	}
 }
 
-// get reads a signed GitHub API path as JSON. With since, an unchanged
+// get reads a signed GitHub API path as JSON, and returns the reply's
+// headers (nil if there was none). With since, an unchanged
 // answer is a 304 that costs nothing against the rate limit: changed is
 // then false and into is left alone.
-func get(ctx context.Context, h widget.Host, path, since string, into any) (resp *http.Response, changed bool, err error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, api+path, nil)
+func get(ctx context.Context, h widget.Host, path, since string, into any) (hdr http.Header, changed bool, err error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, api+path, http.NoBody)
 	if err != nil {
 		return nil, false, err
 	}
@@ -116,18 +117,18 @@ func get(ctx context.Context, h widget.Host, path, since string, into any) (resp
 	if since != "" {
 		req.Header.Set("If-Modified-Since", since)
 	}
-	resp, err = h.Fetch(widget.Authorize(req))
+	resp, err := h.Fetch(widget.Authorize(req))
 	if err != nil {
 		return nil, false, err
 	}
 	defer resp.Body.Close()
 	switch resp.StatusCode {
 	case http.StatusNotModified:
-		return resp, false, nil
+		return resp.Header, false, nil
 	case http.StatusOK:
-		return resp, true, json.NewDecoder(resp.Body).Decode(into)
+		return resp.Header, true, json.NewDecoder(resp.Body).Decode(into)
 	}
-	return resp, false, fmt.Errorf("%s: %s", path, resp.Status)
+	return resp.Header, false, fmt.Errorf("%s: %s", path, resp.Status)
 }
 
 func clip(s string, n int) string {

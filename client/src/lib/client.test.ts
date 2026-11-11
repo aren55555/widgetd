@@ -119,9 +119,17 @@ describe("sync", () => {
 describe("placeholders", () => {
   test("a running instance needs none; the others say why", () => {
     expect(placeholderFor(InstanceStatus_State.RUNNING, "").show).toBe(false);
-    expect(placeholderFor(InstanceStatus_State.NEEDS_CONFIG, "")).toEqual({ show: true, text: "Not set up yet.", setUp: true });
+    expect(placeholderFor(InstanceStatus_State.NEEDS_CONFIG, "")).toEqual({
+      show: true,
+      text: "Not set up yet.",
+      setUp: true,
+    });
     expect(placeholderFor(InstanceStatus_State.INVALID_CONFIG, "")).toMatchObject({ show: true, setUp: true });
-    expect(placeholderFor(InstanceStatus_State.FAULTED, "boom")).toMatchObject({ show: true, setUp: false, text: "Stopped: boom. Retrying…" });
+    expect(placeholderFor(InstanceStatus_State.FAULTED, "boom")).toMatchObject({
+      show: true,
+      setUp: false,
+      text: "Stopped: boom. Retrying…",
+    });
   });
 
   test("a card's instance is its id's first segment", () => {
@@ -132,8 +140,15 @@ describe("placeholders", () => {
 });
 
 test("an instance waiting for an account offers sign-in, saying why", () => {
-  expect(placeholderFor(InstanceStatus_State.NEEDS_SIGN_IN, "", true)).toEqual({ show: true, text: "Needs an account signed in.", setUp: false, signIn: true });
+  expect(placeholderFor(InstanceStatus_State.NEEDS_SIGN_IN, "", true)).toEqual({
+    show: true,
+    text: "Needs an account signed in.",
+    setUp: false,
+    signIn: true,
+  });
   // No account bound (or not yet named): that's the admin page's to fix.
   expect(placeholderFor(InstanceStatus_State.NEEDS_SIGN_IN, "Needs a Google account")).toMatchObject({ signIn: false });
-  expect(placeholderFor(InstanceStatus_State.NEEDS_SIGN_IN, "The sign-in lapsed. Sign in again.")).toMatchObject({ text: "The sign-in lapsed. Sign in again." });
+  expect(placeholderFor(InstanceStatus_State.NEEDS_SIGN_IN, "The sign-in lapsed. Sign in again.")).toMatchObject({
+    text: "The sign-in lapsed. Sign in again.",
+  });
 });

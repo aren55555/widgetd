@@ -97,7 +97,7 @@ func events(ctx context.Context, h widget.Host, calendar string, from, to time.T
 
 // get reads a signed Calendar API URL as JSON.
 func get(ctx context.Context, h widget.Host, u string, into any) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, http.NoBody)
 	if err != nil {
 		return err
 	}

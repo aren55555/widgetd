@@ -13,5 +13,14 @@
 // the board theme's --wd-icon-stroke unless set per icon.
 
 export * from "lucide";
-export { icon, iconPixels, IconRegistry, isIconNode, ICON_SIZES, type IconNode, type IconOptions, type IconSize } from "./render.ts";
+export {
+  icon,
+  iconPixels,
+  IconRegistry,
+  isIconNode,
+  ICON_SIZES,
+  type IconNode,
+  type IconOptions,
+  type IconSize,
+} from "./render.ts";
 export { defineIcons, type WdIconAttributes, type WdIconElement } from "./element.ts";

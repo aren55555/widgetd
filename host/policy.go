@@ -49,15 +49,15 @@ const (
 	activityKept             = 50
 )
 
-// PolicyDenied is the error a widget's fetch fails with when the policy
+// PolicyDeniedError is the error a widget's fetch fails with when the policy
 // refuses it. Rule names the rule, so a too-tight policy reads as a policy
 // problem rather than a broken widget.
-type PolicyDenied struct {
+type PolicyDeniedError struct {
 	Rule string
 	URL  string
 }
 
-func (e *PolicyDenied) Error() string {
+func (e *PolicyDeniedError) Error() string {
 	return fmt.Sprintf("network policy: %s refused (%s)", e.URL, e.Rule)
 }
 
@@ -172,12 +172,12 @@ func anyMatch(ps []hostPattern, host, port string) bool {
 }
 
 // check decides one request (or redirect hop) by URL and method.
-func (p *effectivePolicy) check(method, rawURL string, scheme, host, port string) error {
-	deny := func(rule string) error { return &PolicyDenied{Rule: rule, URL: rawURL} }
+func (p *effectivePolicy) check(method, rawURL, scheme, host, port string) error {
+	deny := func(rule string) error { return &PolicyDeniedError{Rule: rule, URL: rawURL} }
 	switch {
 	case p.disabled:
 		return deny("network disabled for this widget")
-	case scheme != "https" && !(scheme == "http" && p.allowHTTP):
+	case scheme != "https" && (scheme != "http" || !p.allowHTTP):
 		return deny("only https is allowed")
 	case !slices.Contains(p.methods, method):
 		return deny("method " + method + " not granted")
@@ -273,7 +273,7 @@ func guardedDialer(allow func(netip.Addr) bool) *net.Dialer {
 				return nil
 			}
 			if why := forbiddenAddr(ap.Addr()); why != "" {
-				return &PolicyDenied{Rule: why, URL: address}
+				return &PolicyDeniedError{Rule: why, URL: address}
 			}
 			return nil
 		},
@@ -358,7 +358,7 @@ func (f *fetcher) do(ctx context.Context, req *http.Request, auth string) (*http
 	start := time.Now()
 	act := Activity{At: start, Method: req.Method, Host: req.URL.Host, Path: req.URL.Path}
 	fail := func(err error) (*http.Response, error) {
-		var pd *PolicyDenied
+		var pd *PolicyDeniedError
 		if errors.As(err, &pd) {
 			act.Denied = pd.Rule
 		} else {
@@ -374,7 +374,7 @@ func (f *fetcher) do(ctx context.Context, req *http.Request, auth string) (*http
 	}
 	p := f.policy.Load()
 	if !f.limiter.Allow() {
-		return fail(&PolicyDenied{Rule: fmt.Sprintf("over %d requests per minute", p.perMinute), URL: req.URL.Redacted()})
+		return fail(&PolicyDeniedError{Rule: fmt.Sprintf("over %d requests per minute", p.perMinute), URL: req.URL.Redacted()})
 	}
 
 	out := req.Clone(ctx)
@@ -390,7 +390,7 @@ func (f *fetcher) do(ctx context.Context, req *http.Request, auth string) (*http
 		Transport: f.transport,
 		CheckRedirect: func(next *http.Request, via []*http.Request) error {
 			if len(via) >= maxRedirects {
-				return &PolicyDenied{Rule: "too many redirects", URL: next.URL.Redacted()}
+				return &PolicyDeniedError{Rule: "too many redirects", URL: next.URL.Redacted()}
 			}
 			return f.checkURL(next.Method, next)
 		},
@@ -399,8 +399,8 @@ func (f *fetcher) do(ctx context.Context, req *http.Request, auth string) (*http
 	if err != nil {
 		cancel()
 		// A refusal from the dialer or a redirect check arrives wrapped in a
-		// *url.Error; hand the widget the PolicyDenied itself.
-		var pd *PolicyDenied
+		// *url.Error; hand the widget the PolicyDeniedError itself.
+		var pd *PolicyDeniedError
 		if errors.As(err, &pd) {
 			return fail(pd)
 		}

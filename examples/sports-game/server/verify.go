@@ -41,9 +41,9 @@ func Verify(ctx context.Context, h widget.Host) (widget.Verdict, error) {
 func suggest(want string, teams []widget.Choice) []string {
 	var out []string
 	for _, t := range teams {
-		close := strings.HasPrefix(want, t.Value) || strings.HasPrefix(t.Value, want) ||
+		near := strings.HasPrefix(want, t.Value) || strings.HasPrefix(t.Value, want) ||
 			(len(want) >= 2 && len(t.Value) >= 2 && want[:2] == t.Value[:2])
-		if close && len(out) < 2 {
+		if near && len(out) < 2 {
 			out = append(out, fmt.Sprintf("%s (%s)", t.Value, t.Label))
 		}
 	}

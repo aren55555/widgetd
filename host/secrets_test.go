@@ -82,10 +82,10 @@ func TestSecretFields(t *testing.T) {
 		t.Fatalf("secret fields %v, set %v", form.Msg.GetSecretFields(), s)
 	}
 
-	save := func(cfg *testwidgetv1.Config, clear ...string) {
+	save := func(cfg *testwidgetv1.Config, cleared ...string) {
 		t.Helper()
 		b, _ := proto.Marshal(cfg)
-		res, err := c.SaveConfig(ctx, withCookie(&widgetdv1.SaveConfigRequest{InstanceId: "one", Config: b, ClearSecrets: clear}, admin))
+		res, err := c.SaveConfig(ctx, withCookie(&widgetdv1.SaveConfigRequest{InstanceId: "one", Config: b, ClearSecrets: cleared}, admin))
 		if err != nil || len(res.Msg.GetViolations()) > 0 {
 			t.Fatalf("save: %v %v", res, err)
 		}

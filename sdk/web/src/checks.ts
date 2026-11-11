@@ -24,7 +24,7 @@ export function hasUnknown(m: Message): boolean {
       if (hasUnknown(v)) return true;
     } else if (v && typeof v === "object" && "case" in v && isMessage((v as { value?: unknown }).value)) {
       if (hasUnknown((v as { value: Message }).value)) return true;
-    } else if (v !== null && typeof v === "object" && !ArrayBuffer.isView(v)) {
+    } else if (typeof v === "object" && !ArrayBuffer.isView(v)) {
       // map fields are plain objects
       for (const mv of Object.values(v)) if (isMessage(mv) && hasUnknown(mv)) return true;
     }

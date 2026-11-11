@@ -33,7 +33,15 @@ import {
   type WidgetFrame,
 } from "./gen/widgetd/v1/stream_pb.ts";
 import { CardStore } from "./lib/store.ts";
-import { deltaFollows, gridSpan, instanceOf, placeholderFor, staleCards, toBridgeCursor, usableStored } from "./lib/sync.ts";
+import {
+  deltaFollows,
+  gridSpan,
+  instanceOf,
+  placeholderFor,
+  staleCards,
+  toBridgeCursor,
+  usableStored,
+} from "./lib/sync.ts";
 import type { Cursor } from "@widgetd/sdk/bridge";
 import { browserEnv, PreferencesSchema, resolvePrefs, toMessage, type ResolvedPrefs } from "@widgetd/sdk/prefs";
 import { readBoardOptions, resolveLayout, type Layout } from "./lib/options.ts";
@@ -146,7 +154,7 @@ const RECONNECT_MIN = 1000;
 const RECONNECT_MAX = 30_000;
 
 /** One card: its iframe, what it has been handed, and what waits for it. */
-type CardHost = {
+interface CardHost {
   id: string;
   mounted: Mounted;
   el: HTMLElement;
@@ -159,7 +167,7 @@ type CardHost = {
   queue: ToFrame[];
   /** The cursor of the last payload handed to the view. */
   last?: Cursor;
-};
+}
 
 class WidgetBoard extends HTMLElement {
   private root = this.attachShadow({ mode: "open" });
@@ -239,7 +247,7 @@ class WidgetBoard extends HTMLElement {
   }
   private transport = () => createConnectTransport({ baseUrl: this.api, useBinaryFormat: true });
 
-  private notice(...children: (Node | string)[]) {
+  private notice(...children: Array<Node | string>) {
     const n = document.createElement("div");
     n.className = "notice";
     n.append(...children);
@@ -261,6 +269,8 @@ class WidgetBoard extends HTMLElement {
         await this.stream();
         delay = RECONNECT_MIN;
       } catch (e) {
+        // stop() may have run while we awaited.
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (this.stopped) return;
         if (e instanceof ConnectError && e.code === Code.Unauthenticated) continue; // re-check: show pairing
         this.wentOffline(e instanceof Error ? e.message : String(e));
@@ -332,10 +342,18 @@ class WidgetBoard extends HTMLElement {
     const code = document.createElement("div");
     code.className = "code";
     code.textContent = p.code;
-    this.notice("This screen isn't paired yet.", qr, "Scan with a phone signed in as an admin, and check it shows:", code);
+    this.notice(
+      "This screen isn't paired yet.",
+      qr,
+      "Scan with a phone signed in as an admin, and check it shows:",
+      code,
+    );
 
     this.abort = new AbortController();
-    for await (const r of auth.awaitPairing({ pairingId: p.pairingId, secret: p.secret }, { signal: this.abort.signal })) {
+    for await (const r of auth.awaitPairing(
+      { pairingId: p.pairingId, secret: p.secret },
+      { signal: this.abort.signal },
+    )) {
       if (r.state === PairingState.APPROVED) {
         await auth.completePairing({ pairingId: p.pairingId, secret: p.secret });
         return;
@@ -369,7 +387,11 @@ class WidgetBoard extends HTMLElement {
       if (!f) {
         if (!synced) {
           synced = true;
-          for (const id of staleCards(resume.map((r) => r.cardId), mountedInBurst)) this.store.forget(id, true);
+          for (const id of staleCards(
+            resume.map((r) => r.cardId),
+            mountedInBurst,
+          ))
+            this.store.forget(id, true);
           this.render();
         }
         continue;
@@ -422,7 +444,7 @@ class WidgetBoard extends HTMLElement {
 
   private mount(id: string, m: Mounted) {
     const existing = this.cards.get(id);
-    if (existing && existing.mounted.frameUrl === m.frameUrl) {
+    if (existing?.mounted.frameUrl === m.frameUrl) {
       existing.mounted = m;
       paintTitle(existing.title, m.title, m.icon);
       Object.assign(existing.el.style, gridSpan(m.layout?.cols ?? 1, m.layout?.rows ?? 1, this.maxCols));
@@ -459,7 +481,18 @@ class WidgetBoard extends HTMLElement {
     Object.assign(el.style, gridSpan(m.layout?.cols ?? 1, m.layout?.rows ?? 1, this.maxCols));
 
     const stored = usableStored(this.store.load(id), m.widget?.digest ?? "", m.stateType);
-    const card: CardHost = { id, mounted: m, el, frame, title, fault, warn, ready: false, queue: [], last: stored?.cursor };
+    const card: CardHost = {
+      id,
+      mounted: m,
+      el,
+      frame,
+      title,
+      fault,
+      warn,
+      ready: false,
+      queue: [],
+      last: stored?.cursor,
+    };
     this.cards.set(id, card);
     this.grid.append(el);
   }
@@ -616,6 +649,15 @@ class WidgetBoard extends HTMLElement {
     t.replaceChildren(btn);
   }
 
+  private async addWidget(widget: string) {
+    const admin = createClient(WidgetAdminService, this.transport());
+    const { instanceId } = await admin.addInstance({ widget });
+    this.justAdded = instanceId;
+    const known = this.instances.get(instanceId);
+    if (known?.tile) void this.showSetUp(known.tile, instanceId);
+    this.resetAddTile();
+  }
+
   private async pickWidget() {
     const t = this.addTile;
     const admin = createClient(WidgetAdminService, this.transport());
@@ -628,13 +670,7 @@ class WidgetBoard extends HTMLElement {
         b.className = "action";
         const svg = widgetIcon(w.icon, 16);
         b.replaceChildren(...(svg ? [svg] : []), w.title);
-        b.addEventListener("click", async () => {
-          const { instanceId } = await admin.addInstance({ widget: w.name });
-          this.justAdded = instanceId;
-          const known = this.instances.get(instanceId);
-          if (known?.tile) void this.showSetUp(known.tile, instanceId);
-          this.resetAddTile();
-        });
+        b.addEventListener("click", () => void this.addWidget(w.name));
         list.append(b);
       }
       const cancel = document.createElement("button");
@@ -686,6 +722,9 @@ class WidgetBoard extends HTMLElement {
     c.fault.title = message ?? "";
   }
 
+  // e.data comes from a sandboxed frame we don't trust: the checks below hold
+  // even where FromFrame's types say they can't fail.
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unnecessary-type-conversion */
   private onMessage = (e: MessageEvent) => {
     let card: CardHost | undefined;
     for (const c of this.cards.values()) if (c.frame.contentWindow === e.source) card = c;
@@ -702,7 +741,11 @@ class WidgetBoard extends HTMLElement {
           this.abort?.abort();
           return;
         }
-        const stored = usableStored(this.store.load(card.id), card.mounted.widget?.digest ?? "", card.mounted.stateType);
+        const stored = usableStored(
+          this.store.load(card.id),
+          card.mounted.widget?.digest ?? "",
+          card.mounted.stateType,
+        );
         card.ready = true;
         reply({
           t: "init",
@@ -734,9 +777,11 @@ class WidgetBoard extends HTMLElement {
       case "action":
         if (m.value instanceof Uint8Array && typeof m.typeUrl === "string") {
           const admin = createClient(WidgetStreamService, this.transport());
-          admin.sendAction({ cardId: card.id, typeUrl: m.typeUrl, value: m.value }).catch((err) =>
-            this.showFault(card.id, `action refused: ${err instanceof Error ? err.message : String(err)}`),
-          );
+          admin
+            .sendAction({ cardId: card.id, typeUrl: m.typeUrl, value: m.value })
+            .catch((err: unknown) =>
+              this.showFault(card.id, `action refused: ${err instanceof Error ? err.message : String(err)}`),
+            );
         }
         return;
       case "storage-get":
@@ -766,6 +811,7 @@ class WidgetBoard extends HTMLElement {
       }
     }
   };
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unnecessary-type-conversion */
 }
 
 /** A titled list of settings rows, each value over its source. */

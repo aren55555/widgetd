@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"slices"
@@ -30,7 +29,7 @@ type sealer struct {
 
 func openSealer(stateDir string) (*sealer, error) {
 	path := filepath.Join(stateDir, "secret.key")
-	key, err := os.ReadFile(path)
+	key, err := os.ReadFile(path) //nolint:gosec // G304: the operator's state directory
 	if errors.Is(err, os.ErrNotExist) {
 		key = make([]byte, 32)
 		if _, err := rand.Read(key); err != nil {
@@ -60,7 +59,7 @@ func openSealer(stateDir string) (*sealer, error) {
 // sealed value copied to another row doesn't open.
 func (s *sealer) seal(v []byte, instance, field string) []byte {
 	nonce := make([]byte, s.aead.NonceSize())
-	io.ReadFull(rand.Reader, nonce)
+	rand.Read(nonce) // never returns an error; it crashes the program instead
 	return s.aead.Seal(nonce, nonce, v, []byte(instance+"\x00"+field))
 }
 
@@ -150,8 +149,8 @@ func (s *Server) loadSecrets(instance string) (map[string]string, error) {
 }
 
 // storeSecrets writes the given secrets and removes the cleared ones.
-func (s *Server) storeSecrets(tx *sql.Tx, instance string, set map[string]string, clear []string) error {
-	for _, f := range clear {
+func (s *Server) storeSecrets(tx *sql.Tx, instance string, set map[string]string, cleared []string) error {
+	for _, f := range cleared {
 		if _, err := tx.Exec(`DELETE FROM secrets WHERE instance = ? AND field = ?`, instance, f); err != nil {
 			return err
 		}
@@ -183,7 +182,7 @@ func (s *Server) secretsSet(in *instance) []string {
 
 // withStoredSecrets fills the secret fields an edited config left empty
 // from what's stored, except those being cleared.
-func (s *Server) withStoredSecrets(in *instance, cfg []byte, clear []string) ([]byte, error) {
+func (s *Server) withStoredSecrets(in *instance, cfg []byte, cleared []string) ([]byte, error) {
 	if len(in.w.spec.Secrets) == 0 {
 		return cfg, nil
 	}
@@ -191,14 +190,14 @@ func (s *Server) withStoredSecrets(in *instance, cfg []byte, clear []string) ([]
 	if err != nil {
 		return nil, err
 	}
-	for _, c := range clear {
+	for _, c := range cleared {
 		delete(stored, c)
 	}
 	return in.w.mergeSecrets(cfg, stored)
 }
 
-func validClear(w *loadedWidget, clear []string) error {
-	for _, c := range clear {
+func validClear(w *loadedWidget, cleared []string) error {
+	for _, c := range cleared {
 		if !slices.Contains(w.spec.Secrets, c) {
 			return fmt.Errorf("%q isn't a secret field", c)
 		}

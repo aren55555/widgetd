@@ -2,7 +2,13 @@ import { defineWidget } from "@widgetd/sdk";
 
 import { StateSchema, type State } from "./gen/ghnotif/v1/ghnotif_pb.ts";
 
-const KIND: Record<string, string> = { PullRequest: "PR", Issue: "Issue", Release: "Release", Discussion: "Discussion", CheckSuite: "CI" };
+const KIND: Record<string, string> = {
+  PullRequest: "PR",
+  Issue: "Issue",
+  Release: "Release",
+  Discussion: "Discussion",
+  CheckSuite: "CI",
+};
 
 defineWidget({
   state: StateSchema,

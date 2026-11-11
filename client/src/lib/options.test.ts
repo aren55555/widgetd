@@ -5,7 +5,14 @@ import { base64Encode } from "@bufbuild/protobuf/wire";
 import { BoardOptionsSchema } from "../gen/widgetd/v1/board_pb.ts";
 import fixture from "./options.fixture.json";
 import { validated } from "@widgetd/sdk/checks";
-import { checkRules, DEFAULT_COLS, DEFAULT_STALE_AFTER_MS, encodeBoardOptions, readBoardOptions, resolveLayout } from "./options.ts";
+import {
+  checkRules,
+  DEFAULT_COLS,
+  DEFAULT_STALE_AFTER_MS,
+  encodeBoardOptions,
+  readBoardOptions,
+  resolveLayout,
+} from "./options.ts";
 
 const enc = (json: JsonValue) => base64Encode(toBinary(BoardOptionsSchema, fromJson(BoardOptionsSchema, json)), "url");
 
@@ -37,7 +44,7 @@ describe("readBoardOptions", () => {
     expect(r.options.cols).toBeUndefined();
   });
 
-  const ignored: [string, string][] = [
+  const ignored: Array<[string, string]> = [
     ["not base64url", "CAM+Agg8"],
     ["bytes that don't decode", "_w"],
     ["cols 0", enc({ cols: 0 })],
@@ -89,7 +96,13 @@ describe("resolveLayout", () => {
   });
 
   test("stale_after", () => {
-    expect(resolveLayout(opts({ staleAfter: "90.5s" }), null)).toMatchObject({ staleAfterMs: 90_500, staleAfterSource: "set" });
-    expect(resolveLayout(opts({}), null)).toMatchObject({ staleAfterMs: DEFAULT_STALE_AFTER_MS, staleAfterSource: "default" });
+    expect(resolveLayout(opts({ staleAfter: "90.5s" }), null)).toMatchObject({
+      staleAfterMs: 90_500,
+      staleAfterSource: "set",
+    });
+    expect(resolveLayout(opts({}), null)).toMatchObject({
+      staleAfterMs: DEFAULT_STALE_AFTER_MS,
+      staleAfterSource: "default",
+    });
   });
 });

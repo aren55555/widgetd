@@ -17,7 +17,13 @@ import {
 } from "./spiral.ts";
 
 /** A point as drawn, in canvas CSS pixels, so the pointer can find it. */
-type Plotted = { x: number; y: number; t: number; price: number; live: boolean };
+interface Plotted {
+  x: number;
+  y: number;
+  t: number;
+  price: number;
+  live: boolean;
+}
 
 /** How far (CSS px) the pointer may be from the line and still hover it. */
 const HOVER_PX = 12;
@@ -34,10 +40,13 @@ defineWidget({
       case "close": {
         const c = delta.change.value;
         const last = state.daily.at(-1);
-        if (last && last.day === c.day) state.daily[state.daily.length - 1] = c;
+        if (last?.day === c.day) state.daily[state.daily.length - 1] = c;
         else if (!last || last.day < c.day) state.daily.push(c);
         break;
       }
+      case undefined:
+        // An empty delta: nothing changed.
+        break;
     }
     return state;
   },
@@ -68,7 +77,7 @@ defineWidget({
 
     const hover = () => {
       const i = pointer ? nearest(plotted, pointer.x, pointer.y, HOVER_PX) : -1;
-      const p = plotted[i];
+      const p = i >= 0 ? plotted[i] : undefined;
       dot.hidden = tip.hidden = !p;
       if (!p) return;
       dot.style.transform = `translate(${p.x}px, ${p.y}px)`;
@@ -147,7 +156,7 @@ function draw(canvas: HTMLCanvasElement, s: State): Plotted[] {
   g.scale(dpr, dpr);
 
   const size = Math.min(width, height);
-  const R = size / 2 - 6;
+  const outer = size / 2 - 6;
   const ox = (width - size) / 2 + 6;
   const oy = (height - size) / 2 + 6;
   g.translate(ox, oy);
@@ -157,14 +166,14 @@ function draw(canvas: HTMLCanvasElement, s: State): Plotted[] {
   if (s.latest) prices.push(s.latest.price);
   const scale = logScale(Math.min(...prices), Math.max(...prices));
 
-  drawGrid(g, scale, R);
+  drawGrid(g, scale, outer);
 
   // One path per cycle, older cycles fainter, so the turns read apart.
   const ink = css("--wd-accent", "#60a5fa");
-  const byCycle = new Map<number, { x: number; y: number }[]>();
+  const byCycle = new Map<number, Array<{ x: number; y: number }>>();
   for (const d of s.daily) {
     const t = dayToMs(d.day);
-    const p = point(t, d.close, scale, R);
+    const p = point(t, d.close, scale, outer);
     plotted.push({ x: p.x + ox, y: p.y + oy, t, price: d.close, live: false });
     (byCycle.get(p.cycle) ?? byCycle.set(p.cycle, []).get(p.cycle)!).push(p);
   }
@@ -181,46 +190,48 @@ function draw(canvas: HTMLCanvasElement, s: State): Plotted[] {
 
   if (s.latest) {
     const t = Number(s.latest.unixMs);
-    const p = point(t, s.latest.price, scale, R);
+    const p = point(t, s.latest.price, scale, outer);
     plotted.push({ x: p.x + ox, y: p.y + oy, t, price: s.latest.price, live: true });
     g.fillStyle = css("--wd-up", "#4ade80");
     g.beginPath();
     g.arc(p.x, p.y, 4, 0, 2 * Math.PI);
     g.fill();
   }
-  drawLabels(g, scale, R, s.currency);
+  drawLabels(g, scale, outer, s.currency);
   return plotted;
 }
 
-function drawGrid(g: CanvasRenderingContext2D, scale: Scale, R: number) {
+function drawGrid(g: CanvasRenderingContext2D, scale: Scale, outer: number) {
   g.strokeStyle = css("--wd-edge", "#27272a");
   g.lineWidth = 1;
-  for (const r of rings(scale).map((v) => R * (HOLE + (1 - HOLE) * ((Math.log10(v) - scale.lo) / (scale.hi - scale.lo))))) {
+  for (const r of rings(scale).map(
+    (v) => outer * (HOLE + (1 - HOLE) * ((Math.log10(v) - scale.lo) / (scale.hi - scale.lo))),
+  )) {
     g.beginPath();
-    g.arc(R, R, r, 0, 2 * Math.PI);
+    g.arc(outer, outer, r, 0, 2 * Math.PI);
     g.stroke();
   }
   // The halving spoke.
   g.beginPath();
-  g.moveTo(R, R - R * HOLE);
-  g.lineTo(R, 0);
+  g.moveTo(outer, outer - outer * HOLE);
+  g.lineTo(outer, 0);
   g.stroke();
 }
 
 /** Ring labels go on last, on a backing, so the line never runs through them. */
-function drawLabels(g: CanvasRenderingContext2D, scale: Scale, R: number, currency: number) {
+function drawLabels(g: CanvasRenderingContext2D, scale: Scale, outer: number, currency: number) {
   const bg = css("--wd-surface", "#18181b");
   const faint = css("--wd-ink-faint", "#71717a");
   g.font = `10px ${css("--wd-font-mono", "ui-monospace, monospace")}`;
   g.textAlign = "center";
   g.textBaseline = "middle";
   for (const v of rings(scale)) {
-    const r = R * (HOLE + (1 - HOLE) * ((Math.log10(v) - scale.lo) / (scale.hi - scale.lo)));
+    const r = outer * (HOLE + (1 - HOLE) * ((Math.log10(v) - scale.lo) / (scale.hi - scale.lo)));
     const text = formatPrice(v, currency, true);
     const w = g.measureText(text).width + 6;
     g.fillStyle = bg;
-    g.fillRect(R - w / 2, R - r - 6, w, 12);
+    g.fillRect(outer - w / 2, outer - r - 6, w, 12);
     g.fillStyle = faint;
-    g.fillText(text, R, R - r);
+    g.fillText(text, outer, outer - r);
   }
 }

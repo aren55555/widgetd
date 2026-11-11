@@ -7,7 +7,8 @@ const DAY = 86_400_000;
 export function startLabel(start: number, now: number, timeZone?: string): string {
   const fmt = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("en-US", { ...o, timeZone }).format(start);
   const time = fmt({ hour: "numeric", minute: "2-digit" });
-  const dayKey = (t: number) => new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(t);
+  const dayKey = (t: number) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(t);
   const days = Math.round((Date.parse(dayKey(start)) - Date.parse(dayKey(now))) / DAY);
   if (days === 0) return `${Number(fmt({ hour: "numeric", hour12: false })) >= 17 ? "Tonight" : "Today"} ${time}`;
   if (days === 1) return `Tomorrow ${time}`;

@@ -359,7 +359,7 @@ func (s *Server) sortedWidgets() []*loadedWidget {
 
 // violations is check, as field-level messages a form can show inline.
 func (s *schema) violations(name protoreflect.FullName, b []byte) []*widgetdv1.FieldViolation {
-	_, err := s.check(name, b)
+	err := s.check(name, b)
 	if err == nil {
 		return nil
 	}

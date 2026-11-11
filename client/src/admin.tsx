@@ -14,11 +14,29 @@ import { createConnectTransport } from "@connectrpc/connect-web";
 import { timestampDate } from "@bufbuild/protobuf/wkt";
 import { create, createFileRegistry, fromBinary, toBinary } from "@bufbuild/protobuf";
 import { FileDescriptorSetSchema } from "@bufbuild/protobuf/wkt";
-import { createResource, createSignal, ErrorBoundary, For, Match, onCleanup, Show, Suspense, Switch, type JSX } from "solid-js";
+import {
+  createResource,
+  createSignal,
+  ErrorBoundary,
+  For,
+  Match,
+  onCleanup,
+  Show,
+  Suspense,
+  Switch,
+  type JSX,
+} from "solid-js";
 import { render } from "solid-js/web";
 
 import { AuthService, Role, type Device } from "./gen/widgetd/v1/auth_pb.ts";
-import { WidgetAdminService, type Account, type GetConfigFormResponse, type InstanceInfo, type ProviderInfo, type WidgetInfo } from "./gen/widgetd/v1/admin_pb.ts";
+import {
+  WidgetAdminService,
+  type Account,
+  type GetConfigFormResponse,
+  type InstanceInfo,
+  type ProviderInfo,
+  type WidgetInfo,
+} from "./gen/widgetd/v1/admin_pb.ts";
 import { InstanceStatus_State, type Icon } from "./gen/widgetd/v1/stream_pb.ts";
 import { createConfigForm, type ConfigForm } from "./lib/ConfigForm.tsx";
 import { widgetIcon } from "./lib/icon.ts";
@@ -35,7 +53,8 @@ root.className = "mx-auto flex max-w-md flex-col gap-4 px-5 py-8";
 render(() => <App />, root);
 
 function App() {
-  if (!window.isSecureContext || !window.PublicKeyCredential) {
+  if (!window.isSecureContext || !("PublicKeyCredential" in window)) {
+    // eslint-disable-next-line solid/components-return-once -- the condition never changes
     return (
       <Page title="Can't use passkeys here">
         <p>Open this page over HTTPS, in a browser that supports passkeys.</p>
@@ -151,7 +170,9 @@ function createStatus() {
 
 async function createPasskey(setupToken: string, name: string) {
   const begin = await auth.beginEnroll({ setupToken });
-  const options = PublicKeyCredential.parseCreationOptionsFromJSON(JSON.parse(begin.optionsJson));
+  const options = PublicKeyCredential.parseCreationOptionsFromJSON(
+    JSON.parse(begin.optionsJson) as PublicKeyCredentialCreationOptionsJSON,
+  );
   const cred = (await navigator.credentials.create({ publicKey: options })) as PublicKeyCredential | null;
   if (!cred) throw new Error("No passkey was created.");
   await auth.finishEnroll({ ceremonyId: begin.ceremonyId, credentialJson: JSON.stringify(cred.toJSON()), name });
@@ -159,7 +180,9 @@ async function createPasskey(setupToken: string, name: string) {
 
 async function signIn() {
   const begin = await auth.beginLogin({});
-  const options = PublicKeyCredential.parseRequestOptionsFromJSON(JSON.parse(begin.optionsJson));
+  const options = PublicKeyCredential.parseRequestOptionsFromJSON(
+    JSON.parse(begin.optionsJson) as PublicKeyCredentialRequestOptionsJSON,
+  );
   const cred = (await navigator.credentials.get({ publicKey: options })) as PublicKeyCredential | null;
   if (!cred) throw new Error("No passkey was chosen.");
   await auth.finishLogin({ ceremonyId: begin.ceremonyId, credentialJson: JSON.stringify(cred.toJSON()) });
@@ -218,7 +241,14 @@ function Enroll(props: { token: string }) {
           <Page title="Set up widgetd">
             <p>Create a passkey on this phone. It's how you'll approve screens and change settings from now on.</p>
             <label class="block">
-              Name <input class={ui.input} value={name()} onInput={(e) => setName(e.currentTarget.value)} maxLength={64} aria-label="Passkey name" />
+              Name{" "}
+              <input
+                class={ui.input}
+                value={name()}
+                onInput={(e) => setName(e.currentTarget.value)}
+                maxLength={64}
+                aria-label="Passkey name"
+              />
             </label>
             <button
               class={ui.btn.primary}
@@ -265,7 +295,14 @@ function Approve(props: { pairingId: string }) {
               <p class={ui.code}>{p().code}</p>
               <p class={ui.muted}>{p().userAgent || "unknown browser"}</p>
               <label class="block">
-                Name <input class={ui.input} value={screenName()} onInput={(e) => setName(e.currentTarget.value)} maxLength={64} aria-label="Screen name" />
+                Name{" "}
+                <input
+                  class={ui.input}
+                  value={screenName()}
+                  onInput={(e) => setName(e.currentTarget.value)}
+                  maxLength={64}
+                  aria-label="Screen name"
+                />
               </label>
               <button
                 class={ui.btn.primary}
@@ -322,7 +359,9 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
       try {
         const res = await admin.getConfigChoices({ ...target, config: toBinary(desc, msg) });
         if (mine !== asked) return; // a newer edit already asked
-        const next: Choices = new Map(res.fields.map((f) => [f.field, f.choices.map((c) => ({ value: c.value, label: c.label }))]));
+        const next: Choices = new Map(
+          res.fields.map((f) => [f.field, f.choices.map((c) => ({ value: c.value, label: c.label }))]),
+        );
         if (!sameChoices(choices(), next)) setChoices(next);
       } catch {
         // Choices are a convenience: without them, fields stay free text.
@@ -334,7 +373,7 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
       onChange: () => {
         configForm.validate();
         clearTimeout(timer);
-        timer = setTimeout(refreshChoices, 400);
+        timer = setTimeout(() => void refreshChoices(), 400);
       },
     });
     onCleanup(() => clearTimeout(timer));
@@ -343,7 +382,10 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
   }
 
   const save = st.run(async (say) => {
-    if (config && !config.form.validate()) return say("Fix the highlighted fields first.");
+    if (config && !config.form.validate()) {
+      say("Fix the highlighted fields first.");
+      return;
+    }
     const res = await admin.saveConfig({
       ...target,
       label: label().trim(),
@@ -352,7 +394,8 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
     });
     if (res.violations.length) {
       config?.form.validate(res.violations.map((v) => ({ field: v.field, message: v.message })));
-      return say("The widget didn't accept that; see the fields above.");
+      say("The widget didn't accept that; see the fields above.");
+      return;
     }
     setSaved(true);
   });
@@ -376,7 +419,14 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
         <NetworkNote w={w} />
         <label class="block">
           <span class={ui.label}>Name</span>
-          <input class={ui.input} value={label()} onInput={(e) => setLabel(e.currentTarget.value)} maxLength={64} placeholder={w.title} aria-label="Name" />
+          <input
+            class={ui.input}
+            value={label()}
+            onInput={(e) => setLabel(e.currentTarget.value)}
+            maxLength={64}
+            placeholder={w.title}
+            aria-label="Name"
+          />
         </label>
         <div>{config ? config.form.view : <p class={ui.muted}>This widget has no settings.</p>}</div>
         <button class={ui.btn.primary} disabled={st.busy()} onClick={save}>
@@ -393,7 +443,9 @@ function NetworkNote(props: { w: WidgetInfo }) {
     const w = props.w;
     if (!w.requestedHosts.length) return "This widget doesn't use the network.";
     const hosts = w.grantSet ? w.grantedHosts : w.requestedHosts;
-    const reach = w.networkDisabled ? "Network access is turned off for this widget." : `Reaches: ${hosts.join(", ") || "nothing"}.`;
+    const reach = w.networkDisabled
+      ? "Network access is turned off for this widget."
+      : `Reaches: ${hosts.join(", ") || "nothing"}.`;
     return `${reach} ${w.networkWhy}`;
   };
   return <p class={ui.muted}>{text()}</p>;
@@ -401,7 +453,13 @@ function NetworkNote(props: { w: WidgetInfo }) {
 
 // ---- admin home ----
 
-type HomeData = { instances: InstanceInfo[]; widgets: WidgetInfo[]; devices: Device[]; accounts: Account[]; providers: ProviderInfo[] };
+interface HomeData {
+  instances: InstanceInfo[];
+  widgets: WidgetInfo[];
+  devices: Device[];
+  accounts: Account[];
+  providers: ProviderInfo[];
+}
 
 async function loadHome(): Promise<HomeData> {
   const [{ instances }, { widgets }, { devices }, { accounts, providers }] = await Promise.all([
@@ -430,22 +488,34 @@ function AdminHome() {
         <Page title="Widgets">
           <For each={d().accounts.filter((a) => !a.label)}>{(a) => <NameAccount a={a} d={d()} reload={reload} />}</For>
           <ul class={ui.list}>
-            <For each={d().instances} fallback={<li class={`py-3 ${ui.muted}`}>No widgets yet. Add one from a screen.</li>}>
-              {(inst) => <InstanceItem inst={inst} widget={d().widgets.find((w) => w.name === inst.widget)} d={d()} reload={reload} />}
+            <For
+              each={d().instances}
+              fallback={<li class={`py-3 ${ui.muted}`}>No widgets yet. Add one from a screen.</li>}
+            >
+              {(inst) => (
+                <InstanceItem
+                  inst={inst}
+                  widget={d().widgets.find((w) => w.name === inst.widget)}
+                  d={d()}
+                  reload={reload}
+                />
+              )}
             </For>
           </ul>
 
           <Show when={d().providers.length}>
             <h2 class={H2}>Accounts</h2>
             <p class={ui.muted}>
-              Sign an account in from a widget above, and choose for each widget which account it uses. Each account is signed in for exactly
-              what the widgets using it need.
+              Sign an account in from a widget above, and choose for each widget which account it uses. Each account is
+              signed in for exactly what the widgets using it need.
             </p>
             <For each={d().providers}>
               {(p) => (
                 <>
                   <ul class={ui.list}>
-                    <For each={d().accounts.filter((a) => a.provider === p.name && a.label)}>{(a) => <AccountItem a={a} p={p} d={d()} reload={reload} />}</For>
+                    <For each={d().accounts.filter((a) => a.provider === p.name && a.label)}>
+                      {(a) => <AccountItem a={a} p={p} d={d()} reload={reload} />}
+                    </For>
                   </ul>
                   <ProviderItem p={p} reload={reload} />
                 </>
@@ -460,7 +530,12 @@ function AdminHome() {
 
           <h2 class={H2}>Screens</h2>
           <ul class={ui.list}>
-            <For each={d().devices} fallback={<li class={`py-3 ${ui.muted}`}>No screens paired yet. Open a board on a screen and scan its code.</li>}>
+            <For
+              each={d().devices}
+              fallback={
+                <li class={`py-3 ${ui.muted}`}>No screens paired yet. Open a board on a screen and scan its code.</li>
+              }
+            >
               {(dev) => <ScreenItem device={dev} reload={reload} />}
             </For>
           </ul>
@@ -485,7 +560,12 @@ function AdminHome() {
 
 type Fetch = Awaited<ReturnType<typeof admin.getInstanceActivity>>["fetches"][number];
 
-function InstanceItem(props: { inst: InstanceInfo; widget: WidgetInfo | undefined; d: HomeData; reload: () => Promise<void> }) {
+function InstanceItem(props: {
+  inst: InstanceInfo;
+  widget: WidgetInfo | undefined;
+  d: HomeData;
+  reload: () => Promise<void>;
+}) {
   const { inst, widget, reload } = props;
   const title = inst.label || widget?.title || inst.widget;
   const state = inst.status?.state;
@@ -507,7 +587,9 @@ function InstanceItem(props: { inst: InstanceInfo; widget: WidgetInfo | undefine
           <p class="text-sm text-amber-600">⚠ {inst.status?.warning}</p>
         </Show>
       </div>
-      <For each={inst.bindings}>{(b) => <BindingPicker inst={inst} provider={b.provider} accountId={b.accountId} d={props.d} reload={reload} />}</For>
+      <For each={inst.bindings}>
+        {(b) => <BindingPicker inst={inst} provider={b.provider} accountId={b.accountId} d={props.d} reload={reload} />}
+      </For>
       <div class="flex flex-wrap gap-2">
         <button class={ui.btn.small} onClick={() => location.assign(`${base}edit/${encodeURIComponent(inst.id)}`)}>
           {state === InstanceStatus_State.NEEDS_CONFIG ? "Set up" : "Settings"}
@@ -550,7 +632,11 @@ function InstanceItem(props: { inst: InstanceInfo; widget: WidgetInfo | undefine
         {(l) => (
           <Show when={l().length} fallback={<p class="text-sm">No requests yet.</p>}>
             <ul class="list-disc pl-4 font-mono text-xs/snug break-all">
-              <For each={l()}>{(f) => <li>{`${f.method} ${f.host}${f.path} → ${f.denied ? `refused: ${f.denied}` : f.error ? f.error : f.status}`}</li>}</For>
+              <For each={l()}>
+                {(f) => (
+                  <li>{`${f.method} ${f.host}${f.path} → ${f.denied ? `refused: ${f.denied}` : f.error ? f.error : f.status}`}</li>
+                )}
+              </For>
             </ul>
           </Show>
         )}
@@ -575,7 +661,11 @@ function NetworkGrant(props: { w: WidgetInfo }) {
       <For each={w.requestedHosts}>
         {(host) => (
           <label class="flex items-center gap-2">
-            <input type="checkbox" checked={on.has(host)} onChange={(e) => (e.currentTarget.checked ? on.add(host) : on.delete(host))} />
+            <input
+              type="checkbox"
+              checked={on.has(host)}
+              onChange={(e) => (e.currentTarget.checked ? on.add(host) : on.delete(host))}
+            />
             <span>{host}</span>
           </label>
         )}
@@ -630,7 +720,10 @@ function createSignIn(st: ReturnType<typeof createStatus>, reload: () => Promise
   const [code, setCode] = createSignal<{ userCode: string; url: string }>();
   let poll: ReturnType<typeof setTimeout> | undefined;
   onCleanup(() => clearTimeout(poll));
-  const start = (req: { provider: string; accountId?: string; instanceId?: string }, done: (accounts: Account[]) => boolean) =>
+  const start = (
+    req: { provider: string; accountId?: string; instanceId?: string },
+    done: (accounts: Account[]) => boolean,
+  ) =>
     st.run(async () => {
       const s = await admin.beginSignIn(req);
       if (!s.userCode) {
@@ -645,17 +738,20 @@ function createSignIn(st: ReturnType<typeof createStatus>, reload: () => Promise
           setCode(undefined);
           return reload();
         }
-        if (Date.now() < until) poll = setTimeout(check, 3000);
+        if (Date.now() < until) poll = setTimeout(() => void check(), 3000);
       };
-      poll = setTimeout(check, 3000);
+      poll = setTimeout(() => void check(), 3000);
     });
   const View = () => (
     <Show when={code()}>
       {(c) => (
         <p class="text-sm">
-          Enter <strong class="font-mono text-[2rem] leading-tight font-semibold tracking-widest">{c().userCode}</strong> at{" "}
+          Enter{" "}
+          <strong class="font-mono text-[2rem] leading-tight font-semibold tracking-widest">{c().userCode}</strong> at{" "}
           <a class={ui.link} href={c().url} target="_blank" rel="noopener">
-            {c().url.replace(/^https:\/\//, "").replace(/\?.*/, "")}
+            {c()
+              .url.replace(/^https:\/\//, "")
+              .replace(/\?.*/, "")}
           </a>
           . This page updates once you've approved it.
         </p>
@@ -666,7 +762,13 @@ function createSignIn(st: ReturnType<typeof createStatus>, reload: () => Promise
 }
 
 /** Which account an instance uses a provider with; or a new one. */
-function BindingPicker(props: { inst: InstanceInfo; provider: string; accountId: string; d: HomeData; reload: () => Promise<void> }) {
+function BindingPicker(props: {
+  inst: InstanceInfo;
+  provider: string;
+  accountId: string;
+  d: HomeData;
+  reload: () => Promise<void>;
+}) {
   const st = createStatus();
   const signIn = createSignIn(st, props.reload);
   const p = () => props.d.providers.find((x) => x.name === props.provider);
@@ -685,7 +787,9 @@ function BindingPicker(props: { inst: InstanceInfo; provider: string; accountId:
             const v = ev.currentTarget.value;
             if (v === NEW) {
               // A new account arrives unnamed; the page then asks for its name.
-              void signIn.start({ provider: props.provider, instanceId: props.inst.id }, (all) => all.some((a) => !before.has(a.id)))();
+              void signIn.start({ provider: props.provider, instanceId: props.inst.id }, (all) =>
+                all.some((a) => !before.has(a.id)),
+              )();
               return;
             }
             void st.run(async () => {
@@ -742,7 +846,8 @@ function NameAccount(props: { a: Account; d: HomeData; reload: () => Promise<voi
     >
       <p>
         <strong>Name this {title()} account</strong>
-        {props.a.identity ? ` (${props.a.identity})` : ""}. {forWhat() ? `It's for ${forWhat()}, which starts once it has a name.` : ""}
+        {props.a.identity ? ` (${props.a.identity})` : ""}.{" "}
+        {forWhat() ? `It's for ${forWhat()}, which starts once it has a name.` : ""}
       </p>
       <input
         class={ui.input}
@@ -793,7 +898,12 @@ function AccountItem(props: { a: Account; p: ProviderInfo; d: HomeData; reload: 
       <div>
         <strong>{accountName(a, props.d.providers)}</strong>
         <span class={ui.muted}>
-          {a.identity ? ` ${a.identity} ·` : ""} {a.signedIn ? (needs ? `signed in, but ${a.message.toLowerCase()}` : "signed in") : (a.message || "signed out").toLowerCase()}
+          {a.identity ? ` ${a.identity} ·` : ""}{" "}
+          {a.signedIn
+            ? needs
+              ? `signed in, but ${a.message.toLowerCase()}`
+              : "signed in"
+            : (a.message || "signed out").toLowerCase()}
         </span>
       </div>
       <p class={ui.muted}>Used by: {users || "nothing"}</p>
@@ -839,7 +949,12 @@ function AccountItem(props: { a: Account; p: ProviderInfo; d: HomeData; reload: 
             class={ui.btn.danger}
             disabled={st.busy()}
             onClick={st.run(async () => {
-              if (!confirm(`Sign ${accountName(a, props.d.providers)} out? Widgets using it stop until it's signed in again.`)) return;
+              if (
+                !confirm(
+                  `Sign ${accountName(a, props.d.providers)} out? Widgets using it stop until it's signed in again.`,
+                )
+              )
+                return;
               await admin.signOut({ accountId: a.id });
               await props.reload();
             })}
@@ -851,7 +966,12 @@ function AccountItem(props: { a: Account; p: ProviderInfo; d: HomeData; reload: 
           class={ui.btn.danger}
           disabled={st.busy()}
           onClick={st.run(async () => {
-            if (!confirm(`Delete ${accountName(a, props.d.providers)}? It's revoked, and widgets using it wait for another account.`)) return;
+            if (
+              !confirm(
+                `Delete ${accountName(a, props.d.providers)}? It's revoked, and widgets using it wait for another account.`,
+              )
+            )
+              return;
             await admin.deleteAccount({ accountId: a.id });
             await props.reload();
           })}
@@ -943,12 +1063,12 @@ function stateText(s: InstanceStatus_State | undefined, message?: string): strin
 }
 
 function deviceGuess(ua: string): string {
-  if (/iPhone/.test(ua)) return "iPhone";
-  if (/iPad/.test(ua)) return "iPad";
-  if (/Android/.test(ua)) return /Mobile/.test(ua) ? "Android phone" : "Android tablet";
-  if (/Macintosh/.test(ua)) return "Mac";
-  if (/Windows/.test(ua)) return "Windows PC";
-  if (/CrOS/.test(ua)) return "Chromebook";
-  if (/Linux/.test(ua)) return "Linux";
+  if (ua.includes("iPhone")) return "iPhone";
+  if (ua.includes("iPad")) return "iPad";
+  if (ua.includes("Android")) return ua.includes("Mobile") ? "Android phone" : "Android tablet";
+  if (ua.includes("Macintosh")) return "Mac";
+  if (ua.includes("Windows")) return "Windows PC";
+  if (ua.includes("CrOS")) return "Chromebook";
+  if (ua.includes("Linux")) return "Linux";
   return "Screen";
 }

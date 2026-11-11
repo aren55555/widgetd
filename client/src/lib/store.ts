@@ -12,12 +12,12 @@
 
 import type { Cursor, Local } from "@widgetd/sdk/bridge";
 
-export type Stored = {
+export interface Stored {
   digest: string;
   stateType: string;
   cursor: Cursor;
   state: Uint8Array;
-};
+}
 
 /** The subset of the Web Storage API the store needs, so tests can fake it. */
 export type KVBackend = Pick<Storage, "getItem" | "setItem" | "removeItem" | "key" | "length">;
@@ -49,7 +49,8 @@ export class CardStore {
     const raw = this.ls.getItem(this.stateKey(cardId));
     if (!raw) return undefined;
     try {
-      const v = JSON.parse(raw) as { digest: string; stateType: string; cursor: Cursor; state: string };
+      // Parsed from storage: anything could be there, so check before trusting.
+      const v = JSON.parse(raw) as { digest?: unknown; stateType: string; cursor?: Cursor; state: string };
       if (typeof v.digest !== "string" || typeof v.cursor?.seq !== "string") return undefined;
       return { digest: v.digest, stateType: v.stateType, cursor: v.cursor, state: unb64(v.state) };
     } catch {
@@ -70,9 +71,9 @@ export class CardStore {
   }
 
   /** Every card with stored state, for the stream's resume request. */
-  saved(): { cardId: string; stored: Stored }[] {
+  saved(): Array<{ cardId: string; stored: Stored }> {
     const p = `${this.prefix}state:`;
-    const out: { cardId: string; stored: Stored }[] = [];
+    const out: Array<{ cardId: string; stored: Stored }> = [];
     for (const k of this.keys()) {
       if (!k.startsWith(p)) continue;
       const cardId = k.slice(p.length);
@@ -111,7 +112,8 @@ export class CardStore {
       return;
     }
     const raw = JSON.stringify({ type: local.type, value: b64(local.value) });
-    if (this.used(cardId, k) + raw.length > VIEW_QUOTA) throw new Error(`storage quota of ${VIEW_QUOTA} bytes exceeded`);
+    if (this.used(cardId, k) + raw.length > VIEW_QUOTA)
+      throw new Error(`storage quota of ${VIEW_QUOTA} bytes exceeded`);
     this.ls.setItem(k, raw);
   }
 
@@ -138,7 +140,8 @@ export class CardStore {
       this.ls.removeItem(k);
       return;
     }
-    if (this.used(cardId, k) + key.length + value.length > VIEW_QUOTA) throw new Error(`storage quota of ${VIEW_QUOTA} bytes exceeded`);
+    if (this.used(cardId, k) + key.length + value.length > VIEW_QUOTA)
+      throw new Error(`storage quota of ${VIEW_QUOTA} bytes exceeded`);
     this.ls.setItem(k, value);
   }
 

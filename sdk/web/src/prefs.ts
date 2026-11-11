@@ -36,13 +36,16 @@ export type Source =
   | { kind: "detected"; from: string }
   | { kind: "default" };
 
-export type ResolvedPrefs = {
+export interface ResolvedPrefs {
   prefs: DisplayPrefs;
   sources: { readonly [K in keyof DisplayPrefs]: Source };
-};
+}
 
 /** What the display reports about itself. */
-export type PrefsEnv = { language?: string; timeZone?: string };
+export interface PrefsEnv {
+  language?: string;
+  timeZone?: string;
+}
 
 export const DEFAULT_LOCALE = "en-US";
 export const DEFAULT_TIME_ZONE = "UTC";
@@ -104,11 +107,11 @@ function unitsFor(region: string | undefined): Units {
 
 /** A Unicode locale extension keyword's value, e.g. `ms` in `en-u-ms-metric`. */
 function keyword(locale: string, key: string): string | undefined {
-  const m = locale.toLowerCase().match(/-u-(.*)$/);
+  const m = /-u-(.*)$/.exec(locale.toLowerCase());
   if (!m) return undefined;
-  const parts = m[1]!.split("-");
+  const parts = m[1].split("-");
   for (let i = 0; i < parts.length; i++) {
-    if (parts[i]!.length === 1) break; // another extension starts
+    if (parts[i].length === 1) break; // another extension starts
     if (parts[i] === key) return parts[i + 1];
   }
   return undefined;
@@ -136,13 +139,25 @@ function overridden(units: Units, locale: string): { units: Units; by?: string }
       by = "-u-ms-metric";
       break;
     case "ussystem":
-      out = { temperature: TemperatureUnit.FAHRENHEIT, speed: SpeedUnit.MPH, mass: MassUnit.LB, distance: DistanceUnit.MI };
+      out = {
+        temperature: TemperatureUnit.FAHRENHEIT,
+        speed: SpeedUnit.MPH,
+        mass: MassUnit.LB,
+        distance: DistanceUnit.MI,
+      };
       by = "-u-ms-ussystem";
       break;
     case "uksystem":
-      out = { temperature: TemperatureUnit.CELSIUS, speed: SpeedUnit.MPH, mass: MassUnit.KG, distance: DistanceUnit.MI };
+      out = {
+        temperature: TemperatureUnit.CELSIUS,
+        speed: SpeedUnit.MPH,
+        mass: MassUnit.KG,
+        distance: DistanceUnit.MI,
+      };
       by = "-u-ms-uksystem";
       break;
+    default:
+    // None, or one we don't know: the region decides.
   }
   const mu = keyword(locale, "mu");
   if (mu === "celsius" || mu === "fahrenh") {
@@ -195,7 +210,8 @@ export function resolvePrefs(partial: Preferences | undefined, env: PrefsEnv): R
 
   // What follows from the locale is as good as the locale: a default locale
   // gives default values.
-  const fromLocale = (from: string): Source => (localeSrc.kind === "default" ? { kind: "default" } : { kind: "detected", from });
+  const fromLocale = (from: string): Source =>
+    localeSrc.kind === "default" ? { kind: "default" } : { kind: "detected", from };
 
   const region = regionOf(locale);
   const { units, by } = overridden(unitsFor(region), locale);
@@ -205,6 +221,8 @@ export function resolvePrefs(partial: Preferences | undefined, env: PrefsEnv): R
   const known = (e: object, v: number) => v !== 0 && Object.values(e).includes(v);
   const pick = <K extends keyof Units>(k: K, e: object): [Units[K], Source] => {
     const v = p[k] as number;
+    // known() just checked that v is one of the enum's values.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment
     return known(e, v) ? [v as Units[K], { kind: "set" }] : [units[k], unitSrc];
   };
   const [temperature, temperatureSrc] = pick("temperature", TemperatureUnit);

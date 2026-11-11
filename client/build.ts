@@ -22,7 +22,10 @@ const solidJSX: BunPlugin = {
         babelrc: false,
         configFile: false,
         // Presets run last to first: strip types, then compile JSX.
-        presets: [[solid, { generate: "dom" }], [typescript, {}]],
+        presets: [
+          [solid, { generate: "dom" }],
+          [typescript, {}],
+        ],
       });
       if (!out?.code) throw new Error(`babel produced nothing for ${path}`);
       return { contents: out.code, loader: "js" };

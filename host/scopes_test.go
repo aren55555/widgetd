@@ -154,7 +154,7 @@ func TestUndeclaredScopeFlagsInstance(t *testing.T) {
 	h.waitState("ia", widgetdv1.InstanceStatus_STATE_RUNNING)
 	ia := h.srv.instances["ia"]
 	rh := &runHost{in: ia, ctx: context.Background(), cards: map[string]*card{}}
-	req, _ := http.NewRequest("GET", "https://api.example.com/needs-c", nil)
+	req, _ := http.NewRequest(http.MethodGet, "https://api.example.com/needs-c", http.NoBody)
 	_, err := rh.Fetch(widget.Authorize(req))
 	var se *widget.ScopeError
 	if !errors.As(err, &se) || !se.Refused || !slices.Equal(se.Missing, []string{"c"}) {

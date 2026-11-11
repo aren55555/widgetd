@@ -231,11 +231,12 @@ func (w *spiral) candles(ctx context.Context, from, to time.Time) ([]*pb.DailyCl
 		if len(r) < 5 || r[4] <= 0 {
 			continue
 		}
-		d := int32(int64(r[0]) / int64(day/time.Second))
-		if d < int32(from.Unix()/int64(day/time.Second)) || d >= int32(to.Unix()/int64(day/time.Second)) {
+		secs := int64(day / time.Second)
+		d := int64(r[0]) / secs
+		if d < from.Unix()/secs || d >= to.Unix()/secs {
 			continue
 		}
-		out = append(out, &pb.DailyClose{Day: d, Close: r[4]})
+		out = append(out, &pb.DailyClose{Day: int32(d), Close: r[4]})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].GetDay() < out[j].GetDay() })
 	return out, nil
@@ -271,7 +272,7 @@ func (w *spiral) get(ctx context.Context, path string, into any) error {
 
 // getJSON reads a URL as JSON, through the host's policed fetch.
 func (w *spiral) getJSON(ctx context.Context, rawURL string, into any) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, http.NoBody)
 	if err != nil {
 		return err
 	}

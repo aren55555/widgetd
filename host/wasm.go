@@ -223,7 +223,7 @@ func errResult(err error) *abiv1.Result {
 	if errors.As(err, &se) {
 		return &abiv1.Result{Error: err.Error(), Scope: &abiv1.ScopeProblem{Provider: se.Provider, Missing: se.Missing, Refused: se.Refused}}
 	}
-	var pd *PolicyDenied
+	var pd *PolicyDeniedError
 	if errors.As(err, &pd) {
 		return &abiv1.Result{Error: err.Error(), DeniedRule: pd.Rule}
 	}
@@ -348,18 +348,19 @@ func (g *guest) dispatch(ctx context.Context, call *abiv1.Call) *abiv1.Result {
 		g.mu.Lock()
 		for id, rc := range g.cards {
 			ch := rc.Actions()
-			for ch != nil {
+			// Take what's queued without waiting. A nil channel is never
+			// ready, so it falls to the default.
+		drain:
+			for {
 				select {
 				case b, ok := <-ch:
 					if !ok {
-						ch = nil
-						break
+						break drain
 					}
 					out.Actions = append(out.Actions, &abiv1.CardAction{CardId: id, Value: b})
-					continue
 				default:
+					break drain
 				}
-				break
 			}
 		}
 		g.mu.Unlock()

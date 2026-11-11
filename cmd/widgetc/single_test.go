@@ -112,7 +112,7 @@ func TestSplitJoinRoundTrip(t *testing.T) {
 	if got := read("server/server.go"); !strings.Contains(got, `"example.com/m/out/demo/gen/demo/common/v1"`) || !strings.Contains(got, `"example.com/m/out/demo/server/util"`) {
 		t.Errorf("server.go imports not rewritten:\n%s", got)
 	}
-	if _, err := os.Stat(filepath.Join(dir, "proto/demo/v1/demo.proto")); err != nil {
+	if _, err := os.Stat(filepath.Join(dir, "proto", "demo", "v1", "demo.proto")); err != nil {
 		t.Errorf("schema not at its default path: %v", err)
 	}
 	if err := split(wfile, dir); err == nil {
@@ -181,7 +181,7 @@ func TestSplitAnnotates(t *testing.T) {
 			t.Errorf("%s: want it to start %q, got %q", p, want, firstLine(string(b)))
 		}
 	}
-	b, _ := os.ReadFile(filepath.Join(dir, "view/sub/x.ts"))
+	b, _ := os.ReadFile(filepath.Join(dir, "view", "sub", "x.ts"))
 	if !strings.HasPrefix(string(b), "// Generated from demo.widget") {
 		t.Errorf("view/sub/x.ts: no header: %q", firstLine(string(b)))
 	}

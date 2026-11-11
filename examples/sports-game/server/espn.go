@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -52,7 +53,7 @@ type espn struct {
 }
 
 func (e espn) get(ctx context.Context, path string, into any) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, espnAPI+leaguePath[e.league]+path, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, espnAPI+leaguePath[e.league]+path, http.NoBody)
 	if err != nil {
 		return err
 	}
@@ -72,7 +73,7 @@ func (e espn) get(ctx context.Context, path string, into any) error {
 	return json.NewDecoder(resp.Body).Decode(into)
 }
 
-var errNotFound = fmt.Errorf("not found")
+var errNotFound = errors.New("not found")
 
 // schedule is a team's season: every game, past and to come.
 func (e espn) schedule(ctx context.Context, team string) (string, []scheduled, error) {
@@ -93,7 +94,7 @@ func (e espn) schedule(ctx context.Context, team string) (string, []scheduled, e
 		} `json:"events"`
 	}
 	err := e.get(ctx, "/teams/"+url.PathEscape(strings.ToLower(team))+"/schedule", &resp)
-	if err == errNotFound || (err == nil && resp.Team.DisplayName == "") {
+	if errors.Is(err, errNotFound) || (err == nil && resp.Team.DisplayName == "") {
 		return "", nil, fmt.Errorf("ESPN has no %s team %q", pb.League_name[int32(e.league)][len("LEAGUE_"):], team)
 	}
 	if err != nil {

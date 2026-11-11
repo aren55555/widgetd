@@ -9,14 +9,27 @@
 import { create, ScalarType, type DescField, type DescMessage, type DescOneof, type Message } from "@bufbuild/protobuf";
 import { pathToString } from "@bufbuild/protobuf/reflect";
 import { createValidator } from "@bufbuild/protovalidate";
-import { createSignal, Show, untrack, type Accessor, type JSX } from "solid-js";
+import { createSignal, Show, untrack, type Accessor, type JSX, For } from "solid-js";
 
-import { choiceOptions, defaultItem, enumLabel, humanize, normalizePath, parseScalar, type Choices, type FieldChoice, type Secrets } from "./form.ts";
+import {
+  choiceOptions,
+  defaultItem,
+  enumLabel,
+  humanize,
+  normalizePath,
+  parseScalar,
+  type Choices,
+  type FieldChoice,
+  type Secrets,
+} from "./form.ts";
 import * as ui from "./ui.ts";
 
 type Rec = Record<string, unknown>;
+/** A scalar field's value as text: "" when it's unset. */
+const scalarText = (v: unknown): string =>
+  typeof v === "string" || typeof v === "number" || typeof v === "bigint" || typeof v === "boolean" ? String(v) : "";
 
-type Ctx = {
+interface Ctx {
   /** Called after any edit. */
   changed: () => void;
   choices: Accessor<Choices>;
@@ -27,18 +40,21 @@ type Ctx = {
   error: (path: string) => string;
   /** Record, or with undefined clear, that a field's text doesn't parse. */
   parseError: (path: string, message: string | undefined) => void;
-};
+}
 
-export type Violation = { field: string; message: string };
+export interface Violation {
+  field: string;
+  message: string;
+}
 
-export type ConfigForm = {
+export interface ConfigForm {
   view: JSX.Element;
   /**
    * Check the message as it now stands (or show the server's violations)
    * beside each field, and return whether it's valid.
    */
   validate: (server?: Violation[]) => boolean;
-};
+}
 
 /**
  * A form for `msg` (a message of `desc`). Call it from inside a component:
@@ -65,15 +81,19 @@ export function createConfigForm(
         return next;
       }),
   };
-  const view = messageFields(desc, msg as unknown as Rec, "", ctx);
+  const view = messageFields(desc, msg, "", ctx);
   const validator = createValidator();
 
   function validate(server?: Violation[]): boolean {
     const found =
       server ??
       (() => {
-        const r = validator.validate(desc, msg as never);
-        return r.kind === "valid" ? [] : r.kind === "invalid" ? r.violations.map((v) => ({ field: pathToString(v.field), message: v.message })) : [{ field: "", message: r.error.message }];
+        const r = validator.validate(desc, msg);
+        return r.kind === "valid"
+          ? []
+          : r.kind === "invalid"
+            ? r.violations.map((v) => ({ field: pathToString(v.field), message: v.message }))
+            : [{ field: "", message: r.error.message }];
       })();
     const shown = new Map<string, string>();
     for (const v of found) {
@@ -133,7 +153,7 @@ function field(f: DescField, obj: Rec, path: string, ctx: Ctx): JSX.Element {
     );
   }
   if (f.fieldKind === "list") {
-    const list = (obj[key] as unknown[]) ?? (obj[key] = []);
+    const list = (obj[key] as unknown[] | undefined) ?? (obj[key] = []);
     // Adding or removing an item redraws the rows: each row edits list[i].
     const [rows, setRows] = createSignal(0);
     const redraw = () => {
@@ -190,7 +210,15 @@ function field(f: DescField, obj: Rec, path: string, ctx: Ctx): JSX.Element {
 }
 
 /** One value: a scalar input, an enum select, or a nested message. */
-function itemEditor(f: DescField, holder: Rec, key: string, path: string, ctx: Ctx, commit: () => void, label?: string): JSX.Element {
+function itemEditor(
+  f: DescField,
+  holder: Rec,
+  key: string,
+  path: string,
+  ctx: Ctx,
+  commit: () => void,
+  label?: string,
+): JSX.Element {
   const kind = f.fieldKind === "list" ? f.listKind : f.fieldKind;
   const wrap = (input: JSX.Element) =>
     label ? (
@@ -210,7 +238,7 @@ function itemEditor(f: DescField, holder: Rec, key: string, path: string, ctx: C
   if (kind === "message") {
     let m = holder[key] as Rec | undefined;
     if (!m) {
-      m = create(f.message!) as unknown as Rec;
+      m = create(f.message!);
       holder[key] = m;
       commit();
     }
@@ -228,17 +256,21 @@ function itemEditor(f: DescField, holder: Rec, key: string, path: string, ctx: C
     const e = f.enum!;
     return wrap(
       <select class={ui.select} onChange={(ev) => set(Number(ev.currentTarget.value))}>
-        {e.values.map((v) => (
-          <option value={String(v.number)} selected={holder[key] === v.number}>
-            {v.number === 0 ? `(${enumLabel(e, v.name).toLowerCase() || "default"})` : enumLabel(e, v.name)}
-          </option>
-        ))}
+        <For each={e.values}>
+          {(v) => (
+            <option value={String(v.number)} selected={holder[key] === v.number}>
+              {v.number === 0 ? `(${enumLabel(e, v.name).toLowerCase() || "default"})` : enumLabel(e, v.name)}
+            </option>
+          )}
+        </For>
       </select>,
     );
   }
   const t = f.scalar!;
   if (t === ScalarType.BOOL) {
-    const box = <input type="checkbox" checked={holder[key] === true} onChange={(ev) => set(ev.currentTarget.checked)} />;
+    const box = (
+      <input type="checkbox" checked={holder[key] === true} onChange={(ev) => set(ev.currentTarget.checked)} />
+    );
     return label ? (
       <label class={ui.check}>
         {box}
@@ -270,7 +302,7 @@ function textInput(t: ScalarType, holder: Rec, key: string, path: string, ctx: C
       class={ui.input}
       inputmode={t === ScalarType.STRING ? "text" : "decimal"}
       autocomplete="off"
-      value={holder[key] === undefined ? "" : String(holder[key])}
+      value={scalarText(holder[key])}
       aria-invalid={invalid() ? "true" : undefined}
       onInput={(ev) => {
         const r = parseScalar(t, ev.currentTarget.value);
@@ -307,7 +339,12 @@ function oneofField(o: DescOneof, obj: Rec, path: string, ctx: Ctx): JSX.Element
           const f = o.fields.find((x) => x.localName === ev.currentTarget.value);
           if (!f) obj[o.localName] = { case: undefined };
           else {
-            const v = f.fieldKind === "message" ? create(f.message) : f.fieldKind === "enum" ? 0 : ((parseScalar(f.scalar!, "") as { value: unknown }).value ?? "");
+            const v =
+              f.fieldKind === "message"
+                ? create(f.message)
+                : f.fieldKind === "enum"
+                  ? 0
+                  : ((parseScalar(f.scalar!, "") as { value: unknown }).value ?? "");
             obj[o.localName] = { case: f.localName, value: v };
           }
           setPicked(f?.localName ?? "");
@@ -315,11 +352,13 @@ function oneofField(o: DescOneof, obj: Rec, path: string, ctx: Ctx): JSX.Element
         }}
       >
         <option value="">(none)</option>
-        {o.fields.map((f) => (
-          <option value={f.localName} selected={picked() === f.localName}>
-            {humanize(f.name)}
-          </option>
-        ))}
+        <For each={o.fields}>
+          {(f) => (
+            <option value={f.localName} selected={picked() === f.localName}>
+              {humanize(f.name)}
+            </option>
+          )}
+        </For>
       </select>
       {body()}
       {err}
@@ -333,15 +372,17 @@ function oneofField(o: DescOneof, obj: Rec, path: string, ctx: Ctx): JSX.Element
  * changes a setting by itself.
  */
 function choiceSelect(picks: readonly FieldChoice[], holder: Rec, key: string, set: (v: string) => void): JSX.Element {
-  const current = String(holder[key] ?? "");
+  const current = scalarText(holder[key]);
   return (
     <select class={ui.select} onChange={(ev) => set(ev.currentTarget.value)}>
       <option value="">(choose)</option>
-      {choiceOptions(picks, current).map((opt) => (
-        <option value={opt.value} selected={opt.value === current}>
-          {opt.label}
-        </option>
-      ))}
+      <For each={choiceOptions(picks, current)}>
+        {(opt) => (
+          <option value={opt.value} selected={opt.value === current}>
+            {opt.label}
+          </option>
+        )}
+      </For>
     </select>
   );
 }

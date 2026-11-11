@@ -90,7 +90,7 @@ func seedConfig(w *loadedWidget, in Instance) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := w.schema.check(want, b); err != nil {
+	if err := w.schema.check(want, b); err != nil {
 		return nil, fmt.Errorf("instance %s: %w", in.ID, err)
 	}
 	return b, nil
@@ -108,21 +108,16 @@ func (s *Server) loadInstances() error {
 	}
 	// Read every row before loading any secrets: the pool has one
 	// connection, and these rows hold it until they're closed.
-	var all []row
 	rows, err := s.db.Query(`SELECT id, widget, label, config, configured, created_at FROM instances ORDER BY created_at, id`)
 	if err != nil {
 		return err
 	}
-	for rows.Next() {
+	all, err := collect(rows, func(rows *sql.Rows) (row, error) {
 		var r row
-		if err := rows.Scan(&r.id, &r.widget, &r.label, &r.cfg, &r.configured, &r.created); err != nil {
-			rows.Close()
-			return err
-		}
-		all = append(all, r)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
+		err := rows.Scan(&r.id, &r.widget, &r.label, &r.cfg, &r.configured, &r.created)
+		return r, err
+	})
+	if err != nil {
 		return err
 	}
 	for _, r := range all {
@@ -171,7 +166,7 @@ func (in *instance) checkConfig(cfg []byte) error {
 		}
 		return nil
 	}
-	_, err := in.w.schema.check(spec.ProtoReflect().Descriptor().FullName(), cfg)
+	err := in.w.schema.check(spec.ProtoReflect().Descriptor().FullName(), cfg)
 	return err
 }
 

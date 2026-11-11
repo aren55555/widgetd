@@ -10,7 +10,7 @@ import type { Icon } from "../gen/widgetd/v1/stream_pb.ts";
 const SVG = "http://www.w3.org/2000/svg";
 
 /** The attributes each shape may have: what Lucide's icons use. Mirrors host/icon.go. */
-const SHAPES: Record<string, ReadonlySet<string>> = {
+const SHAPES: Partial<Record<string, ReadonlySet<string>>> = {
   path: new Set(["d"]),
   circle: new Set(["cx", "cy", "r", "fill"]),
   rect: new Set(["x", "y", "width", "height", "rx", "ry"]),

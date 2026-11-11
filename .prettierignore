@@ -1,0 +1,17 @@
+# Prettier formats the hand-written TypeScript. Everything generated, built
+# or vendored is left alone, as are files other tools own.
+**/gen/
+**/dist/
+**/node_modules/
+examples/.widgetc/
+spikes/
+bin/
+data/
+bun.lock
+*.md
+*.json
+*.yaml
+*.yml
+*.css
+*.html
+*.widget

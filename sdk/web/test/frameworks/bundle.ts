@@ -6,7 +6,7 @@
 import { join } from "node:path";
 import { solid } from "../../src/build/solid.ts";
 
-const fixture = process.argv[2]!;
+const fixture = process.argv[2];
 const r = await Bun.build({
   entrypoints: [join(import.meta.dir, fixture)],
   format: "iife",
@@ -19,4 +19,4 @@ if (!r.success) {
   for (const l of r.logs) console.error(l);
   process.exit(1);
 }
-process.stdout.write(await r.outputs[0]!.text());
+process.stdout.write(await r.outputs[0].text());

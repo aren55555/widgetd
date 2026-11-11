@@ -26,9 +26,9 @@ const (
 	maxDeltas = 120
 	// actionBuffer is how many actions a card holds for a widget that's busy.
 	actionBuffer = 16
-	// restartMin/Max bound the backoff between restarts of a failing instance.
-	restartMin = time.Second
-	restartMax = 5 * time.Minute
+	// minBackoff and maxBackoff bound the backoff between restarts of a failing instance.
+	minBackoff = time.Second
+	maxBackoff = 5 * time.Minute
 	// healthyAfter is how long a run must last to reset the backoff.
 	healthyAfter = time.Minute
 )
@@ -55,9 +55,9 @@ type instance struct {
 	// With STATE_NEEDS_SIGN_IN: the provider, and the account (if one is
 	// bound) it waits for.
 	waitProvider, waitAccount, waitLabel string
-	bindings   map[string]string // provider → account id (see accounts.go)
-	warning    string // something wrong that doesn't stop it
-	quarantine string // set: stopped, and out of its accounts' grants (see accounts.go)
+	bindings                             map[string]string // provider → account id (see accounts.go)
+	warning                              string            // something wrong that doesn't stop it
+	quarantine                           string            // set: stopped, and out of its accounts' grants (see accounts.go)
 
 	// Set while running; guarded by srv.mu.
 	cancel context.CancelFunc
@@ -71,13 +71,13 @@ type instance struct {
 // backoff when it returns or panics. Each run gets its own epoch and its own
 // Host, so anything a previous run left behind can no longer emit.
 func (in *instance) run(ctx context.Context) {
-	backoff := restartMin
+	backoff := minBackoff
 	for {
 		in.setState(widgetdv1.InstanceStatus_STATE_RUNNING, "")
 		started := time.Now()
 		h := &runHost{in: in, epoch: uint64(started.UnixNano()), cards: map[string]*card{}}
 		runCtx, cancel := context.WithCancel(ctx)
-		h.ctx, h.cancel = runCtx, cancel
+		h.ctx, h.cancel = runCtx, cancel //nolint:fatcontext // a fresh child of ctx each run, not a nested one
 		err := in.safeRun(runCtx, h)
 		cancel()
 		h.close()
@@ -86,7 +86,7 @@ func (in *instance) run(ctx context.Context) {
 			return
 		}
 		if time.Since(started) > healthyAfter {
-			backoff = restartMin
+			backoff = minBackoff
 		}
 		in.log.Warn("widget instance stopped; restarting", "err", err, "in", backoff)
 		in.restartN.Add(1)
@@ -96,7 +96,7 @@ func (in *instance) run(ctx context.Context) {
 			return
 		case <-time.After(backoff):
 		}
-		backoff = min(backoff*2, restartMax)
+		backoff = min(backoff*2, maxBackoff)
 	}
 }
 
@@ -115,7 +115,7 @@ func (in *instance) safeRun(ctx context.Context, h *runHost) (err error) {
 	}
 	err = in.w.spec.Run(ctx, h)
 	if err == nil {
-		err = errors.New("Run returned")
+		err = errors.New("the widget's Run returned")
 	}
 	return err
 }
@@ -342,7 +342,7 @@ func (r *rawCard) Snapshot(state []byte) error {
 	if err := r.live(); err != nil {
 		return err
 	}
-	if _, err := r.h.in.w.schema.check(r.opts.StateType, state); err != nil {
+	if err := r.h.in.w.schema.check(r.opts.StateType, state); err != nil {
 		return r.refuse(err)
 	}
 	if !r.h.in.srv.board.snapshot(r.c, state) {
@@ -359,7 +359,7 @@ func (r *rawCard) Delta(delta []byte, current func() ([]byte, error)) error {
 		return errors.New("card was mounted without a Delta type")
 	}
 	sch := r.h.in.w.schema
-	if _, err := sch.check(r.opts.DeltaType, delta); err != nil {
+	if err := sch.check(r.opts.DeltaType, delta); err != nil {
 		return r.refuse(err)
 	}
 	checked := func() ([]byte, error) {
@@ -367,7 +367,7 @@ func (r *rawCard) Delta(delta []byte, current func() ([]byte, error)) error {
 		if err != nil {
 			return nil, err
 		}
-		if _, err := sch.check(r.opts.StateType, b); err != nil {
+		if err := sch.check(r.opts.StateType, b); err != nil {
 			return nil, r.refuse(err)
 		}
 		return b, nil
@@ -390,7 +390,7 @@ func (r *rawCard) deltaDeferred(delta []byte) (bool, error) {
 	if r.opts.DeltaType == "" {
 		return false, errors.New("card was mounted without a Delta type")
 	}
-	if _, err := r.h.in.w.schema.check(r.opts.DeltaType, delta); err != nil {
+	if err := r.h.in.w.schema.check(r.opts.DeltaType, delta); err != nil {
 		return false, r.refuse(err)
 	}
 	want, ok, err := r.h.in.srv.board.deltaDeferred(r.c, delta)
@@ -405,7 +405,7 @@ func (r *rawCard) checkpoint(state []byte) error {
 	if err := r.live(); err != nil {
 		return err
 	}
-	if _, err := r.h.in.w.schema.check(r.opts.StateType, state); err != nil {
+	if err := r.h.in.w.schema.check(r.opts.StateType, state); err != nil {
 		return r.refuse(err)
 	}
 	if !r.h.in.srv.board.checkpoint(r.c, state) {

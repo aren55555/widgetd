@@ -5,7 +5,11 @@
 import type { Event, State } from "./gen/calendar/v1/calendar_pb.ts";
 
 /** What the display is set to. Board options will hand these in as ctx.prefs; until then, detectPrefs. */
-export type Prefs = { locale: string; timeZone: string; hour12: boolean };
+export interface Prefs {
+  locale: string;
+  timeZone: string;
+  hour12: boolean;
+}
 
 export function detectPrefs(): Prefs {
   const o = new Intl.DateTimeFormat(undefined, { hour: "numeric" }).resolvedOptions();
@@ -26,7 +30,13 @@ function parter(tz: string): Intl.DateTimeFormat {
   let f = parters.get(tz);
   if (!f) {
     f = new Intl.DateTimeFormat("en-US", {
-      timeZone: tz, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric",
+      timeZone: tz,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
     });
     parters.set(tz, f);
   }
@@ -37,7 +47,7 @@ function parter(tz: string): Intl.DateTimeFormat {
 export function wall(ms: number, tz: string): { day: number; min: number } {
   const p: Record<string, number> = {};
   for (const x of parter(tz).formatToParts(ms)) if (x.type !== "literal") p[x.type] = Number(x.value);
-  const local = Date.UTC(p.year!, p.month! - 1, p.day!, p.hour! % 24, p.minute!);
+  const local = Date.UTC(p.year, p.month - 1, p.day, p.hour % 24, p.minute);
   return { day: Math.floor(local / DAY), min: Math.round((local - Math.floor(local / DAY) * DAY) / MIN) };
 }
 
@@ -62,7 +72,7 @@ export const weekday = (day: number) => (((day + 4) % 7) + 7) % 7;
 
 // ---------- days ----------
 
-export type Span = {
+export interface Span {
   /** Minutes from the day's start (real minutes: a DST day is 23 or 25 h). */
   s: number;
   e: number;
@@ -73,9 +83,9 @@ export type Span = {
   /** The whole event's instants, for its labels. */
   from: number;
   to: number;
-};
+}
 
-export type Day = {
+export interface Day {
   day: number; // civil day number
   start: number; // ms
   len: number; // minutes
@@ -89,32 +99,39 @@ export type Day = {
   /** Dim [0, pastUntil). */
   pastUntil: number;
   now: number | null;
-};
+}
 
 /** Expands packed [start − previous start, duration] pairs into [start, end] unit offsets. */
-export function unpack(packed: readonly number[]): [number, number][] {
-  const out: [number, number][] = [];
+export function unpack(packed: readonly number[]): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
   let at = 0;
   for (let i = 0; i + 1 < packed.length; i += 2) {
-    at += packed[i]!;
-    out.push([at, at + packed[i + 1]!]);
+    at += packed[i];
+    out.push([at, at + packed[i + 1]]);
   }
   return out;
 }
 
 /** The 14 days from this week's Sunday, as the screen in prefs.timeZone sees them. */
 export function fortnight(st: State, now: number, prefs: Prefs): Day[] {
-  const tz = prefs.timeZone, ws = Number(st.windowStart) * 1000, unit = (st.resolutionMinutes || 5) * MIN;
-  const busy = unpack(st.busy), tent = unpack(st.tentative);
+  const tz = prefs.timeZone;
+  const ws = Number(st.windowStart) * 1000;
+  const unit = (st.resolutionMinutes || 5) * MIN;
+  const busy = unpack(st.busy);
+  const tent = unpack(st.tentative);
   const all = [
     ...busy.map(([a, b], i) => ({ from: ws + a * unit, to: ws + b * unit, k: false, ev: st.events[i] })),
     ...tent.map(([a, b], i) => ({ from: ws + a * unit, to: ws + b * unit, k: true, ev: st.events[busy.length + i] })),
   ];
   const wh = st.workingHours ?? { start: 540, end: 1050, days: 0b0111110 };
-  const today = wall(now, tz).day, sunday = today - weekday(today);
+  const today = wall(now, tz).day;
+  const sunday = today - weekday(today);
   const days: Day[] = [];
   for (let i = 0; i < 14; i++) {
-    const day = sunday + i, start = instant(day, 0, tz), end = instant(day + 1, 0, tz), len = Math.round((end - start) / MIN);
+    const day = sunday + i;
+    const start = instant(day, 0, tz);
+    const end = instant(day + 1, 0, tz);
+    const len = Math.round((end - start) / MIN);
     const at = (ms: number) => Math.round((ms - start) / MIN);
     const spans: Span[] = [];
     for (const x of all) {
@@ -126,11 +143,17 @@ export function fortnight(st: State, now: number, prefs: Prefs): Day[] {
     const wd = weekday(day);
     const nowMin = day === today ? at(now) : null;
     days.push({
-      day, start, len, spans, allDay,
+      day,
+      start,
+      len,
+      spans,
+      allDay,
       working: ((wh.days >> wd) & 1) === 1,
       work: [at(instant(day, wh.start, tz)), at(instant(day, Math.min(wh.end, 1440), tz))],
-      today: day === today, weekend: wd === 0 || wd === 6,
-      pastUntil: day < today ? len : nowMin ?? 0, now: nowMin,
+      today: day === today,
+      weekend: wd === 0 || wd === 6,
+      pastUntil: day < today ? len : (nowMin ?? 0),
+      now: nowMin,
     });
   }
   return days;
@@ -145,13 +168,19 @@ export type Cat = "busy" | "double" | "tent";
  * event, with or without tentative ones), double (two or more accepted) or
  * tent (tentative only).
  */
-export function segments(spans: readonly Span[]): { s: number; e: number; cat: Cat }[] {
+export function segments(spans: readonly Span[]): Array<{ s: number; e: number; cat: Cat }> {
   const cuts = [...new Set(spans.flatMap((x) => [x.s, x.e]))].sort((a, b) => a - b);
-  const out: { s: number; e: number; cat: Cat }[] = [];
+  const out: Array<{ s: number; e: number; cat: Cat }> = [];
   for (let i = 0; i + 1 < cuts.length; i++) {
-    const a = cuts[i]!, b = cuts[i + 1]!;
-    let busy = 0, tent = 0;
-    for (const x of spans) if (x.s <= a && x.e >= b) x.k ? tent++ : busy++;
+    const a = cuts[i];
+    const b = cuts[i + 1];
+    let busy = 0;
+    let tent = 0;
+    for (const x of spans) {
+      if (x.s > a || x.e < b) continue;
+      if (x.k) tent++;
+      else busy++;
+    }
     const cat = busy >= 2 ? "double" : busy ? "busy" : tent ? "tent" : null;
     if (cat) out.push({ s: a, e: b, cat });
   }
@@ -159,8 +188,9 @@ export function segments(spans: readonly Span[]): { s: number; e: number; cat: C
 }
 
 /** Lanes: each span takes the first lane free when it starts. */
-export function lanes(spans: readonly { s: number; e: number }[]): { lane: number[]; count: number } {
-  const ends: number[] = [], lane: number[] = [];
+export function lanes(spans: ReadonlyArray<{ s: number; e: number }>): { lane: number[]; count: number } {
+  const ends: number[] = [];
+  const lane: number[] = [];
   for (const x of spans) {
     let l = ends.findIndex((end) => end <= x.s);
     if (l < 0) {
@@ -175,7 +205,7 @@ export function lanes(spans: readonly { s: number; e: number }[]): { lane: numbe
 
 /** The accepted spans overlapping span j: it's double-booked with them. */
 export function overlaps(spans: readonly Span[], j: number): Span[] {
-  const x = spans[j]!;
+  const x = spans[j];
   if (x.k) return [];
   return spans.filter((y, i) => i !== j && !y.k && y.s < x.e && x.s < y.e);
 }
@@ -186,10 +216,11 @@ export function overlaps(spans: readonly Span[], j: number): Span[] {
  * side (in the neighbouring day off, or inside the working day when that
  * neighbour is on another row).
  */
-export function hourLabels(days: readonly Day[], i: number, cols: number): ("left" | "right")[] {
-  const d = days[i]!, out: ("left" | "right")[] = [];
+export function hourLabels(days: readonly Day[], i: number, cols: number): Array<"left" | "right"> {
+  const d = days[i];
+  const out: Array<"left" | "right"> = [];
   const sameRow = (j: number) => j >= 0 && j < days.length && Math.floor(j / cols) === Math.floor(i / cols);
-  const isW = (j: number) => sameRow(j) && days[j]!.working;
+  const isW = (j: number) => sameRow(j) && days[j].working;
   if (d.working) {
     if (!isW(i - 1) && !sameRow(i - 1)) out.push("left");
     if (!isW(i + 1) && !sameRow(i + 1)) out.push("right");
@@ -204,9 +235,10 @@ export function hourLabels(days: readonly Day[], i: number, cols: number): ("lef
 
 /** A wall-clock time, compactly: "9a", "5:30p" on a 12-hour clock; "09", "17:30" on a 24-hour one. */
 export function clockLabel(min: number, hour12: boolean): string {
-  const h = Math.floor(min / 60) % 24, m = Math.round(min % 60);
+  const h = Math.floor(min / 60) % 24;
+  const m = Math.round(min % 60);
   if (!hour12) return String(h).padStart(2, "0") + (m ? ":" + String(m).padStart(2, "0") : "");
-  return (h % 12 || 12) + (m ? ":" + String(m).padStart(2, "0") : "") + (h < 12 ? "a" : "p");
+  return String(h % 12 || 12) + (m ? ":" + String(m).padStart(2, "0") : "") + (h < 12 ? "a" : "p");
 }
 
 /** An instant's wall-clock label in the display's zone. */

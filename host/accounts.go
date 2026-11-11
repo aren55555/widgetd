@@ -208,16 +208,14 @@ func (s *Server) migrateClients() error {
 		widget, id string
 		sealed     []byte
 	}
-	var olds []old
-	for rows.Next() {
+	olds, err := collect(rows, func(rows *sql.Rows) (old, error) {
 		var o old
-		if err := rows.Scan(&o.widget, &o.id, &o.sealed); err != nil {
-			rows.Close()
-			return err
-		}
-		olds = append(olds, o)
+		err := rows.Scan(&o.widget, &o.id, &o.sealed)
+		return o, err
+	})
+	if err != nil {
+		return err
 	}
-	rows.Close()
 	for _, o := range olds {
 		w, ok := s.widgets[o.widget]
 		if !ok || len(w.usedProviders()) != 1 {
@@ -300,16 +298,14 @@ func (s *Server) listAccts(provider string) ([]*account, error) {
 	if err != nil {
 		return nil, err
 	}
-	var ids []string
-	for rows.Next() {
+	ids, err := collect(rows, func(rows *sql.Rows) (string, error) {
 		var id string
-		if err := rows.Scan(&id); err != nil {
-			rows.Close()
-			return nil, err
-		}
-		ids = append(ids, id)
+		err := rows.Scan(&id)
+		return id, err
+	})
+	if err != nil {
+		return nil, err
 	}
-	rows.Close()
 	out := make([]*account, 0, len(ids))
 	for _, id := range ids {
 		a, err := s.loadAcct(id)
@@ -366,7 +362,9 @@ func (s *Server) revokeWithProvider(provider, subject string, t *token, why stri
 		if others, err := s.listAccts(provider); err == nil {
 			for _, o := range others {
 				if o.Token != nil && strings.EqualFold(o.Subject, subject) {
-					s.storeToken(o.ID, nil)
+					if err := s.storeToken(o.ID, nil); err != nil {
+						s.log.Warn("accounts: couldn't sign out an account the provider revoked", "account", o.ID, "err", err)
+					}
 				}
 			}
 		}
@@ -456,7 +454,7 @@ func (s *Server) reconcileLocked(provider string) {
 			// A new sign-in no one named: let it go once it's stale.
 			if time.Since(a.Created) > signInTTL {
 				s.revokeToken(a, "never named")
-				s.db.Exec(`DELETE FROM identities WHERE id = ?`, a.ID)
+				s.dbBestEffort("forget an unnamed sign-in", `DELETE FROM identities WHERE id = ?`, a.ID)
 				s.unbindAllLocked(a.ID)
 			}
 			continue
@@ -489,7 +487,7 @@ func (s *Server) reconcile(provider string) {
 }
 
 func (s *Server) unbindAllLocked(acctID string) {
-	s.db.Exec(`DELETE FROM bindings WHERE account = ?`, acctID)
+	s.dbBestEffort("unbind an account", `DELETE FROM bindings WHERE account = ?`, acctID)
 	for _, in := range s.instances {
 		in.mu.Lock()
 		for p, a := range in.bindings {
@@ -517,16 +515,8 @@ func (s *Server) waitingFor(in *instance) (provider string, a *account) {
 	return "", nil
 }
 
-// startIfReady starts an instance that is configured and covered by its
-// accounts, and otherwise stops it and says what's missing.
-func (s *Server) startIfReady(id string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if in, ok := s.instances[id]; ok {
-		s.startIfReadyLocked(in)
-	}
-}
-
+// startIfReadyLocked starts an instance that is configured and covered by its
+// accounts, and otherwise stops it and says what's missing. Callers hold s.mu.
 func (s *Server) startIfReadyLocked(in *instance) {
 	switch {
 	case !in.configured:
@@ -551,9 +541,9 @@ func (s *Server) startIfReadyLocked(in *instance) {
 
 // ---- the provider, over HTTP ----
 
-// providerForm POSTs (or sends) a form and decodes a JSON reply, if into.
-func (s *Server) providerForm(ctx context.Context, method, endpoint string, form url.Values, hdr http.Header, into any) error {
-	return s.providerDo(ctx, method, endpoint, "application/x-www-form-urlencoded", strings.NewReader(form.Encode()), hdr, into)
+// providerForm POSTs a form and decodes a JSON reply, if into.
+func (s *Server) providerForm(ctx context.Context, endpoint string, form url.Values, hdr http.Header, into any) error {
+	return s.providerDo(ctx, http.MethodPost, endpoint, "application/x-www-form-urlencoded", strings.NewReader(form.Encode()), hdr, into)
 }
 
 func (s *Server) providerJSON(ctx context.Context, method, endpoint, body string, hdr http.Header) error {
@@ -783,7 +773,7 @@ func (s *Server) serveOAuth(w http.ResponseWriter, r *http.Request, rest string)
 		}
 		c, _, _ := s.loadClient(ps.provider)
 		var reply tokenReply
-		err := s.providerForm(r.Context(), http.MethodPost, p.m.SignIn.TokenURL, url.Values{
+		err := s.providerForm(r.Context(), p.m.SignIn.TokenURL, url.Values{
 			"client_id":     {c.id},
 			"client_secret": {c.secret},
 			"code":          {q.Get("code")},
@@ -852,7 +842,7 @@ func (s *Server) signedIn(ctx context.Context, ps *pendingSignIn, t *token) (str
 			return "", err
 		}
 		if a.Subject == "" && subject != "" {
-			s.db.Exec(`UPDATE identities SET subject = ? WHERE id = ?`, subject, a.ID)
+			s.dbBestEffort("record who an account is", `UPDATE identities SET subject = ? WHERE id = ?`, subject, a.ID)
 		}
 		s.setAccountError(a.ID, "")
 		s.log.Info("accounts: signed in", "account", a.ID, "provider", p.Name, "scopes", t.Granted)
@@ -922,7 +912,8 @@ func oauthPage(w http.ResponseWriter, status int, title, body string) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	w.WriteHeader(status)
-	oauthTmpl.Execute(w, struct{ Title, Body string }{title, body})
+	// Headers are sent; a failure here means the client went away.
+	_ = oauthTmpl.Execute(w, struct{ Title, Body string }{title, body})
 }
 
 type deviceCode struct {
@@ -938,7 +929,7 @@ type deviceCode struct {
 
 func (s *Server) beginDevice(ctx context.Context, p *provider, c signInClient, ps *pendingSignIn) (*signInStart, error) {
 	var dc deviceCode
-	err := s.providerForm(ctx, http.MethodPost, p.m.SignIn.DeviceURL, url.Values{"client_id": {c.id}, "scope": {strings.Join(ps.scopes, " ")}}, nil, &dc)
+	err := s.providerForm(ctx, p.m.SignIn.DeviceURL, url.Values{"client_id": {c.id}, "scope": {strings.Join(ps.scopes, " ")}}, nil, &dc)
 	if err != nil {
 		return nil, err
 	}
@@ -996,7 +987,7 @@ func (s *Server) awaitDevice(ctx context.Context, cancel context.CancelFunc, p *
 			form.Set("client_secret", c.secret)
 		}
 		var r tokenReply
-		if err := s.providerForm(ctx, http.MethodPost, p.m.SignIn.TokenURL, form, nil, &r); err != nil {
+		if err := s.providerForm(ctx, p.m.SignIn.TokenURL, form, nil, &r); err != nil {
 			s.log.Warn("accounts: token poll failed", "provider", p.Name, "err", err)
 			continue
 		}
@@ -1044,7 +1035,7 @@ func (s *Server) authorization(ctx context.Context, in *instance, method string,
 		break
 	}
 	if p == nil {
-		return "", "", "", &PolicyDenied{Rule: "this widget's accounts don't cover " + u.Host, URL: u.Redacted()}
+		return "", "", "", &PolicyDeniedError{Rule: "this widget's accounts don't cover " + u.Host, URL: u.Redacted()}
 	}
 	a, err := s.loadAcct(in.binding(p.Name))
 	if err != nil {
@@ -1082,7 +1073,7 @@ func (s *Server) refresh(ctx context.Context, p *provider, a *account) (*token, 
 		form.Set("client_secret", c.secret)
 	}
 	var r tokenReply
-	if err := s.providerForm(ctx, http.MethodPost, p.m.SignIn.TokenURL, form, nil, &r); err != nil {
+	if err := s.providerForm(ctx, p.m.SignIn.TokenURL, form, nil, &r); err != nil {
 		return nil, err
 	}
 	if r.Error != "" || r.AccessToken == "" {
@@ -1428,22 +1419,21 @@ func (s *Server) loadQuarantine() error {
 	if err != nil {
 		return err
 	}
-	q := map[string]string{}
-	for rows.Next() {
-		var id, reason string
-		if err := rows.Scan(&id, &reason); err != nil {
-			rows.Close()
-			return err
-		}
-		q[id] = reason
+	type entry struct{ id, reason string }
+	q, err := collect(rows, func(rows *sql.Rows) (entry, error) {
+		var e entry
+		err := rows.Scan(&e.id, &e.reason)
+		return e, err
+	})
+	if err != nil {
+		return err
 	}
-	rows.Close()
-	for id, reason := range q {
-		if in, ok := s.instances[id]; ok {
-			in.quarantine = reason
+	for _, e := range q {
+		if in, ok := s.instances[e.id]; ok {
+			in.quarantine = e.reason
 		}
 	}
-	return rows.Err()
+	return nil
 }
 
 // unquarantine clears an instance's quarantine (its settings were saved:
@@ -1452,7 +1442,15 @@ func (s *Server) unquarantine(in *instance) {
 	in.mu.Lock()
 	in.quarantine = ""
 	in.mu.Unlock()
-	s.db.Exec(`DELETE FROM quarantine WHERE instance = ?`, in.id)
+	s.dbBestEffort("clear a quarantine", `DELETE FROM quarantine WHERE instance = ?`, in.id)
+}
+
+// dbBestEffort runs a write whose failure shouldn't stop the caller, and logs
+// the failure.
+func (s *Server) dbBestEffort(what, query string, args ...any) {
+	if _, err := s.db.Exec(query, args...); err != nil {
+		s.log.Warn("db: couldn't "+what, "err", err)
+	}
 }
 
 func (s *Server) setAccountError(provider, msg string) {

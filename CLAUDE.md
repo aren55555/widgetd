@@ -6,11 +6,13 @@ widgetd is a self-hostable host for small, live, sandboxed UI widgets. It is a G
 
 ## Commands
 
-Tool versions are pinned in `mise.toml` (go, buf, bun, just). The justfile runs every tool through `mise exec --`.
+Tool versions are pinned in `mise.toml` (go, buf, bun, just, golangci-lint). The justfile runs every tool through `mise exec --`.
 
 ```sh
 just setup          # bun install + buf generate + client bundle + example widgets
 just test           # full CI suite (regenerates and rebuilds first)
+just lint           # golangci-lint, tsc, ESLint, Prettier (CI runs it after test)
+just lint-fix       # apply the fixes they know how to make
 just run [ARGS]     # standalone server on :8080 (reads ./widgetd.toml, state in ./data)
 just build          # bin/widgetd
 just generate       # regenerate from proto/ and internal/testwidget/
@@ -30,6 +32,10 @@ WIDGETC_PARITY=1 mise exec -- go test -count=1 -run 'TestParity|TestFixture' ./c
 ```
 
 The TS test suites are `client/src/lib/*.test.ts`, `sdk/web/test/*.test.ts` and `examples/*/view/*.test.ts`. `sdk/web/test/icons.test.ts` bundles `sdk/web/test/frameworks/*` (vanilla, Preact, React, Solid, Lit) in a child process (`frameworks/bundle.ts`), because `Bun.build` inside `bun test` stops tree-shaking packages the test has also imported, and runs each bundle in happy-dom. JS is a bun workspace (`client`, `sdk/web`, `examples/*/view`). Use bun, not node. The `protoc-gen-es` plugin is run through `bun` explicitly.
+
+## Linting
+
+Go uses `.golangci.yml`, a strict set in the spirit of Google's Go style guide: doc comments on exported names, `XxxError` error types, wrapped errors, and no dropped errors. A deliberately ignored error is written `_ =` with a comment saying why. TS uses `eslint.config.ts`, which is typescript-eslint's strict and stylistic type-checked sets plus Google's rules: named exports only, `interface` over object `type`, no `public`, and `==` only against `null`. Formatting comes from Prettier (`.prettierrc.json`, width 120, double quotes). Type-aware linting uses `tsconfig.lint.json`. Don't rename it to `tsconfig.json`: Bun's bundler would pick it up and break the SDK's Preact and React test bundles. Suppress a rule only with a reason: `//nolint:<linter> // why` in Go, and `// eslint-disable-next-line <rule> -- why` or a comment above it in TS.
 
 ## Generated and committed artifacts
 

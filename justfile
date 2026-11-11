@@ -37,6 +37,22 @@ test: generate client-build examples
     GOOS=wasip1 GOARCH=wasm {{mise}} go vet ./sdk/go/widget ./internal/testwidget/wasm
     {{mise}} go test -race ./...
 
+# Lint and format checks: golangci-lint (.golangci.yml) for Go; tsc, ESLint
+# (eslint.config.ts) and Prettier (.prettierrc.json) for TypeScript
+lint: install
+    {{mise}} golangci-lint run ./...
+    {{mise}} golangci-lint fmt --diff
+    {{mise}} bun x tsc -p tsconfig.lint.json
+    {{mise}} bun --bun x eslint --max-warnings 0 .
+    {{mise}} bun x prettier --check .
+
+# Apply every fix the linters and formatters know how to make
+lint-fix: install
+    {{mise}} golangci-lint fmt
+    {{mise}} golangci-lint run --fix ./...
+    {{mise}} bun --bun x eslint --fix .
+    {{mise}} bun x prettier --write --log-level warn .
+
 # Run the standalone server on :8080
 run *ARGS:
     {{mise}} go run ./cmd/widgetd {{ARGS}}

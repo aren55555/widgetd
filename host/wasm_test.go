@@ -25,7 +25,7 @@ import (
 var (
 	wasmOnce  sync.Once
 	wasmBin   []byte
-	wasmErr   error
+	errWasm   error
 	wasmCache = filepath.Join(os.TempDir(), "widgetd-test-wasm-cache")
 )
 
@@ -33,23 +33,23 @@ var (
 func testWasm(t *testing.T) []byte {
 	t.Helper()
 	wasmOnce.Do(func() {
-		dir, err := os.MkdirTemp("", "widgetd-wasm")
+		dir, err := os.MkdirTemp("", "widgetd-wasm") //nolint:usetesting // shared by every test, so not one test's TempDir
 		if err != nil {
-			wasmErr = err
+			errWasm = err
 			return
 		}
 		out := filepath.Join(dir, "w.wasm")
 		cmd := exec.Command("go", "build", "-o", out, "../internal/testwidget/wasm")
 		cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm")
 		if b, err := cmd.CombinedOutput(); err != nil {
-			wasmErr = err
+			errWasm = err
 			t.Logf("%s", b)
 			return
 		}
-		wasmBin, wasmErr = os.ReadFile(out)
+		wasmBin, errWasm = os.ReadFile(out)
 	})
-	if wasmErr != nil {
-		t.Fatalf("build test widget: %v", wasmErr)
+	if errWasm != nil {
+		t.Fatalf("build test widget: %v", errWasm)
 	}
 	return wasmBin
 }
@@ -346,7 +346,7 @@ func TestWasmVerify(t *testing.T) {
 		t.Fatalf("tidy: saved %v, %v", &cfg, err)
 	}
 	ok := cfgBytes(t, "fine")
-	if v, saved, err := h.srv.verifyConfig(ctx, in, ok); err != nil || len(v) != 0 || string(saved) != string(ok) {
+	if v, saved, err := h.srv.verifyConfig(ctx, in, ok); err != nil || len(v) != 0 || !bytes.Equal(saved, ok) {
 		t.Fatalf("fine: %v %q %v", v, saved, err)
 	}
 }

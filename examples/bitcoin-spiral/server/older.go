@@ -51,6 +51,8 @@ func (w *spiral) loadOlder(ctx context.Context) (int, error) {
 			older, err = w.bitstampCloses(ctx)
 		case pb.OlderHistory_OLDER_HISTORY_BLOCKCHAIN_INFO:
 			older, err = w.blockchainAverages(ctx)
+		case pb.OlderHistory_OLDER_HISTORY_UNSPECIFIED:
+			// No older source: the spiral starts where recent history does.
 		}
 		if err != nil {
 			return 0, err

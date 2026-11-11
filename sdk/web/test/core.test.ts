@@ -18,7 +18,7 @@ const cursor = (seq: number) => ({ epoch: "1", seq: String(seq) });
 
 function harness() {
   const sent: FromFrame[] = [];
-  const renders: { state: State; delta?: Delta }[] = [];
+  const renders: Array<{ state: State; delta?: Delta }> = [];
   const def: WidgetDef<typeof StateSchema, typeof DeltaSchema> = defineWidget({
     state: StateSchema,
     delta: DeltaSchema,
@@ -29,7 +29,13 @@ function harness() {
     mount: () => ({ update: (state, delta) => renders.push({ state, delta }) }),
   });
   const core = new CardCore(def, (m) => sent.push(m), def.mount.bind(def, {} as never));
-  core.handle({ t: "init", cardId: "a/b", stateType: "testwidget.v1.State", deltaType: "testwidget.v1.Delta", theme: {} });
+  core.handle({
+    t: "init",
+    cardId: "a/b",
+    stateType: "testwidget.v1.State",
+    deltaType: "testwidget.v1.Delta",
+    theme: {},
+  });
   return { core, sent, renders };
 }
 
@@ -86,7 +92,11 @@ describe("CardCore", () => {
   test("refuses a card whose types aren't the view's", () => {
     const sent: FromFrame[] = [];
     const def = defineWidget({ state: StateSchema, mount: () => ({ update() {} }) });
-    const core = new CardCore(def, (m) => sent.push(m), () => ({ update() {} }));
+    const core = new CardCore(
+      def,
+      (m) => sent.push(m),
+      () => ({ update() {} }),
+    );
     core.handle({ t: "init", cardId: "x", stateType: "other.State", deltaType: "", theme: {} });
     expect(sent.at(-1)?.t).toBe("fault");
   });
@@ -94,7 +104,11 @@ describe("CardCore", () => {
   test("draws stored state immediately on init", () => {
     const renders: State[] = [];
     const def = defineWidget({ state: StateSchema, mount: () => ({ update: (s) => renders.push(s) }) });
-    const core = new CardCore(def, () => {}, () => ({ update: (s) => renders.push(s) }));
+    const core = new CardCore(
+      def,
+      () => {},
+      () => ({ update: (s) => renders.push(s) }),
+    );
     core.handle({
       t: "init",
       cardId: "x",
@@ -124,7 +138,7 @@ describe("decodeChecked", () => {
 describe("typed local value", () => {
   // Config stands in for a view's local message: its label has a max_len rule.
   function localHarness(local?: LocalBytes) {
-    const saved: (LocalBytes | null)[] = [];
+    const saved: Array<LocalBytes | null> = [];
     const seen: string[] = [];
     let refuse: string | undefined;
     const def = defineWidget({
@@ -201,7 +215,11 @@ describe("typed local value", () => {
 
   test("a widget without a local type can't use it", async () => {
     const def = defineWidget({ state: StateSchema, mount: () => ({ update() {} }) });
-    const core = new CardCore(def, () => {}, () => def.mount({} as never));
+    const core = new CardCore(
+      def,
+      () => {},
+      () => def.mount({} as never),
+    );
     expect(() => core.local.value).toThrow("declares no local type");
     await expect(core.local.set(create(StateSchema, {}))).rejects.toThrow("declares no local type");
   });
@@ -211,10 +229,14 @@ describe("display preferences", () => {
   const init = (prefs?: Uint8Array) => {
     let seen: DisplayPrefs | undefined;
     const def = defineWidget({ state: StateSchema, mount: () => ({ update: () => {} }) });
-    const core = new CardCore(def, () => {}, (_local, prefs) => {
-      seen = prefs;
-      return def.mount({} as never);
-    });
+    const core = new CardCore(
+      def,
+      () => {},
+      (_local, prefs) => {
+        seen = prefs;
+        return def.mount({} as never);
+      },
+    );
     core.handle({ t: "init", cardId: "a/b", stateType: "testwidget.v1.State", deltaType: "", theme: {}, prefs });
     return { core, seen };
   };
@@ -222,8 +244,13 @@ describe("display preferences", () => {
   test("the board's prefs reach mount, filled in", () => {
     const sent = create(PreferencesSchema, { locale: "en-GB", timeZone: "Asia/Tokyo", speed: SpeedUnit.MPS });
     const { core, seen } = init(toBinary(PreferencesSchema, sent));
-    expect(seen).toMatchObject({ locale: "en-GB", timeZone: "Asia/Tokyo", speed: SpeedUnit.MPS, hourCycle: HourCycle.H24 });
-    expect(core.prefs).toBe(seen!);
+    expect(seen).toMatchObject({
+      locale: "en-GB",
+      timeZone: "Asia/Tokyo",
+      speed: SpeedUnit.MPS,
+      hourCycle: HourCycle.H24,
+    });
+    expect(core.prefs).toBe(seen);
   });
 
   test("an older board sends none: detected here", () => {

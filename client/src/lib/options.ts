@@ -12,11 +12,11 @@ import { BoardOptionsSchema, type BoardOptions } from "../gen/widgetd/v1/board_p
 export const DEFAULT_COLS = 4;
 export const DEFAULT_STALE_AFTER_MS = 30_000;
 
-export type BoardOptionsRead = {
+export interface BoardOptionsRead {
   options: BoardOptions;
   /** Why `o` was ignored, if it was. */
   error?: string;
-};
+}
 
 /** The options in a page's query string (`location.search`). */
 export function readBoardOptions(search: string): BoardOptionsRead {
@@ -60,12 +60,12 @@ export function encodeBoardOptions(opts: BoardOptions): string {
 
 export type LayoutSource = "set" | "attribute" | "default";
 
-export type Layout = {
+export interface Layout {
   cols: number;
   colsSource: LayoutSource;
   staleAfterMs: number;
   staleAfterSource: LayoutSource;
-};
+}
 
 /** Layout values, by precedence: the URL, then the element's attribute, then the default. */
 export function resolveLayout(opts: BoardOptions, colsAttr: string | null): Layout {
