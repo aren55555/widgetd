@@ -30,9 +30,9 @@ examples:
 test: generate client-build examples
     cd client && {{mise}} bun test
     cd sdk/web && {{mise}} bun test
-    cd examples/bitcoin-spiral/view && {{mise}} bun test
-    cd examples/sports-game/view && {{mise}} bun test
-    cd examples/calendar/view && {{mise}} bun test
+    {{mise}} go run ./cmd/widgetc test examples/bitcoin-spiral examples/sports-game examples/github-notifications examples/calendar examples/clock.widget
+    # Folder and .widget parity; rebuilds the examples in place, so on its own
+    WIDGETC_PARITY=1 {{mise}} go test -count=1 -run 'TestParity|TestFixture' ./cmd/widgetc
     {{mise}} go vet ./...
     GOOS=wasip1 GOARCH=wasm {{mise}} go vet ./sdk/go/widget ./internal/testwidget/wasm
     {{mise}} go test -race ./...

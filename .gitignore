@@ -3,5 +3,5 @@ node_modules/
 /data/
 .DS_Store
 widgetd.toml
-/examples/.widgetc/
+.widgetc/
 .claude/worktrees/

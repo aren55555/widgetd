@@ -1,13 +1,22 @@
-// Command widgetc builds a widget from its folder:
+// Command widgetc builds widgets. A widget is a folder, or the same folder
+// written as one .widget file (see single.go); every command takes either,
+// and treats them the same.
 //
 //	<widget>/
 //	  widget.toml          manifest: name, version, title, icon, config message, network request
-//	  buf.yaml, buf.lock   the schema's buf module (proto/ plus its deps)
+//	  buf.yaml, buf.lock   the schema's buf module (proto/ plus its deps); buf.lock
+//	                       is written by `buf dep update` if missing
 //	  proto/...            the schema: State, Delta, Config
 //	  server/              the server half: a Go package exporting Run
 //	  view/view.ts         the view half: calls defineWidget
 //	  view/view.css        optional
 //	  view/plugins.ts      optional: Bun build plugins, `export default [...]`
+//	  view/package.json    optional: the view's own dependencies (bun install)
+//
+//	widgetc build <dir | x.widget>...   build
+//	widgetc test  <dir | x.widget>...   generate, then run the widget's tests
+//	widgetc split <x.widget> <dir>      write a .widget out as a folder
+//	widgetc join  <dir> <x.widget>      write a folder as one .widget
 //
 // `widgetc build <dir>` generates the schema's Go code into <dir>/gen and its
 // TypeScript into <dir>/view/gen (from the same .proto, so the two halves
@@ -16,12 +25,19 @@
 // <dir>/widget_gen.go, which exposes the whole widget as a widget.Spec.
 // It also compiles the server half for the sandbox (GOOS=wasip1) and writes
 // <dir>/<name>.wpkg: schema, server.wasm and view in one file, which is
-// what a host loads; widget_gen.go just embeds it.
+// what a host loads; widget_gen.go just embeds it. A .widget builds through
+// a scratch folder, and gets <name>.wpkg and <name>_widget_gen.go beside it.
 //
 // widget.toml's `icon` names a Lucide icon ("cloud-sun"; https://lucide.dev),
 // looked up in the view's own @widgetd/sdk/icons the way <wd-icon> finds
 // one. Its shapes go into the package, and widgetd's pages draw it beside
 // the widget's title.
+//
+// `widgetc test` runs `go test ./...` if the widget has Go tests, and
+// `bun test` in view/ if it has script tests.
+//
+// Every feature must work the same in both forms; TestParity checks that
+// converting the examples loses nothing and builds byte-identical packages.
 package main
 
 import (
@@ -38,6 +54,7 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -60,8 +77,8 @@ type manifest struct {
 	Title   string `toml:"title"`
 	// Icon is a Lucide icon's name ("cloud-sun"), drawn beside the title on
 	// widgetd's own pages.
-	Icon    string `toml:"icon"`
-	Config  string `toml:"config"`
+	Icon    string   `toml:"icon"`
+	Config  string   `toml:"config"`
 	Secrets []string `toml:"secrets"`
 	Network struct {
 		Hosts   []string `toml:"hosts"`
@@ -73,74 +90,174 @@ type manifest struct {
 
 var nameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)
 
+const usage = `usage:
+  widgetc build <dir | x.widget>...   build widgets
+  widgetc test  <dir | x.widget>...   run widgets' tests
+  widgetc split <x.widget> <dir>      write a .widget out as a folder
+  widgetc join  <dir> <x.widget>      write a folder as one .widget`
+
 func main() {
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: widgetc build <widget-dir | file.widget>...")
-	}
+	flag.Usage = func() { fmt.Fprintln(os.Stderr, usage) }
 	flag.Parse()
-	if flag.NArg() < 2 || flag.Arg(0) != "build" {
+	args := flag.Args()
+	if len(args) < 2 {
 		flag.Usage()
 		os.Exit(2)
 	}
-	for _, dir := range flag.Args()[1:] {
+	fail := func(what string, err error) {
+		fmt.Fprintf(os.Stderr, "widgetc: %s: %v\n", what, err)
+		os.Exit(1)
+	}
+	switch args[0] {
+	case "build", "test":
+		for _, w := range args[1:] {
+			var err error
+			if args[0] == "build" {
+				err = buildAny(w)
+			} else {
+				err = testAny(w)
+			}
+			if err != nil {
+				fail(w, err)
+			}
+		}
+	case "split", "join":
+		if len(args) != 3 {
+			flag.Usage()
+			os.Exit(2)
+		}
 		var err error
-		if strings.HasSuffix(dir, ".widget") {
-			err = buildSingleFile(dir)
+		if args[0] == "split" {
+			err = split(args[1], args[2])
 		} else {
-			err = build(dir, true)
+			err = join(args[1], args[2])
 		}
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "widgetc: %s: %v\n", dir, err)
-			os.Exit(1)
+			fail(args[1], err)
 		}
+	default:
+		flag.Usage()
+		os.Exit(2)
 	}
 }
 
-// build builds a widget folder. withSpec also writes widget_gen.go, the Go
-// package that embeds the result; a single-file widget's build folder is
-// scratch, so it gets just the .wpkg.
-func build(dir string, withSpec bool) error {
+func isWidgetFile(p string) bool { return strings.HasSuffix(p, ".widget") }
+
+// buildAny builds a widget folder or a .widget.
+func buildAny(w string) error {
+	if isWidgetFile(w) {
+		return buildSingleFile(w, true)
+	}
+	dir, err := filepath.Abs(w)
+	if err != nil {
+		return err
+	}
+	m, err := build(dir)
+	if err != nil {
+		return err
+	}
+	return writeSpec(dir, m)
+}
+
+// testAny runs a widget folder's or a .widget's tests.
+func testAny(w string) error {
+	dir := w
+	if isWidgetFile(w) {
+		var err error
+		if dir, err = prepareSingleFile(w, true); err != nil {
+			return err
+		}
+	}
 	dir, err := filepath.Abs(dir)
 	if err != nil {
 		return err
 	}
+	if _, _, err := prepare(dir); err != nil {
+		return err
+	}
+	return runTests(dir)
+}
+
+// prepare checks a widget folder, fetches what it depends on, and generates
+// its code: everything a build or a test needs first.
+func prepare(dir string) (manifest, string, error) {
 	var m manifest
 	if err := readManifest(dir, &m); err != nil {
-		return err
+		return m, "", err
 	}
 	if !nameRE.MatchString(m.Name) {
-		return fmt.Errorf("widget.toml: name %q: want lowercase letters, digits and dashes", m.Name)
+		return m, "", fmt.Errorf("widget.toml: name %q: want lowercase letters, digits and dashes", m.Name)
 	}
 	if m.Version == "" {
-		return errors.New("widget.toml: version is required")
+		return m, "", errors.New("widget.toml: version is required")
 	}
-
 	importPath, err := goImportPath(dir)
 	if err != nil {
-		return err
+		return m, "", err
 	}
 	protos, err := protoFiles(filepath.Join(dir, "proto"))
 	if err != nil {
-		return err
+		return m, "", err
 	}
 	if len(protos) == 0 {
-		return errors.New("no .proto files under proto/")
+		return m, "", errors.New("no .proto files under proto/")
 	}
-
+	if _, err := os.Stat(filepath.Join(dir, "buf.lock")); errors.Is(err, fs.ErrNotExist) {
+		if err := run(dir, "buf", "dep", "update"); err != nil {
+			return m, "", err
+		}
+	}
+	// The view's own dependencies. In a bun workspace this installs the
+	// workspace, which is a no-op when it's up to date.
+	if _, err := os.Stat(filepath.Join(dir, "view", "package.json")); err == nil {
+		if err := run(filepath.Join(dir, "view"), "bun", "install"); err != nil {
+			return m, "", err
+		}
+	}
 	if err := generate(dir, importPath); err != nil {
-		return err
+		return m, "", err
+	}
+	return m, importPath, nil
+}
+
+// build builds a widget folder into <dir>/<name>.wpkg.
+func build(dir string) (manifest, error) {
+	m, importPath, err := prepare(dir)
+	if err != nil {
+		return m, err
+	}
+	protos, err := protoFiles(filepath.Join(dir, "proto"))
+	if err != nil {
+		return m, err
 	}
 	icon, err := bundleView(dir, m.Icon)
 	if err != nil {
+		return m, err
+	}
+	return m, pack(dir, importPath, m, icon, protos)
+}
+
+// runTests runs the Go tests anywhere in a widget folder, and the script
+// tests in its view.
+func runTests(dir string) error {
+	srcs, err := readSources(dir)
+	if err != nil {
 		return err
 	}
-	if err := pack(dir, importPath, m, icon, protos); err != nil {
-		return err
+	var goTests, viewTests bool
+	for p := range srcs {
+		goTests = goTests || strings.HasSuffix(p, "_test.go")
+		viewTests = viewTests || (strings.HasPrefix(p, "view/") && isScript(p) && strings.Contains(path.Base(p), ".test."))
 	}
-	if !withSpec {
-		return nil
+	if goTests {
+		if err := run(dir, "go", "test", "./..."); err != nil {
+			return err
+		}
 	}
-	return writeSpec(dir, m)
+	if viewTests {
+		return run(filepath.Join(dir, "view"), "bun", "test")
+	}
+	return nil
 }
 
 // goImportPath is the Go import path of dir, from the enclosing go.mod.
@@ -395,7 +512,11 @@ func pack(dir, importPath string, m manifest, icon *widget.Icon, protos []string
 	return nil
 }
 
-var specTmpl = template.Must(template.New("spec").Parse(`// Code generated by widgetc from widget.toml. DO NOT EDIT.
+// specTmpl is the Go embedding of a built widget. A folder is its own
+// package, so it exports Package and Widget; .widget files share the
+// package of their directory, so theirs carry the widget's name: ClockPackage
+// and ClockWidget for clock.widget.
+var specTmpl = template.Must(template.New("spec").Parse(`// Code generated by widgetc from {{.From}}. DO NOT EDIT.
 
 package {{.Package}}
 
@@ -406,30 +527,82 @@ import (
 	"github.com/aren55555/widgetd/sdk/go/widget"
 )
 
-// Package is the {{.Name}} widget, packaged: its schema, its sandboxed
+// {{.ID}}Package is the {{.Name}} widget, packaged: its schema, its sandboxed
 // server half, and its view.
 //
 //go:embed {{.Name}}.wpkg
-var Package []byte
+var {{.ID}}Package []byte
 
-// Widget loads Package, ready to hand to a widgetd host.
-func Widget() (widget.Spec, error) { return host.LoadPackage(Package) }
+// {{.ID}}Widget loads {{.ID}}Package, ready to hand to a widgetd host.
+func {{.ID}}Widget() (widget.Spec, error) { return host.LoadPackage({{.ID}}Package) }
 `))
 
+// writeSpec writes a folder's widget_gen.go.
 func writeSpec(dir string, m manifest) error {
-	var buf bytes.Buffer
-	err := specTmpl.Execute(&buf, map[string]any{
-		"Package": strings.ReplaceAll(filepath.Base(dir), "-", ""),
-		"Name":    m.Name,
+	return writeSpecFile(filepath.Join(dir, "widget_gen.go"), map[string]any{
+		"From": "widget.toml", "Package": strings.ReplaceAll(filepath.Base(dir), "-", ""), "Name": m.Name, "ID": "",
 	})
+}
+
+// writeSingleSpec writes <name>_widget_gen.go beside a .widget, in the
+// package of the Go files already there (or one named for the directory,
+// as for a folder).
+func writeSingleSpec(file string, m manifest) error {
+	dir := filepath.Dir(file)
+	pkg, err := dirPackage(dir)
 	if err != nil {
+		return err
+	}
+	if pkg == "" {
+		pkg = strings.ReplaceAll(filepath.Base(dir), "-", "")
+	}
+	return writeSpecFile(filepath.Join(dir, m.Name+"_widget_gen.go"), map[string]any{
+		"From": filepath.Base(file), "Package": pkg, "Name": m.Name, "ID": goName(m.Name),
+	})
+}
+
+func writeSpecFile(p string, data map[string]any) error {
+	var buf bytes.Buffer
+	if err := specTmpl.Execute(&buf, data); err != nil {
 		return err
 	}
 	src, err := format.Source(buf.Bytes())
 	if err != nil {
-		return fmt.Errorf("format widget_gen.go: %w\n%s", err, buf.Bytes())
+		return fmt.Errorf("format %s: %w\n%s", filepath.Base(p), err, buf.Bytes())
 	}
-	return os.WriteFile(filepath.Join(dir, "widget_gen.go"), src, 0o644)
+	return os.WriteFile(p, src, 0o644)
+}
+
+// dirPackage is the package name of the non-test Go files in dir, or "".
+func dirPackage(dir string) (string, error) {
+	fset := token.NewFileSet()
+	pkgs, err := parser.ParseDir(fset, dir, func(fi fs.FileInfo) bool { return !strings.HasSuffix(fi.Name(), "_test.go") }, parser.PackageClauseOnly)
+	if err != nil {
+		return "", err
+	}
+	if len(pkgs) > 1 {
+		return "", fmt.Errorf("%s: Go files of more than one package", dir)
+	}
+	for name := range pkgs {
+		return name, nil
+	}
+	return "", nil
+}
+
+// goName is a widget name as an exported Go identifier: bitcoin-spiral is
+// BitcoinSpiral.
+func goName(name string) string {
+	var b strings.Builder
+	for _, part := range strings.Split(name, "-") {
+		if part != "" {
+			b.WriteString(strings.ToUpper(part[:1]) + part[1:])
+		}
+	}
+	s := b.String()
+	if s == "" || (s[0] >= '0' && s[0] <= '9') {
+		s = "W" + s
+	}
+	return s
 }
 
 func run(dir, name string, args ...string) error {

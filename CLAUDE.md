@@ -15,14 +15,18 @@ just run [ARGS]     # standalone server on :8080 (reads ./widgetd.toml, state in
 just build          # bin/widgetd
 just generate       # regenerate from proto/ and internal/testwidget/
 just client-build   # rebuild client/dist
-just examples       # widgetc build examples/bitcoin-spiral
+just examples       # widgetc build each example (folders and .widget files)
 ```
+
+`widgetc` (`go run ./cmd/widgetc`) has four commands, and each takes a widget folder or a `.widget` file alike: `build`, `test` (generate, then `go test ./...` and the view's `bun test`), `split x.widget dir` and `join dir x.widget`.
 
 Single tests:
 
 ```sh
 mise exec -- go test -race ./host -run TestStreamAndResume
 cd sdk/web && mise exec -- bun test -t "<name pattern>"     # also: client/, examples/*/view/
+mise exec -- go run ./cmd/widgetc test examples/clock.widget # a widget's own tests, either form
+WIDGETC_PARITY=1 mise exec -- go test -count=1 -run 'TestParity|TestFixture' ./cmd/widgetc
 ```
 
 The TS test suites are `client/src/lib/*.test.ts`, `sdk/web/test/*.test.ts` and `examples/*/view/*.test.ts`. `sdk/web/test/icons.test.ts` bundles `sdk/web/test/frameworks/*` (vanilla, Preact, React, Solid, Lit) in a child process (`frameworks/bundle.ts`), because `Bun.build` inside `bun test` stops tree-shaking packages the test has also imported, and runs each bundle in happy-dom. JS is a bun workspace (`client`, `sdk/web`, `examples/*/view`). Use bun, not node. The `protoc-gen-es` plugin is run through `bun` explicitly.
@@ -33,7 +37,7 @@ These are checked in. Regenerate them; don't edit them by hand:
 - `gen/` and `client/src/gen/`: from `proto/widgetd/v1/*.proto` (`buf.gen.yaml`).
 - `internal/testwidget/gen/` and `sdk/web/test/gen/`: the test widget schema, used by the Go host tests and the web SDK tests.
 - `client/dist/`: the bundled `<widget-board>` and admin pages. It is committed because `client/embed.go` embeds it into the Go module, and the module's users have no JS toolchain. **After changing `client/src`, run `just client-build`.**
-- For each widget: `gen/`, `view/gen/`, `dist/` and `widget_gen.go`, produced by `widgetc build <dir>`.
+- For each widget folder: `gen/`, `view/gen/`, `dist/`, `wasm/main_gen.go`, `<name>.wpkg` and `widget_gen.go`, produced by `widgetc build <dir>`. For each `.widget` file: `<name>.wpkg` and `<name>_widget_gen.go` beside it, produced by `widgetc build x.widget` (its scratch folder, `.widgetc/`, is gitignored).
 
 ## Architecture
 
@@ -52,4 +56,8 @@ These are checked in. Regenerate them; don't edit them by hand:
 
 ## Adding or changing a widget
 
-A widget folder (see `examples/bitcoin-spiral`, documented in `cmd/widgetc/main.go`) contains `widget.toml` (name, version, title, optional Lucide `icon`, fully qualified `config` message, `[network]`), `buf.yaml`/`buf.lock`, `proto/` (State, Delta, Config), `server/` (a package exporting `Run`) and `view/view.ts` (+ optional `view.css` and `plugins.ts`, which exports Bun build plugins, e.g. `@widgetd/sdk/build/solid` for Solid JSX). `widgetc` generates its buf template inline, so a widget folder has no `buf.gen.yaml`. It bundles the view with `cmd/widgetc/buildview.ts` (embedded): an IIFE, not ESM, because module scripts in an opaque origin would need CORS; minified, with `NODE_ENV=production`; and the build fails if it emits anything but `view.js`, since a card can load nothing else. Built-in widgets are registered in `builtin()` in `cmd/widgetd/main.go`. Instances are configured in `widgetd.toml` (gitignored), with `config` given as protojson.
+A widget folder (see `examples/bitcoin-spiral`, documented in `cmd/widgetc/main.go`) contains `widget.toml` (name, version, title, optional Lucide `icon`, fully qualified `config` message, `[network]`), `buf.yaml`/`buf.lock`, `proto/` (State, Delta, Config), `server/` (a package exporting `Run`) and `view/view.ts` (+ optional `view.css` and `plugins.ts`, which exports Bun build plugins, e.g. `@widgetd/sdk/build/solid` for Solid JSX). `widgetc` generates its buf template inline, so a widget folder has no `buf.gen.yaml`. It bundles the view with `cmd/widgetc/buildview.ts` (embedded): an IIFE, not ESM, because module scripts in an opaque origin would need CORS; minified, with `NODE_ENV=production`; and the build fails if it emits anything but `view.js`, since a card can load nothing else. Built-in widgets are listed in `builtin` in `cmd/widgetd/main.go`. Instances are configured in `widgetd.toml` (gitignored), with `config` given as protojson.
+
+A `.widget` file (see `examples/clock.widget`, documented in `cmd/widgetc/single.go`) is the same folder written as one file: named blocks for the usual files, and `<file path="…">` blocks for any other source file. Its Go code imports the widget's own packages as `widget/…` (and `widget/schema` for the `<schema>` block's generated code), which `split` and the build rewrite to real import paths.
+
+**Parity rule: every `widgetc` feature must work the same for a folder and for a `.widget` file.** Put new behaviour in the shared folder path (`prepare`/`build` in `cmd/widgetc/main.go`), which a `.widget` reaches through its scratch folder, and keep anything a folder can contain expressible as a block. `TestParity*` (run by `just test`) converts every example to the other form and back and requires byte-identical sources and packages; `TestFixture` builds `cmd/widgetc/testdata/multi.widget`, which exercises `<file>` blocks.
