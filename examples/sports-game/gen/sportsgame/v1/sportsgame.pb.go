@@ -132,7 +132,7 @@ func (x State_Phase) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use State_Phase.Descriptor instead.
 func (State_Phase) EnumDescriptor() ([]byte, []int) {
-	return file_sportsgame_v1_sportsgame_proto_rawDescGZIP(), []int{2, 0}
+	return file_sportsgame_v1_sportsgame_proto_rawDescGZIP(), []int{3, 0}
 }
 
 // Config is one team to follow. Follow two teams with two instances.
@@ -217,11 +217,14 @@ type Team struct {
 	// Hex without "#", or empty.
 	Color string `protobuf:"bytes,5,opt,name=color,proto3" json:"color,omitempty"`
 	// Only ESPN's image host: the card may load images from nowhere else.
-	Logo          string `protobuf:"bytes,6,opt,name=logo,proto3" json:"logo,omitempty"`
-	Record        string `protobuf:"bytes,7,opt,name=record,proto3" json:"record,omitempty"`
-	Winner        bool   `protobuf:"varint,8,opt,name=winner,proto3" json:"winner,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Logo   string `protobuf:"bytes,6,opt,name=logo,proto3" json:"logo,omitempty"`
+	Record string `protobuf:"bytes,7,opt,name=record,proto3" json:"record,omitempty"`
+	Winner bool   `protobuf:"varint,8,opt,name=winner,proto3" json:"winner,omitempty"`
+	// ESPN's second colour, hex without "#", or empty. The card's chart uses
+	// it for the away team when both teams' colours are too alike.
+	AlternateColor string `protobuf:"bytes,9,opt,name=alternate_color,json=alternateColor,proto3" json:"alternate_color,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Team) Reset() {
@@ -310,6 +313,78 @@ func (x *Team) GetWinner() bool {
 	return false
 }
 
+func (x *Team) GetAlternateColor() string {
+	if x != nil {
+		return x.AlternateColor
+	}
+	return ""
+}
+
+// Market is Kalshi's market on who wins a game that has started: each team's
+// price in whole percent (the market's chance it wins), once a minute from
+// start_unix_ms, carried forward through minutes without a trade. A decided
+// game ends at 99 and 1, or so.
+type Market struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	StartUnixMs int64                  `protobuf:"varint,1,opt,name=start_unix_ms,json=startUnixMs,proto3" json:"start_unix_ms,omitempty"`
+	// At most twelve hours of minutes.
+	Away          []uint32 `protobuf:"varint,2,rep,packed,name=away,proto3" json:"away,omitempty"`
+	Home          []uint32 `protobuf:"varint,3,rep,packed,name=home,proto3" json:"home,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Market) Reset() {
+	*x = Market{}
+	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Market) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Market) ProtoMessage() {}
+
+func (x *Market) ProtoReflect() protoreflect.Message {
+	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Market.ProtoReflect.Descriptor instead.
+func (*Market) Descriptor() ([]byte, []int) {
+	return file_sportsgame_v1_sportsgame_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Market) GetStartUnixMs() int64 {
+	if x != nil {
+		return x.StartUnixMs
+	}
+	return 0
+}
+
+func (x *Market) GetAway() []uint32 {
+	if x != nil {
+		return x.Away
+	}
+	return nil
+}
+
+func (x *Market) GetHome() []uint32 {
+	if x != nil {
+		return x.Home
+	}
+	return nil
+}
+
 // State is one game's card.
 type State struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
@@ -323,14 +398,19 @@ type State struct {
 	Away      *Team  `protobuf:"bytes,7,opt,name=away,proto3" json:"away,omitempty"`
 	Broadcast string `protobuf:"bytes,8,opt,name=broadcast,proto3" json:"broadcast,omitempty"`
 	// The followed team's abbreviation, so the card can highlight it.
-	Mine          string `protobuf:"bytes,9,opt,name=mine,proto3" json:"mine,omitempty"`
+	Mine string `protobuf:"bytes,9,opt,name=mine,proto3" json:"mine,omitempty"`
+	// Unset before the start, and when Kalshi has no market for the game.
+	Market *Market `protobuf:"bytes,10,opt,name=market,proto3" json:"market,omitempty"`
+	// When each score happened (ESPN's wall clock), for ticks on the chart.
+	// Only for leagues that score rarely: hockey, soccer, football, baseball.
+	ScoredUnixMs  []int64 `protobuf:"varint,11,rep,packed,name=scored_unix_ms,json=scoredUnixMs,proto3" json:"scored_unix_ms,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *State) Reset() {
 	*x = State{}
-	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[2]
+	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -342,7 +422,7 @@ func (x *State) String() string {
 func (*State) ProtoMessage() {}
 
 func (x *State) ProtoReflect() protoreflect.Message {
-	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[2]
+	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -355,7 +435,7 @@ func (x *State) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use State.ProtoReflect.Descriptor instead.
 func (*State) Descriptor() ([]byte, []int) {
-	return file_sportsgame_v1_sportsgame_proto_rawDescGZIP(), []int{2}
+	return file_sportsgame_v1_sportsgame_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *State) GetLeague() League {
@@ -421,6 +501,20 @@ func (x *State) GetMine() string {
 	return ""
 }
 
+func (x *State) GetMarket() *Market {
+	if x != nil {
+		return x.Market
+	}
+	return nil
+}
+
+func (x *State) GetScoredUnixMs() []int64 {
+	if x != nil {
+		return x.ScoredUnixMs
+	}
+	return nil
+}
+
 // End is what the server half stores per game: when it saw it end.
 type End struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -431,7 +525,7 @@ type End struct {
 
 func (x *End) Reset() {
 	*x = End{}
-	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[3]
+	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -443,7 +537,7 @@ func (x *End) String() string {
 func (*End) ProtoMessage() {}
 
 func (x *End) ProtoReflect() protoreflect.Message {
-	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[3]
+	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -456,7 +550,7 @@ func (x *End) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use End.ProtoReflect.Descriptor instead.
 func (*End) Descriptor() ([]byte, []int) {
-	return file_sportsgame_v1_sportsgame_proto_rawDescGZIP(), []int{3}
+	return file_sportsgame_v1_sportsgame_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *End) GetUnixMs() int64 {
@@ -477,7 +571,7 @@ const file_sportsgame_v1_sportsgame_proto_rawDesc = "" +
 	"\x04team\x18\x02 \x01(\tB\x16\xbaH\x13r\x112\x0f^[A-Za-z]{2,4}$R\x04team\x12*\n" +
 	"\fhours_before\x18\x03 \x01(\rB\a\xbaH\x04*\x02\x180R\vhoursBefore\x12(\n" +
 	"\vhours_after\x18\x04 \x01(\rB\a\xbaH\x04*\x02\x18HR\n" +
-	"hoursAfter\"\xde\x02\n" +
+	"hoursAfter\"\xa3\x03\n" +
 	"\x04Team\x12=\n" +
 	"\fabbreviation\x18\x01 \x01(\tB\x19\xbaH\x16r\x142\x12^[A-Za-z0-9]{1,6}$R\fabbreviation\x12\x1b\n" +
 	"\x04name\x18\x02 \x01(\tB\a\xbaH\x04r\x02\x18@R\x04name\x12&\n" +
@@ -487,7 +581,12 @@ const file_sportsgame_v1_sportsgame_proto_rawDesc = "" +
 	"\x05color\x18\x05 \x01(\tB\x1a\xbaH\x17r\x152\x13^([0-9a-fA-F]{6})?$R\x05color\x12H\n" +
 	"\x04logo\x18\x06 \x01(\tB4\xbaH1r/2-^(https://a\\.espncdn\\.com/[A-Za-z0-9/._-]+)?$R\x04logo\x12\x1f\n" +
 	"\x06record\x18\a \x01(\tB\a\xbaH\x04r\x02\x18\x10R\x06record\x12\x16\n" +
-	"\x06winner\x18\b \x01(\bR\x06winner\"\xf1\x03\n" +
+	"\x06winner\x18\b \x01(\bR\x06winner\x12C\n" +
+	"\x0falternate_color\x18\t \x01(\tB\x1a\xbaH\x17r\x152\x13^([0-9a-fA-F]{6})?$R\x0ealternateColor\"\x7f\n" +
+	"\x06Market\x12+\n" +
+	"\rstart_unix_ms\x18\x01 \x01(\x03B\a\xbaH\x04\"\x02 \x00R\vstartUnixMs\x12#\n" +
+	"\x04away\x18\x02 \x03(\rB\x0f\xbaH\f\x92\x01\t\x10\xd0\x05\"\x04*\x02\x18dR\x04away\x12#\n" +
+	"\x04home\x18\x03 \x03(\rB\x0f\xbaH\f\x92\x01\t\x10\xd0\x05\"\x04*\x02\x18dR\x04home\"\xd0\x04\n" +
 	"\x05State\x127\n" +
 	"\x06league\x18\x01 \x01(\x0e2\x15.sportsgame.v1.LeagueB\b\xbaH\x05\x82\x01\x02\x10\x01R\x06league\x12/\n" +
 	"\bevent_id\x18\x02 \x01(\tB\x14\xbaH\x11r\x0f2\r^[0-9]{1,16}$R\aeventId\x12+\n" +
@@ -497,7 +596,10 @@ const file_sportsgame_v1_sportsgame_proto_rawDesc = "" +
 	"\x04home\x18\x06 \x01(\v2\x13.sportsgame.v1.TeamB\x06\xbaH\x03\xc8\x01\x01R\x04home\x12/\n" +
 	"\x04away\x18\a \x01(\v2\x13.sportsgame.v1.TeamB\x06\xbaH\x03\xc8\x01\x01R\x04away\x12%\n" +
 	"\tbroadcast\x18\b \x01(\tB\a\xbaH\x04r\x02\x180R\tbroadcast\x12\x1b\n" +
-	"\x04mine\x18\t \x01(\tB\a\xbaH\x04r\x02\x18\x06R\x04mine\"N\n" +
+	"\x04mine\x18\t \x01(\tB\a\xbaH\x04r\x02\x18\x06R\x04mine\x12-\n" +
+	"\x06market\x18\n" +
+	" \x01(\v2\x15.sportsgame.v1.MarketR\x06market\x12.\n" +
+	"\x0escored_unix_ms\x18\v \x03(\x03B\b\xbaH\x05\x92\x01\x02\x10(R\fscoredUnixMs\"N\n" +
 	"\x05Phase\x12\x15\n" +
 	"\x11PHASE_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tPHASE_PRE\x10\x01\x12\x0e\n" +
@@ -534,14 +636,15 @@ func file_sportsgame_v1_sportsgame_proto_rawDescGZIP() []byte {
 }
 
 var file_sportsgame_v1_sportsgame_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_sportsgame_v1_sportsgame_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_sportsgame_v1_sportsgame_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_sportsgame_v1_sportsgame_proto_goTypes = []any{
 	(League)(0),      // 0: sportsgame.v1.League
 	(State_Phase)(0), // 1: sportsgame.v1.State.Phase
 	(*Config)(nil),   // 2: sportsgame.v1.Config
 	(*Team)(nil),     // 3: sportsgame.v1.Team
-	(*State)(nil),    // 4: sportsgame.v1.State
-	(*End)(nil),      // 5: sportsgame.v1.End
+	(*Market)(nil),   // 4: sportsgame.v1.Market
+	(*State)(nil),    // 5: sportsgame.v1.State
+	(*End)(nil),      // 6: sportsgame.v1.End
 }
 var file_sportsgame_v1_sportsgame_proto_depIdxs = []int32{
 	0, // 0: sportsgame.v1.Config.league:type_name -> sportsgame.v1.League
@@ -549,11 +652,12 @@ var file_sportsgame_v1_sportsgame_proto_depIdxs = []int32{
 	1, // 2: sportsgame.v1.State.phase:type_name -> sportsgame.v1.State.Phase
 	3, // 3: sportsgame.v1.State.home:type_name -> sportsgame.v1.Team
 	3, // 4: sportsgame.v1.State.away:type_name -> sportsgame.v1.Team
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	4, // 5: sportsgame.v1.State.market:type_name -> sportsgame.v1.Market
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_sportsgame_v1_sportsgame_proto_init() }
@@ -567,7 +671,7 @@ func file_sportsgame_v1_sportsgame_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_sportsgame_v1_sportsgame_proto_rawDesc), len(file_sportsgame_v1_sportsgame_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

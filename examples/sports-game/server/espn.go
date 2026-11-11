@@ -1,12 +1,14 @@
 package server
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -135,7 +137,9 @@ func (e espn) game(ctx context.Context, id string) (*pb.State, error) {
 						Abbreviation string `json:"abbreviation"`
 						DisplayName  string `json:"displayName"`
 						ShortName    string `json:"shortDisplayName"`
+						Nickname     string `json:"name"` // "Sharks": the summary's short name
 						Color        string `json:"color"`
+						AltColor     string `json:"alternateColor"`
 						Logos        []struct {
 							Href string `json:"href"`
 						} `json:"logos"`
@@ -151,6 +155,15 @@ func (e espn) game(ctx context.Context, id string) (*pb.State, error) {
 				} `json:"broadcasts"`
 			} `json:"competitions"`
 		} `json:"header"`
+		// Where each league keeps its scoring plays: hockey and baseball
+		// in plays, football in its drives, soccer in key events.
+		Plays  []play `json:"plays"`
+		Drives struct {
+			Previous []struct {
+				Plays []play `json:"plays"`
+			} `json:"previous"`
+		} `json:"drives"`
+		KeyEvents []play `json:"keyEvents"`
 	}
 	if err := e.get(ctx, "/summary?event="+url.QueryEscape(id), &resp); err != nil {
 		return nil, err
@@ -177,12 +190,13 @@ func (e espn) game(ctx context.Context, id string) (*pb.State, error) {
 	}
 	for _, comp := range c.Competitors {
 		t := &pb.Team{
-			Abbreviation: comp.Team.Abbreviation,
-			Name:         clip(comp.Team.DisplayName, 64),
-			ShortName:    clip(comp.Team.ShortName, 32),
-			Score:        clip(comp.Score, 8),
-			Color:        comp.Team.Color,
-			Winner:       comp.Winner,
+			Abbreviation:   comp.Team.Abbreviation,
+			Name:           clip(comp.Team.DisplayName, 64),
+			ShortName:      clip(cmp.Or(comp.Team.ShortName, comp.Team.Nickname), 32),
+			Score:          clip(comp.Score, 8),
+			Color:          comp.Team.Color,
+			AlternateColor: comp.Team.AltColor,
+			Winner:         comp.Winner,
 		}
 		if len(comp.Team.Logos) > 0 && strings.HasPrefix(comp.Team.Logos[0].Href, "https://a.espncdn.com/") {
 			t.Logo = comp.Team.Logos[0].Href
@@ -199,7 +213,51 @@ func (e espn) game(ctx context.Context, id string) (*pb.State, error) {
 	if st.Home == nil || st.Away == nil {
 		return nil, fmt.Errorf("game %s: missing a team", id)
 	}
+	if scoresRarely[e.league] {
+		plays := slices.Concat(resp.Plays, resp.KeyEvents)
+		for _, d := range resp.Drives.Previous {
+			plays = append(plays, d.Plays...)
+		}
+		st.ScoredUnixMs = scored(plays)
+	}
 	return st, nil
+}
+
+// scoresRarely is the leagues whose scores are few enough to mark on the
+// chart. A basketball game has a hundred.
+var scoresRarely = map[pb.League]bool{
+	pb.League_LEAGUE_NFL: true,
+	pb.League_LEAGUE_NHL: true,
+	pb.League_LEAGUE_MLB: true,
+	pb.League_LEAGUE_MLS: true,
+}
+
+type play struct {
+	ScoringPlay bool   `json:"scoringPlay"`
+	Wallclock   string `json:"wallclock"`
+}
+
+// scored is when each scoring play happened, in order, once each, at most
+// 40 (State's cap).
+func scored(plays []play) []int64 {
+	seen := map[int64]bool{}
+	var out []int64
+	for _, p := range plays {
+		if !p.ScoringPlay {
+			continue
+		}
+		t, err := time.Parse(time.RFC3339, p.Wallclock)
+		if err != nil || seen[t.UnixMilli()] {
+			continue
+		}
+		seen[t.UnixMilli()] = true
+		out = append(out, t.UnixMilli())
+	}
+	slices.Sort(out)
+	if len(out) > 40 {
+		out = out[:40]
+	}
+	return out
 }
 
 // ESPN writes times as "2026-11-08T18:00Z": RFC 3339 without seconds.

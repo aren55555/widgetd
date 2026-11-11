@@ -1,13 +1,23 @@
+.card {
+  position: relative;
+  height: 100%;
+}
+
 .game {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 6px;
   height: 100%;
-  padding: 4px 14px 10px;
+  /* The top padding matches the status line below the teams (its height plus
+     the gap), so the two team rows sit at the card's centre, either side of
+     the chart's 50% line. */
+  padding: 22px 14px 0;
   box-sizing: border-box;
   font-family: var(--wd-font-mono, ui-monospace, monospace);
   color: var(--wd-ink, #e5e7eb);
+  transition: opacity 0.12s;
 }
 
 .teams {
@@ -16,18 +26,17 @@
   gap: 4px;
 }
 
+/* logo · legend swatch · name ★ record · win % · score. Empty cells take no
+   room: the spacing is on the cells, not the grid. */
 .team {
   display: grid;
-  grid-template-columns: 28px 1fr auto 3ch;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 10px;
   padding: 2px 0 2px 8px;
-  border-left: 3px solid transparent;
   color: var(--wd-ink-soft, #d4d4d8);
 }
 
 .team.mine {
-  border-left-color: var(--team, var(--wd-accent, #60a5fa));
   color: var(--wd-ink, #f4f4f5);
 }
 
@@ -35,9 +44,38 @@
   width: 28px;
   height: 28px;
   object-fit: contain;
+  margin-right: 10px;
+}
+
+.swatch {
+  width: 0;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.charted .swatch {
+  width: 10px;
+  margin-right: 10px;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.35);
+}
+
+.who {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The followed team's star: what icon(Star, { size: "sm" }) draws. */
+.who .wd-icon {
+  flex: none;
+  align-self: center;
+  color: var(--wd-ink-muted, #a1a1aa);
 }
 
 .name {
+  min-width: 0;
   font-size: 15px;
   font-weight: 600;
   overflow: hidden;
@@ -46,11 +84,25 @@
 }
 
 .record {
+  flex: none;
   font-size: 11px;
   color: var(--wd-ink-faint, #71717a);
 }
 
+.pct {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--line);
+  text-align: right;
+}
+
+.pct:not(:empty) {
+  margin-left: 10px;
+}
+
 .score {
+  min-width: 3ch;
+  margin-left: 10px;
   font-size: 20px;
   font-weight: 700;
   text-align: right;
@@ -62,10 +114,142 @@
 
 .status {
   font-size: 12px;
+  line-height: 16px;
   color: var(--wd-ink-muted, #a1a1aa);
 }
 
 .status[data-phase="live"] {
   color: var(--wd-down, #f87171);
   font-weight: 600;
+}
+
+/* Text over the chart gets a halo of the card's colour so it stays legible. */
+.charted :is(.name, .record, .score, .status) {
+  text-shadow:
+    0 0 6px var(--wd-surface, #18181b),
+    0 0 3px var(--wd-surface, #18181b),
+    0 0 1px var(--wd-surface, #18181b);
+}
+
+/* ---- The market chart, behind everything ---- */
+
+.market {
+  position: absolute;
+  inset: 0;
+  opacity: 0.81;
+}
+
+.market[hidden] {
+  display: none;
+}
+
+/* Edge to edge. The line's final jump runs off the card. */
+.plot {
+  position: absolute;
+  inset: 0;
+}
+
+.plot svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.plot path.line {
+  fill: none;
+  stroke-width: 1px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.plot line {
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+
+.plot line.mid {
+  stroke: var(--wd-ink-faint, #71717a);
+  stroke-dasharray: 2 4;
+}
+
+.plot line.scored {
+  stroke: var(--wd-ink-faint, #71717a);
+  opacity: 0.5;
+}
+
+.plot .end {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: var(--line);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--line) 35%, transparent);
+}
+
+/* ---- Hover: a rule at the pointer's minute, each line's price there ---- */
+
+.hover {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hovering .game {
+  opacity: 0.35;
+}
+
+.hover .rule {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -0.5px;
+  border-left: 1px solid var(--wd-ink-muted, #a1a1aa);
+  opacity: 0.7;
+}
+
+.hover .pt {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: var(--line);
+  box-shadow: 0 0 0 2px var(--wd-surface, #18181b);
+}
+
+.hover .tag {
+  position: absolute;
+  left: 8px;
+  transform: translateY(-50%);
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font: 600 11px/15px var(--wd-font-mono, ui-monospace, monospace);
+  color: #fff;
+  background: var(--line);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+.hover .tag.left {
+  left: auto;
+  right: 8px;
+}
+
+.hover .when {
+  position: absolute;
+  bottom: 3px;
+  transform: translateX(-50%);
+  padding: 0 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+  font: 10px/14px var(--wd-font-mono, ui-monospace, monospace);
+  color: var(--wd-ink-muted, #a1a1aa);
+  background: var(--wd-surface, #18181b);
 }

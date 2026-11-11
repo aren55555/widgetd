@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { startLabel, teamColor } from "./game.ts";
+import { halfRange, lineColors, spread, startLabel, teamColor } from "./game.ts";
 
 const tz = "America/Los_Angeles";
 const at = (iso: string) => Date.parse(iso);
@@ -21,4 +21,38 @@ test("teamColor", () => {
   expect(teamColor("aa0000")).toBe("#aa0000");
   expect(teamColor("")).toBeUndefined();
   expect(teamColor("red")).toBeUndefined();
+});
+
+describe("chart", () => {
+  test("lineColors: the away team gives way when the colours clash", () => {
+    // Sharks teal and Islanders blue are too alike: the Islanders go orange.
+    expect(
+      lineColors({ color: "00529b", alternateColor: "f47d31" }, { color: "00788a", alternateColor: "070707" }),
+    ).toEqual({
+      away: "#f47d31",
+      home: "#00788a",
+    });
+    // Unlike colours stay; near-black is lifted to read on the dark card.
+    expect(lineColors({ color: "ef3b24", alternateColor: "" }, { color: "000000", alternateColor: "" })).toEqual({
+      away: "#ef3b24",
+      home: "color-mix(in oklab, #000000 65%, white)",
+    });
+    // No colour: the theme's ink.
+    expect(lineColors({ color: "", alternateColor: "" }, { color: "00788a", alternateColor: "" }).away).toContain(
+      "--wd-ink-muted",
+    );
+  });
+
+  test("halfRange ignores a decided game's prices", () => {
+    expect(halfRange([43, 71, 55], [57, 29, 45])).toBeCloseTo(23.1);
+    expect(halfRange([51, 99], [49, 1])).toBe(8); // the jump to 99/1 doesn't count
+    expect(halfRange([50], [50])).toBe(8);
+    expect(halfRange([96], [4])).toBe(50);
+  });
+
+  test("spread pushes close tags apart about their midpoint", () => {
+    expect(spread([50, 54], 18)).toEqual([43, 61]);
+    expect(spread([54, 50], 18)).toEqual([61, 43]);
+    expect(spread([10, 90], 18)).toEqual([10, 90]);
+  });
 });

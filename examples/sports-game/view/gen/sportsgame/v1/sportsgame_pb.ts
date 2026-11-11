@@ -11,7 +11,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file sportsgame/v1/sportsgame.proto.
  */
 export const file_sportsgame_v1_sportsgame: GenFile = /*@__PURE__*/
-  fileDesc("Ch5zcG9ydHNnYW1lL3YxL3Nwb3J0c2dhbWUucHJvdG8SDXNwb3J0c2dhbWUudjEingEKBkNvbmZpZxIxCgZsZWFndWUYASABKA4yFS5zcG9ydHNnYW1lLnYxLkxlYWd1ZUIKukgHggEEEAEgABIkCgR0ZWFtGAIgASgJQha6SBNyETIPXltBLVphLXpdezIsNH0kEh0KDGhvdXJzX2JlZm9yZRgDIAEoDUIHukgEKgIYMBIcCgtob3Vyc19hZnRlchgEIAEoDUIHukgEKgIYSCKbAgoEVGVhbRIvCgxhYmJyZXZpYXRpb24YASABKAlCGbpIFnIUMhJeW0EtWmEtejAtOV17MSw2fSQSFQoEbmFtZRgCIAEoCUIHukgEcgIYQBIbCgpzaG9ydF9uYW1lGAMgASgJQge6SARyAhggEhYKBXNjb3JlGAQgASgJQge6SARyAhgIEikKBWNvbG9yGAUgASgJQhq6SBdyFTITXihbMC05YS1mQS1GXXs2fSk/JBJCCgRsb2dvGAYgASgJQjS6SDFyLzItXihodHRwczovL2FcLmVzcG5jZG5cLmNvbS9bQS1aYS16MC05Ly5fLV0rKT8kEhcKBnJlY29yZBgHIAEoCUIHukgEcgIYEBIOCgZ3aW5uZXIYCCABKAgipwMKBVN0YXRlEi8KBmxlYWd1ZRgBIAEoDjIVLnNwb3J0c2dhbWUudjEuTGVhZ3VlQgi6SAWCAQIQARImCghldmVudF9pZBgCIAEoCUIUukgRcg8yDV5bMC05XXsxLDE2fSQSHgoNc3RhcnRfdW5peF9tcxgDIAEoA0IHukgEIgIgABIzCgVwaGFzZRgEIAEoDjIaLnNwb3J0c2dhbWUudjEuU3RhdGUuUGhhc2VCCLpIBYIBAhABEhcKBmRldGFpbBgFIAEoCUIHukgEcgIYQBIpCgRob21lGAYgASgLMhMuc3BvcnRzZ2FtZS52MS5UZWFtQga6SAPIAQESKQoEYXdheRgHIAEoCzITLnNwb3J0c2dhbWUudjEuVGVhbUIGukgDyAEBEhoKCWJyb2FkY2FzdBgIIAEoCUIHukgEcgIYMBIVCgRtaW5lGAkgASgJQge6SARyAhgGIk4KBVBoYXNlEhUKEVBIQVNFX1VOU1BFQ0lGSUVEEAASDQoJUEhBU0VfUFJFEAESDgoKUEhBU0VfTElWRRACEg8KC1BIQVNFX0ZJTkFMEAMiFgoDRW5kEg8KB3VuaXhfbXMYASABKAMqgQEKBkxlYWd1ZRIWChJMRUFHVUVfVU5TUEVDSUZJRUQQABIOCgpMRUFHVUVfTkZMEAESDgoKTEVBR1VFX05ITBACEg4KCkxFQUdVRV9OQkEQAxIOCgpMRUFHVUVfTUxCEAQSDwoLTEVBR1VFX1dOQkEQBRIOCgpMRUFHVUVfTUxTEAZCywEKEWNvbS5zcG9ydHNnYW1lLnYxQg9TcG9ydHNnYW1lUHJvdG9QAVpQZ2l0aHViLmNvbS9hcmVuNTU1NTUvd2lkZ2V0ZC9leGFtcGxlcy9zcG9ydHMtZ2FtZS9nZW4vc3BvcnRzZ2FtZS92MTtzcG9ydHNnYW1ldjGiAgNTWFiqAg1TcG9ydHNnYW1lLlYxygINU3BvcnRzZ2FtZVxWMeICGVNwb3J0c2dhbWVcVjFcR1BCTWV0YWRhdGHqAg5TcG9ydHNnYW1lOjpWMWIGcHJvdG8z", [file_buf_validate_validate]);
+  fileDesc("Ch5zcG9ydHNnYW1lL3YxL3Nwb3J0c2dhbWUucHJvdG8SDXNwb3J0c2dhbWUudjEingEKBkNvbmZpZxIxCgZsZWFndWUYASABKA4yFS5zcG9ydHNnYW1lLnYxLkxlYWd1ZUIKukgHggEEEAEgABIkCgR0ZWFtGAIgASgJQha6SBNyETIPXltBLVphLXpdezIsNH0kEh0KDGhvdXJzX2JlZm9yZRgDIAEoDUIHukgEKgIYMBIcCgtob3Vyc19hZnRlchgEIAEoDUIHukgEKgIYSCLQAgoEVGVhbRIvCgxhYmJyZXZpYXRpb24YASABKAlCGbpIFnIUMhJeW0EtWmEtejAtOV17MSw2fSQSFQoEbmFtZRgCIAEoCUIHukgEcgIYQBIbCgpzaG9ydF9uYW1lGAMgASgJQge6SARyAhggEhYKBXNjb3JlGAQgASgJQge6SARyAhgIEikKBWNvbG9yGAUgASgJQhq6SBdyFTITXihbMC05YS1mQS1GXXs2fSk/JBJCCgRsb2dvGAYgASgJQjS6SDFyLzItXihodHRwczovL2FcLmVzcG5jZG5cLmNvbS9bQS1aYS16MC05Ly5fLV0rKT8kEhcKBnJlY29yZBgHIAEoCUIHukgEcgIYEBIOCgZ3aW5uZXIYCCABKAgSMwoPYWx0ZXJuYXRlX2NvbG9yGAkgASgJQhq6SBdyFTITXihbMC05YS1mQS1GXXs2fSk/JCJmCgZNYXJrZXQSHgoNc3RhcnRfdW5peF9tcxgBIAEoA0IHukgEIgIgABIdCgRhd2F5GAIgAygNQg+6SAySAQkQ0AUiBCoCGGQSHQoEaG9tZRgDIAMoDUIPukgMkgEJENAFIgQqAhhkIvADCgVTdGF0ZRIvCgZsZWFndWUYASABKA4yFS5zcG9ydHNnYW1lLnYxLkxlYWd1ZUIIukgFggECEAESJgoIZXZlbnRfaWQYAiABKAlCFLpIEXIPMg1eWzAtOV17MSwxNn0kEh4KDXN0YXJ0X3VuaXhfbXMYAyABKANCB7pIBCICIAASMwoFcGhhc2UYBCABKA4yGi5zcG9ydHNnYW1lLnYxLlN0YXRlLlBoYXNlQgi6SAWCAQIQARIXCgZkZXRhaWwYBSABKAlCB7pIBHICGEASKQoEaG9tZRgGIAEoCzITLnNwb3J0c2dhbWUudjEuVGVhbUIGukgDyAEBEikKBGF3YXkYByABKAsyEy5zcG9ydHNnYW1lLnYxLlRlYW1CBrpIA8gBARIaCglicm9hZGNhc3QYCCABKAlCB7pIBHICGDASFQoEbWluZRgJIAEoCUIHukgEcgIYBhIlCgZtYXJrZXQYCiABKAsyFS5zcG9ydHNnYW1lLnYxLk1hcmtldBIgCg5zY29yZWRfdW5peF9tcxgLIAMoA0IIukgFkgECECgiTgoFUGhhc2USFQoRUEhBU0VfVU5TUEVDSUZJRUQQABINCglQSEFTRV9QUkUQARIOCgpQSEFTRV9MSVZFEAISDwoLUEhBU0VfRklOQUwQAyIWCgNFbmQSDwoHdW5peF9tcxgBIAEoAyqBAQoGTGVhZ3VlEhYKEkxFQUdVRV9VTlNQRUNJRklFRBAAEg4KCkxFQUdVRV9ORkwQARIOCgpMRUFHVUVfTkhMEAISDgoKTEVBR1VFX05CQRADEg4KCkxFQUdVRV9NTEIQBBIPCgtMRUFHVUVfV05CQRAFEg4KCkxFQUdVRV9NTFMQBkLLAQoRY29tLnNwb3J0c2dhbWUudjFCD1Nwb3J0c2dhbWVQcm90b1ABWlBnaXRodWIuY29tL2FyZW41NTU1NS93aWRnZXRkL2V4YW1wbGVzL3Nwb3J0cy1nYW1lL2dlbi9zcG9ydHNnYW1lL3YxO3Nwb3J0c2dhbWV2MaICA1NYWKoCDVNwb3J0c2dhbWUuVjHKAg1TcG9ydHNnYW1lXFYx4gIZU3BvcnRzZ2FtZVxWMVxHUEJNZXRhZGF0YeoCDlNwb3J0c2dhbWU6OlYxYgZwcm90bzM", [file_buf_validate_validate]);
 
 /**
  * Config is one team to follow. Follow two teams with two instances.
@@ -102,6 +102,14 @@ export type Team = Message<"sportsgame.v1.Team"> & {
    * @generated from field: bool winner = 8;
    */
   winner: boolean;
+
+  /**
+   * ESPN's second colour, hex without "#", or empty. The card's chart uses
+   * it for the away team when both teams' colours are too alike.
+   *
+   * @generated from field: string alternate_color = 9;
+   */
+  alternateColor: string;
 };
 
 /**
@@ -110,6 +118,40 @@ export type Team = Message<"sportsgame.v1.Team"> & {
  */
 export const TeamSchema: GenMessage<Team> = /*@__PURE__*/
   messageDesc(file_sportsgame_v1_sportsgame, 1);
+
+/**
+ * Market is Kalshi's market on who wins a game that has started: each team's
+ * price in whole percent (the market's chance it wins), once a minute from
+ * start_unix_ms, carried forward through minutes without a trade. A decided
+ * game ends at 99 and 1, or so.
+ *
+ * @generated from message sportsgame.v1.Market
+ */
+export type Market = Message<"sportsgame.v1.Market"> & {
+  /**
+   * @generated from field: int64 start_unix_ms = 1;
+   */
+  startUnixMs: bigint;
+
+  /**
+   * At most twelve hours of minutes.
+   *
+   * @generated from field: repeated uint32 away = 2;
+   */
+  away: number[];
+
+  /**
+   * @generated from field: repeated uint32 home = 3;
+   */
+  home: number[];
+};
+
+/**
+ * Describes the message sportsgame.v1.Market.
+ * Use `create(MarketSchema)` to create a new message.
+ */
+export const MarketSchema: GenMessage<Market> = /*@__PURE__*/
+  messageDesc(file_sportsgame_v1_sportsgame, 2);
 
 /**
  * State is one game's card.
@@ -165,6 +207,21 @@ export type State = Message<"sportsgame.v1.State"> & {
    * @generated from field: string mine = 9;
    */
   mine: string;
+
+  /**
+   * Unset before the start, and when Kalshi has no market for the game.
+   *
+   * @generated from field: sportsgame.v1.Market market = 10;
+   */
+  market?: Market | undefined;
+
+  /**
+   * When each score happened (ESPN's wall clock), for ticks on the chart.
+   * Only for leagues that score rarely: hockey, soccer, football, baseball.
+   *
+   * @generated from field: repeated int64 scored_unix_ms = 11;
+   */
+  scoredUnixMs: bigint[];
 };
 
 /**
@@ -172,7 +229,7 @@ export type State = Message<"sportsgame.v1.State"> & {
  * Use `create(StateSchema)` to create a new message.
  */
 export const StateSchema: GenMessage<State> = /*@__PURE__*/
-  messageDesc(file_sportsgame_v1_sportsgame, 2);
+  messageDesc(file_sportsgame_v1_sportsgame, 3);
 
 /**
  * @generated from enum sportsgame.v1.State.Phase
@@ -203,7 +260,7 @@ export enum State_Phase {
  * Describes the enum sportsgame.v1.State.Phase.
  */
 export const State_PhaseSchema: GenEnum<State_Phase> = /*@__PURE__*/
-  enumDesc(file_sportsgame_v1_sportsgame, 2, 0);
+  enumDesc(file_sportsgame_v1_sportsgame, 3, 0);
 
 /**
  * End is what the server half stores per game: when it saw it end.
@@ -222,7 +279,7 @@ export type End = Message<"sportsgame.v1.End"> & {
  * Use `create(EndSchema)` to create a new message.
  */
 export const EndSchema: GenMessage<End> = /*@__PURE__*/
-  messageDesc(file_sportsgame_v1_sportsgame, 3);
+  messageDesc(file_sportsgame_v1_sportsgame, 4);
 
 /**
  * @generated from enum sportsgame.v1.League

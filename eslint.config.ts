@@ -25,6 +25,9 @@ export default defineConfig(
     "spikes/",
     "bin/",
     "data/",
+    // Other checkouts of this repo (git worktrees), gitignored. Prettier
+    // skips them by reading .gitignore; ESLint doesn't read it.
+    ".claude/worktrees/",
   ]),
 
   js.configs.recommended,

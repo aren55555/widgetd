@@ -1,8 +1,9 @@
 // Package server is the sports-game widget's server half: one followed
 // team. It reads the team's schedule, and for each game whose window is
 // open (a few hours before the start until a day after the end) it shows a
-// card and keeps its score current. Cards come and go by themselves; between
-// games the instance shows nothing.
+// card and keeps its score current. Once a game starts, the card also carries
+// Kalshi's market on who wins, which the view draws behind the score. Cards
+// come and go by themselves; between games the instance shows nothing.
 package server
 
 import (
@@ -54,6 +55,7 @@ func Run(ctx context.Context, h widget.Host) error {
 	g := &games{
 		h:       h,
 		espn:    espn{h: h, league: cfg.GetLeague()},
+		kalshi:  &kalshi{h: h, league: cfg.GetLeague(), games: map[string]*market{}},
 		team:    strings.ToUpper(cfg.GetTeam()),
 		before:  hours(cfg.GetHoursBefore(), 3),
 		after:   hours(cfg.GetHoursAfter(), 24),
@@ -76,6 +78,7 @@ func hours(n, def uint32) time.Duration {
 type games struct {
 	h       widget.Host
 	espn    espn
+	kalshi  *kalshi
 	team    string
 	before  time.Duration
 	after   time.Duration
@@ -138,6 +141,7 @@ func (g *games) tick(ctx context.Context) time.Duration {
 			continue
 		}
 		st.Mine = g.team
+		st.Market = g.kalshi.market(ctx, st, now)
 		switch st.GetPhase() {
 		case pb.State_PHASE_LIVE:
 			g.sawLive[s.id] = true
@@ -171,6 +175,7 @@ func (g *games) tick(ctx context.Context) time.Duration {
 			delete(g.cards, id)
 			delete(g.last, id)
 			delete(g.until, id)
+			delete(g.kalshi.games, id)
 		}
 	}
 	return max(wait, time.Second)
@@ -181,8 +186,9 @@ func (g *games) tick(ctx context.Context) time.Duration {
 func (g *games) show(id string, st *pb.State, until time.Time) error {
 	card, ok := g.cards[id]
 	if !ok || !g.until[id].Equal(until) {
+		// No title: the board then draws no heading, and the card (with the
+		// market chart behind it) fills the whole tile. The teams are on it.
 		c, err := widget.MountState[*pb.State](g.h, "game-"+id, widget.MountOptions{
-			Title:        st.GetAway().GetAbbreviation() + " @ " + st.GetHome().GetAbbreviation(),
 			Layout:       widget.Layout{Cols: 2, Rows: 1},
 			VisibleUntil: until,
 		})

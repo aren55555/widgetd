@@ -40,6 +40,30 @@ message Team {
   string logo = 6 [(buf.validate.field).string.pattern = "^(https://a\\.espncdn\\.com/[A-Za-z0-9/._-]+)?$"];
   string record = 7 [(buf.validate.field).string.max_len = 16];
   bool winner = 8;
+  // ESPN's second colour, hex without "#", or empty. The card's chart uses
+  // it for the away team when both teams' colours are too alike.
+  string alternate_color = 9 [(buf.validate.field).string.pattern = "^([0-9a-fA-F]{6})?$"];
+}
+
+// Market is Kalshi's market on who wins a game that has started: each team's
+// price in whole percent (the market's chance it wins), once a minute from
+// start_unix_ms, carried forward through minutes without a trade. A decided
+// game ends at 99 and 1, or so.
+message Market {
+  int64 start_unix_ms = 1 [(buf.validate.field).int64.gt = 0];
+  // At most twelve hours of minutes.
+  repeated uint32 away = 2 [(buf.validate.field).repeated = {
+    max_items: 720
+    items: {
+      uint32: {lte: 100}
+    }
+  }];
+  repeated uint32 home = 3 [(buf.validate.field).repeated = {
+    max_items: 720
+    items: {
+      uint32: {lte: 100}
+    }
+  }];
 }
 
 // State is one game's card.
@@ -61,6 +85,11 @@ message State {
   string broadcast = 8 [(buf.validate.field).string.max_len = 48];
   // The followed team's abbreviation, so the card can highlight it.
   string mine = 9 [(buf.validate.field).string.max_len = 6];
+  // Unset before the start, and when Kalshi has no market for the game.
+  Market market = 10;
+  // When each score happened (ESPN's wall clock), for ticks on the chart.
+  // Only for leagues that score rarely: hockey, soccer, football, baseball.
+  repeated int64 scored_unix_ms = 11 [(buf.validate.field).repeated.max_items = 40];
 }
 
 // End is what the server half stores per game: when it saw it end.
