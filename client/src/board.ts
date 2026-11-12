@@ -81,10 +81,10 @@ ${WIDGET_ICON_CSS}
 .code { font: 600 22px/28px var(--wd-font-mono, ui-monospace, monospace); letter-spacing: 0.1em; color: var(--wd-ink, #e5e7eb); }
 .offline { position: absolute; right: 8px; bottom: 8px; z-index: 4; padding: 2px 10px; border-radius: 999px; font: 12px/18px var(--wd-font-mono, monospace);
   background: color-mix(in oklab, var(--wd-warn, #f59e0b) 20%, var(--wd-surface, #18181b)); color: var(--wd-warn, #f59e0b); cursor: help; }
-.footer { display: flex; justify-content: flex-end; padding-top: 8px; }
+.footer { display: flex; justify-content: flex-end; gap: 2px; padding-top: 8px; }
 .icon { display: inline-flex; align-items: center; justify-content: center; padding: 4px; border: 0; border-radius: 6px; background: none;
   cursor: pointer; color: var(--wd-ink-faint, #71717a); }
-.icon:hover, .icon:focus-visible { color: var(--wd-ink, #e5e7eb); }
+.icon:hover, .icon:focus-visible, .icon[aria-pressed="true"] { color: var(--wd-ink, #e5e7eb); }
 .icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 dialog { width: min(440px, calc(100vw - 32px)); max-height: calc(100vh - 32px); box-sizing: border-box; padding: 0; overflow: auto;
   border: 1px solid var(--wd-edge, #27272a); border-radius: var(--wd-radius, 10px); background: var(--wd-surface, #18181b); color: var(--wd-ink, #e5e7eb);
@@ -128,15 +128,18 @@ dialog dd small { display: block; font-size: 11px; color: var(--wd-ink-faint, #7
   .overlay .info { flex: 1; align-items: flex-start; text-align: left; }
   .overlay .code { font-size: clamp(16px, 16cqh, 36px); }
 }
-.overlay .close { position: absolute; right: 6px; top: 4px; border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--wd-ink-faint, #71717a); }
+/* Above .fit, which follows it and covers the whole overlay. */
+.overlay .close { position: absolute; right: 6px; top: 4px; z-index: 1; border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--wd-ink-faint, #71717a); }
 `;
 
-// Lucide icons (settings, pencil, x), inline: the board has no icon set.
+// Lucide icons (settings, pencil, qr-code, x), inline: the board has no icon set.
 const ICONS = {
   settings:
     '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
   pencil:
     '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+  "qr-code":
+    '<rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
 };
 
@@ -195,6 +198,8 @@ class WidgetBoard extends HTMLElement {
   private prefsBytes = new Uint8Array();
 
   private footer = document.createElement("div");
+  /** The footer's toggle for every card's set-up code at once. */
+  private setUpAllButton = iconButton("qr-code", "Set up widgets", () => this.toggleSetUpAll());
   private dialog = document.createElement("dialog");
   private badge = document.createElement("div");
   /** When the stream went down; undefined while it is live. */
@@ -209,7 +214,11 @@ class WidgetBoard extends HTMLElement {
     style.textContent = STYLE;
     this.grid.className = "grid";
     this.footer.className = "footer";
-    this.footer.replaceChildren(iconButton("settings", "Screen settings", () => this.openSettings()));
+    this.setUpAllButton.setAttribute("aria-pressed", "false");
+    this.footer.replaceChildren(
+      this.setUpAllButton,
+      iconButton("settings", "Screen settings", () => this.openSettings()),
+    );
     this.badge.className = "offline";
     this.badge.hidden = true;
     this.dialog.addEventListener("click", (e) => {
@@ -217,6 +226,7 @@ class WidgetBoard extends HTMLElement {
     });
     this.root.replaceChildren(style, this.body, this.badge, this.dialog);
     window.addEventListener("message", this.onMessage);
+    window.addEventListener("keydown", this.onKey);
     this.stopped = false;
     this.wentOffline("connecting");
     void this.start();
@@ -228,7 +238,13 @@ class WidgetBoard extends HTMLElement {
     clearTimeout(this.offlineTimer);
     this.offlineSince = undefined;
     window.removeEventListener("message", this.onMessage);
+    window.removeEventListener("keydown", this.onKey);
   }
+
+  /** Escape clears the set-up codes. */
+  private onKey = (e: KeyboardEvent) => {
+    if (e.key === "Escape") this.clearSetUp();
+  };
 
   /** Read `?o=` and settle the layout and preferences for this page load. */
   private resolveOptions() {
@@ -475,7 +491,7 @@ class WidgetBoard extends HTMLElement {
     gear.title = "Settings";
     gear.setAttribute("aria-label", "Settings");
     gear.textContent = "\u2699";
-    gear.addEventListener("click", () => void this.showSetUp(el, instanceOf(id)));
+    gear.addEventListener("click", () => void this.showSetUp([el], instanceOf(id)));
     if (m.title) el.append(title);
     el.append(gear, fault, warn, frame);
     Object.assign(el.style, gridSpan(m.layout?.cols ?? 1, m.layout?.rows ?? 1, this.maxCols));
@@ -529,7 +545,7 @@ class WidgetBoard extends HTMLElement {
       const btn = document.createElement("button");
       btn.className = "action";
       btn.textContent = "Set up";
-      btn.addEventListener("click", () => void this.showSetUp(tile, id));
+      btn.addEventListener("click", () => void this.showSetUp([tile], id));
       tile.append(btn);
     }
     if (p.signIn) {
@@ -546,7 +562,7 @@ class WidgetBoard extends HTMLElement {
     }
     if (this.justAdded === id) {
       this.justAdded = "";
-      void this.showSetUp(tile, id);
+      void this.showSetUp([tile], id);
     }
   }
 
@@ -555,16 +571,49 @@ class WidgetBoard extends HTMLElement {
    * phone. The code is good for one use and ten minutes; the phone still
    * needs an admin passkey to save anything.
    */
-  private async showSetUp(within: HTMLElement, instanceId: string) {
-    const o = this.codeOverlay(within);
+  private async showSetUp(tiles: HTMLElement[], instanceId: string) {
+    // One code for the instance, shown on each of its cards.
+    const os = tiles.map((t) => this.codeOverlay(t, "setup"));
     try {
       const admin = createClient(WidgetAdminService, this.transport());
       const t = await admin.requestConfigTicket({ instanceId });
-      o.show(t.url, ["Scan with your phone to set this up."]);
-      o.expireAt(t.expiresAt ? Number(t.expiresAt.seconds) * 1000 : Date.now() + 600_000);
+      const expires = t.expiresAt ? Number(t.expiresAt.seconds) * 1000 : Date.now() + 600_000;
+      for (const o of os) {
+        o.show(t.url, ["Scan with your phone to set this up."]);
+        o.expireAt(expires);
+      }
     } catch (e) {
-      o.fail(`Couldn't get a code: ${e instanceof Error ? e.message : String(e)}`);
+      for (const o of os) o.fail(`Couldn't get a code: ${e instanceof Error ? e.message : String(e)}`);
     }
+  }
+
+  /**
+   * The footer's set-up button: every card's set-up code at once, or, if
+   * they're up, none. Cards of one instance share its code.
+   */
+  private toggleSetUpAll() {
+    if (this.grid.querySelector(".overlay.setup")) {
+      this.clearSetUp();
+      return;
+    }
+    const byInstance = new Map<string, HTMLElement[]>();
+    for (const c of this.cards.values()) {
+      const id = instanceOf(c.id);
+      byInstance.set(id, [...(byInstance.get(id) ?? []), c.el]);
+    }
+    for (const [id, tiles] of byInstance) void this.showSetUp(tiles, id);
+    this.syncSetUpButton();
+  }
+
+  /** Takes every set-up code down (not sign-ins). */
+  private clearSetUp() {
+    for (const o of this.grid.querySelectorAll(".overlay.setup")) o.remove();
+    this.syncSetUpButton();
+  }
+
+  /** The footer's set-up button reads pressed while any set-up code is up. */
+  private syncSetUpButton() {
+    this.setUpAllButton.setAttribute("aria-pressed", String(!!this.grid.querySelector(".overlay.setup")));
   }
 
   /**
@@ -574,7 +623,7 @@ class WidgetBoard extends HTMLElement {
    * turns into the widget when it comes.
    */
   private async showSignIn(within: HTMLElement, provider: string, accountId: string) {
-    const o = this.codeOverlay(within);
+    const o = this.codeOverlay(within, "signin");
     try {
       const admin = createClient(WidgetAdminService, this.transport());
       const s = await admin.beginSignIn({ provider, accountId });
@@ -595,15 +644,19 @@ class WidgetBoard extends HTMLElement {
    * text (and, for sign-in, the code to type), laid out to fit the tile:
    * see .overlay in STYLE.
    */
-  private codeOverlay(within: HTMLElement) {
+  private codeOverlay(within: HTMLElement, kind: "setup" | "signin") {
     within.querySelector(".overlay")?.remove();
     const overlay = document.createElement("div");
-    overlay.className = "overlay";
+    overlay.className = `overlay ${kind}`;
+    const remove = () => {
+      overlay.remove();
+      this.syncSetUpButton();
+    };
     const close = document.createElement("button");
     close.className = "close";
     close.setAttribute("aria-label", "Close");
     close.textContent = "×";
-    close.addEventListener("click", () => overlay.remove());
+    close.addEventListener("click", remove);
     const fit = document.createElement("div");
     fit.className = "fit";
     fit.textContent = "Getting a code…";
@@ -633,7 +686,7 @@ class WidgetBoard extends HTMLElement {
         fit.textContent = message;
       },
       expireAt(ms: number) {
-        setTimeout(() => overlay.remove(), Math.max(1000, ms - Date.now()));
+        setTimeout(remove, Math.max(1000, ms - Date.now()));
       },
     };
   }
@@ -654,7 +707,7 @@ class WidgetBoard extends HTMLElement {
     const { instanceId } = await admin.addInstance({ widget });
     this.justAdded = instanceId;
     const known = this.instances.get(instanceId);
-    if (known?.tile) void this.showSetUp(known.tile, instanceId);
+    if (known?.tile) void this.showSetUp([known.tile], instanceId);
     this.resetAddTile();
   }
 

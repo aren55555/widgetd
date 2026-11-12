@@ -180,6 +180,8 @@
 /* A score: in the scoring team's colour (set inline). */
 .plot line.scored {
   stroke: var(--wd-ink-faint, #71717a);
+  /* Long dashes, apart from the 50% line's dots. */
+  stroke-dasharray: 8 5;
   opacity: 0.6;
 }
 
