@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { halfRange, lineColors, spread, startLabel, teamColor } from "./game.ts";
+import { creditLine, halfRange, lineColors, spread, startLabel, teamColor } from "./game.ts";
 
 const tz = "America/Los_Angeles";
 const at = (iso: string) => Date.parse(iso);
@@ -55,4 +55,14 @@ describe("chart", () => {
     expect(spread([54, 50], 18)).toEqual([61, 43]);
     expect(spread([10, 90], 18)).toEqual([10, 90]);
   });
+});
+
+test("creditLine", () => {
+  const c = (name: string, seasonTotal = 0) => ({ name, seasonTotal });
+  expect(creditLine(c("Celebrini", 5), [c("Smith", 8), c("Misa", 2)])).toBe("Celebrini (5); Smith (8) and Misa (2)");
+  expect(creditLine(c("Celebrini", 5), [c("Smith", 8)])).toBe("Celebrini (5); Smith (8)");
+  expect(creditLine(c("Celebrini", 5), [])).toBe("Celebrini (5)"); // unassisted
+  expect(creditLine(c("Stenberg"), [])).toBe("Stenberg"); // a shootout goal: no total
+  expect(creditLine(c("A", 1), [c("B", 2), c("C", 3), c("D", 4)])).toBe("A (1); B (2), C (3) and D (4)");
+  expect(creditLine(undefined, [])).toBe("");
 });

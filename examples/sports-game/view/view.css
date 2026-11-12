@@ -67,10 +67,12 @@
   min-width: 0;
 }
 
-/* The followed team's star: what icon(Star, { size: "sm" }) draws. */
+/* The followed team's star, as a superscript: up against the name's cap
+   height, closer than the row's gap. */
 .who .wd-icon {
   flex: none;
-  align-self: center;
+  align-self: flex-start;
+  margin: 1px 0 0 -6px;
   color: var(--wd-ink-muted, #a1a1aa);
 }
 
@@ -175,9 +177,10 @@
   stroke-dasharray: 2 4;
 }
 
+/* A score: in the scoring team's colour (set inline). */
 .plot line.scored {
   stroke: var(--wd-ink-faint, #71717a);
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 .plot .end {
@@ -241,6 +244,21 @@
   left: auto;
   right: 8px;
 }
+
+/* Near a score's mark: who scored, across the top in the team's colour. */
+.hover .credit {
+  position: absolute;
+  top: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font: 600 11px/15px var(--wd-font-mono, ui-monospace, monospace);
+  color: #fff;
+  background: var(--line);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+
 
 .hover .when {
   position: absolute;

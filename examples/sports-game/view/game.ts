@@ -102,3 +102,22 @@ export function spread(ys: readonly number[], gap: number): number[] {
   }
   return out;
 }
+
+interface CreditLike {
+  name: string;
+  seasonTotal: number;
+}
+
+/**
+ * Who scored, for the hover on a score's mark:
+ * "Celebrini (5); Smith (8) and Misa (2)". Totals are season totals; one
+ * ESPN doesn't give (a shootout goal) is left out. Empty if no one's named.
+ */
+export function creditLine(scorer: CreditLike | undefined, assists: readonly CreditLike[]): string {
+  if (!scorer) return "";
+  const one = (c: CreditLike) => (c.seasonTotal ? `${c.name} (${c.seasonTotal})` : c.name);
+  const helpers = assists.map(one);
+  const tail =
+    helpers.length > 1 ? `${helpers.slice(0, -1).join(", ")} and ${helpers.at(-1) ?? ""}` : (helpers[0] ?? "");
+  return tail ? `${one(scorer)}; ${tail}` : one(scorer);
+}

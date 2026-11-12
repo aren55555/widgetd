@@ -401,9 +401,9 @@ type State struct {
 	Mine string `protobuf:"bytes,9,opt,name=mine,proto3" json:"mine,omitempty"`
 	// Unset before the start, and when Kalshi has no market for the game.
 	Market *Market `protobuf:"bytes,10,opt,name=market,proto3" json:"market,omitempty"`
-	// When each score happened (ESPN's wall clock), for ticks on the chart.
-	// Only for leagues that score rarely: hockey, soccer, football, baseball.
-	ScoredUnixMs  []int64 `protobuf:"varint,11,rep,packed,name=scored_unix_ms,json=scoredUnixMs,proto3" json:"scored_unix_ms,omitempty"`
+	// Each score, in order, for marks on the chart. Only for leagues that
+	// score rarely: hockey, soccer, football, baseball.
+	Scores        []*Score `protobuf:"bytes,12,rep,name=scores,proto3" json:"scores,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -508,11 +508,139 @@ func (x *State) GetMarket() *Market {
 	return nil
 }
 
-func (x *State) GetScoredUnixMs() []int64 {
+func (x *State) GetScores() []*Score {
 	if x != nil {
-		return x.ScoredUnixMs
+		return x.Scores
 	}
 	return nil
+}
+
+// Score is one scoring play.
+type Score struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// When it happened, by ESPN's wall clock.
+	UnixMs int64 `protobuf:"varint,1,opt,name=unix_ms,json=unixMs,proto3" json:"unix_ms,omitempty"`
+	// Which team scored: the home team, or else the away team.
+	Home bool `protobuf:"varint,2,opt,name=home,proto3" json:"home,omitempty"`
+	// Who scored, if ESPN says (it does for hockey).
+	Scorer        *Credit   `protobuf:"bytes,3,opt,name=scorer,proto3" json:"scorer,omitempty"`
+	Assists       []*Credit `protobuf:"bytes,4,rep,name=assists,proto3" json:"assists,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Score) Reset() {
+	*x = Score{}
+	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Score) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Score) ProtoMessage() {}
+
+func (x *Score) ProtoReflect() protoreflect.Message {
+	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Score.ProtoReflect.Descriptor instead.
+func (*Score) Descriptor() ([]byte, []int) {
+	return file_sportsgame_v1_sportsgame_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Score) GetUnixMs() int64 {
+	if x != nil {
+		return x.UnixMs
+	}
+	return 0
+}
+
+func (x *Score) GetHome() bool {
+	if x != nil {
+		return x.Home
+	}
+	return false
+}
+
+func (x *Score) GetScorer() *Credit {
+	if x != nil {
+		return x.Scorer
+	}
+	return nil
+}
+
+func (x *Score) GetAssists() []*Credit {
+	if x != nil {
+		return x.Assists
+	}
+	return nil
+}
+
+// Credit is a player's part in a score.
+type Credit struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The player's last name, as ESPN shortens it: "Celebrini".
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Their season total of goals (a scorer) or assists (an assister),
+	// counting this one; 0 if ESPN doesn't say (a shootout goal).
+	SeasonTotal   uint32 `protobuf:"varint,2,opt,name=season_total,json=seasonTotal,proto3" json:"season_total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Credit) Reset() {
+	*x = Credit{}
+	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Credit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Credit) ProtoMessage() {}
+
+func (x *Credit) ProtoReflect() protoreflect.Message {
+	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Credit.ProtoReflect.Descriptor instead.
+func (*Credit) Descriptor() ([]byte, []int) {
+	return file_sportsgame_v1_sportsgame_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *Credit) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Credit) GetSeasonTotal() uint32 {
+	if x != nil {
+		return x.SeasonTotal
+	}
+	return 0
 }
 
 // End is what the server half stores per game: when it saw it end.
@@ -525,7 +653,7 @@ type End struct {
 
 func (x *End) Reset() {
 	*x = End{}
-	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[4]
+	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -537,7 +665,7 @@ func (x *End) String() string {
 func (*End) ProtoMessage() {}
 
 func (x *End) ProtoReflect() protoreflect.Message {
-	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[4]
+	mi := &file_sportsgame_v1_sportsgame_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -550,7 +678,7 @@ func (x *End) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use End.ProtoReflect.Descriptor instead.
 func (*End) Descriptor() ([]byte, []int) {
-	return file_sportsgame_v1_sportsgame_proto_rawDescGZIP(), []int{4}
+	return file_sportsgame_v1_sportsgame_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *End) GetUnixMs() int64 {
@@ -586,7 +714,7 @@ const file_sportsgame_v1_sportsgame_proto_rawDesc = "" +
 	"\x06Market\x12+\n" +
 	"\rstart_unix_ms\x18\x01 \x01(\x03B\a\xbaH\x04\"\x02 \x00R\vstartUnixMs\x12#\n" +
 	"\x04away\x18\x02 \x03(\rB\x0f\xbaH\f\x92\x01\t\x10\xd0\x05\"\x04*\x02\x18dR\x04away\x12#\n" +
-	"\x04home\x18\x03 \x03(\rB\x0f\xbaH\f\x92\x01\t\x10\xd0\x05\"\x04*\x02\x18dR\x04home\"\xd0\x04\n" +
+	"\x04home\x18\x03 \x03(\rB\x0f\xbaH\f\x92\x01\t\x10\xd0\x05\"\x04*\x02\x18dR\x04home\"\xee\x04\n" +
 	"\x05State\x127\n" +
 	"\x06league\x18\x01 \x01(\x0e2\x15.sportsgame.v1.LeagueB\b\xbaH\x05\x82\x01\x02\x10\x01R\x06league\x12/\n" +
 	"\bevent_id\x18\x02 \x01(\tB\x14\xbaH\x11r\x0f2\r^[0-9]{1,16}$R\aeventId\x12+\n" +
@@ -598,14 +726,22 @@ const file_sportsgame_v1_sportsgame_proto_rawDesc = "" +
 	"\tbroadcast\x18\b \x01(\tB\a\xbaH\x04r\x02\x180R\tbroadcast\x12\x1b\n" +
 	"\x04mine\x18\t \x01(\tB\a\xbaH\x04r\x02\x18\x06R\x04mine\x12-\n" +
 	"\x06market\x18\n" +
-	" \x01(\v2\x15.sportsgame.v1.MarketR\x06market\x12.\n" +
-	"\x0escored_unix_ms\x18\v \x03(\x03B\b\xbaH\x05\x92\x01\x02\x10(R\fscoredUnixMs\"N\n" +
+	" \x01(\v2\x15.sportsgame.v1.MarketR\x06market\x126\n" +
+	"\x06scores\x18\f \x03(\v2\x14.sportsgame.v1.ScoreB\b\xbaH\x05\x92\x01\x02\x10(R\x06scores\"N\n" +
 	"\x05Phase\x12\x15\n" +
 	"\x11PHASE_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tPHASE_PRE\x10\x01\x12\x0e\n" +
 	"\n" +
 	"PHASE_LIVE\x10\x02\x12\x0f\n" +
-	"\vPHASE_FINAL\x10\x03\"\x1e\n" +
+	"\vPHASE_FINAL\x10\x03J\x04\b\v\x10\fR\x0escored_unix_ms\"\xa7\x01\n" +
+	"\x05Score\x12 \n" +
+	"\aunix_ms\x18\x01 \x01(\x03B\a\xbaH\x04\"\x02 \x00R\x06unixMs\x12\x12\n" +
+	"\x04home\x18\x02 \x01(\bR\x04home\x12-\n" +
+	"\x06scorer\x18\x03 \x01(\v2\x15.sportsgame.v1.CreditR\x06scorer\x129\n" +
+	"\aassists\x18\x04 \x03(\v2\x15.sportsgame.v1.CreditB\b\xbaH\x05\x92\x01\x02\x10\x03R\aassists\"T\n" +
+	"\x06Credit\x12\x1d\n" +
+	"\x04name\x18\x01 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x180R\x04name\x12+\n" +
+	"\fseason_total\x18\x02 \x01(\rB\b\xbaH\x05*\x03\x18\xe7\aR\vseasonTotal\"\x1e\n" +
 	"\x03End\x12\x17\n" +
 	"\aunix_ms\x18\x01 \x01(\x03R\x06unixMs*\x81\x01\n" +
 	"\x06League\x12\x16\n" +
@@ -636,7 +772,7 @@ func file_sportsgame_v1_sportsgame_proto_rawDescGZIP() []byte {
 }
 
 var file_sportsgame_v1_sportsgame_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_sportsgame_v1_sportsgame_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_sportsgame_v1_sportsgame_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_sportsgame_v1_sportsgame_proto_goTypes = []any{
 	(League)(0),      // 0: sportsgame.v1.League
 	(State_Phase)(0), // 1: sportsgame.v1.State.Phase
@@ -644,7 +780,9 @@ var file_sportsgame_v1_sportsgame_proto_goTypes = []any{
 	(*Team)(nil),     // 3: sportsgame.v1.Team
 	(*Market)(nil),   // 4: sportsgame.v1.Market
 	(*State)(nil),    // 5: sportsgame.v1.State
-	(*End)(nil),      // 6: sportsgame.v1.End
+	(*Score)(nil),    // 6: sportsgame.v1.Score
+	(*Credit)(nil),   // 7: sportsgame.v1.Credit
+	(*End)(nil),      // 8: sportsgame.v1.End
 }
 var file_sportsgame_v1_sportsgame_proto_depIdxs = []int32{
 	0, // 0: sportsgame.v1.Config.league:type_name -> sportsgame.v1.League
@@ -653,11 +791,14 @@ var file_sportsgame_v1_sportsgame_proto_depIdxs = []int32{
 	3, // 3: sportsgame.v1.State.home:type_name -> sportsgame.v1.Team
 	3, // 4: sportsgame.v1.State.away:type_name -> sportsgame.v1.Team
 	4, // 5: sportsgame.v1.State.market:type_name -> sportsgame.v1.Market
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	6, // 6: sportsgame.v1.State.scores:type_name -> sportsgame.v1.Score
+	7, // 7: sportsgame.v1.Score.scorer:type_name -> sportsgame.v1.Credit
+	7, // 8: sportsgame.v1.Score.assists:type_name -> sportsgame.v1.Credit
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_sportsgame_v1_sportsgame_proto_init() }
@@ -671,7 +812,7 @@ func file_sportsgame_v1_sportsgame_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_sportsgame_v1_sportsgame_proto_rawDesc), len(file_sportsgame_v1_sportsgame_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

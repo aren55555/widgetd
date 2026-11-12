@@ -3,7 +3,7 @@ import { icon, Star } from "@widgetd/sdk/icons";
 
 import { StateSchema, State_Phase, type State, type Team } from "./gen/sportsgame/v1/sportsgame_pb.ts";
 import { Chart } from "./chart.ts";
-import { lineColors, startLabel, teamColor, TYPICAL_MS } from "./game.ts";
+import { creditLine, lineColors, startLabel, teamColor, TYPICAL_MS } from "./game.ts";
 
 defineWidget({
   state: StateSchema,
@@ -15,6 +15,11 @@ defineWidget({
     const status = root.querySelector<HTMLElement>(".status")!;
     const chart = new Chart(card, prefs);
     card.prepend(chart.el);
+    // Built once and updated in place: a new <img> on every update would
+    // blank the logos for a moment each time (every state, and every minute).
+    const awayRow = new TeamRow();
+    const homeRow = new TeamRow();
+    teams.append(awayRow.el, homeRow.el);
     let current: State | undefined;
 
     const render = () => {
@@ -33,22 +38,26 @@ defineWidget({
             { key: "home", label: s.home.abbreviation, color: colors.home, prices: m.home },
           ],
           typicalMs: TYPICAL_MS[s.league] ?? 3 * 3_600_000,
-          scoredUnixMs: s.scoredUnixMs.map(Number),
+          marks: s.scores.map((sc) => ({
+            unixMs: Number(sc.unixMs),
+            color: sc.home ? colors.home : colors.away,
+            credit: creditLine(sc.scorer, sc.assists),
+          })),
           live,
         },
       );
       game.classList.toggle("charted", !!m);
 
-      const row = (t: Team, color: string, prices: number[] | undefined): HTMLElement =>
-        teamRow(t, {
-          mine: t.abbreviation === s.mine,
-          winner: s.phase === State_Phase.FINAL && t.winner,
-          score: pre ? "" : t.score,
-          record: pre ? t.record : "", // once it starts, the score and the market say more
-          swatch: m ? color : undefined,
-          pct: live && prices?.length ? `${prices[prices.length - 1]}%` : "",
-        });
-      teams.replaceChildren(row(s.away, colors.away, m?.away), row(s.home, colors.home, m?.home));
+      const opts = (t: Team, color: string, prices: number[] | undefined): RowOpts => ({
+        mine: t.abbreviation === s.mine,
+        winner: s.phase === State_Phase.FINAL && t.winner,
+        score: pre ? "" : t.score,
+        record: pre ? t.record : "", // once it starts, the score and the market say more
+        swatch: m ? color : undefined,
+        pct: live && prices?.length ? `${prices[prices.length - 1]}%` : "",
+      });
+      awayRow.update(s.away, opts(s.away, colors.away, m?.away));
+      homeRow.update(s.home, opts(s.home, colors.home, m?.home));
 
       status.dataset.phase = State_Phase[s.phase].toLowerCase();
       status.textContent = pre
@@ -77,26 +86,47 @@ interface RowOpts {
   pct: string;
 }
 
-function teamRow(t: Team, o: RowOpts): HTMLElement {
-  const r = document.createElement("div");
-  r.className = "team";
-  r.classList.toggle("mine", o.mine);
-  r.classList.toggle("winner", o.winner);
-  const color = teamColor(t.color);
-  if (color) r.style.setProperty("--team", color);
-  if (o.swatch) r.style.setProperty("--line", o.swatch);
+/** A team's row: logo · legend swatch · name ★ record · win % · score. */
+class TeamRow {
+  readonly el = document.createElement("div");
+  private logo = document.createElement("img");
+  private name = span("name");
+  // A superscript: smaller than the "sm" step, set high against the name.
+  private star = icon(Star, { size: 10, label: "Following" });
+  private record = span("record");
+  private pct = span("pct");
+  private score = span("score");
 
-  const logo = document.createElement("img");
-  logo.alt = "";
-  if (t.logo) logo.src = t.logo;
-  // The legend: the team's line colour, beside its name.
-  const swatch = span("swatch");
-  const who = span("who");
-  who.append(span("name", t.shortName || t.name));
-  if (o.mine) who.append(icon(Star, { size: "sm", label: "Following" }));
-  if (o.record) who.append(span("record", o.record));
-  r.append(logo, swatch, who, span("pct", o.pct), span("score", o.score));
-  return r;
+  constructor() {
+    this.el.className = "team";
+    this.logo.alt = "";
+    const who = span("who");
+    who.append(this.name, this.star, this.record);
+    // The legend: the team's line colour, beside its name.
+    this.el.append(this.logo, span("swatch"), who, this.pct, this.score);
+  }
+
+  update(t: Team, o: RowOpts): void {
+    const r = this.el;
+    r.classList.toggle("mine", o.mine);
+    r.classList.toggle("winner", o.winner);
+    setVar(r, "--team", teamColor(t.color));
+    setVar(r, "--line", o.swatch);
+    // Only a different logo reloads the image.
+    if (t.logo && this.logo.getAttribute("src") !== t.logo) this.logo.src = t.logo;
+    if (!t.logo) this.logo.removeAttribute("src");
+    this.name.textContent = t.shortName || t.name;
+    this.star.style.display = o.mine ? "" : "none";
+    this.record.textContent = o.record;
+    this.record.hidden = !o.record;
+    this.pct.textContent = o.pct;
+    this.score.textContent = o.score;
+  }
+}
+
+function setVar(el: HTMLElement, name: string, value: string | undefined): void {
+  if (value) el.style.setProperty(name, value);
+  else el.style.removeProperty(name);
 }
 
 function span(cls: string, text = ""): HTMLElement {

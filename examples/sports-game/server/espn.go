@@ -134,6 +134,7 @@ func (e espn) game(ctx context.Context, id string) (*pb.State, error) {
 					Score    string `json:"score"`
 					Winner   bool   `json:"winner"`
 					Team     struct {
+						ID           string `json:"id"`
 						Abbreviation string `json:"abbreviation"`
 						DisplayName  string `json:"displayName"`
 						ShortName    string `json:"shortDisplayName"`
@@ -160,7 +161,8 @@ func (e espn) game(ctx context.Context, id string) (*pb.State, error) {
 		Plays  []play `json:"plays"`
 		Drives struct {
 			Previous []struct {
-				Plays []play `json:"plays"`
+				Team  teamRef `json:"team"` // football plays name no team: the drive's scored
+				Plays []play  `json:"plays"`
 			} `json:"previous"`
 		} `json:"drives"`
 		KeyEvents []play `json:"keyEvents"`
@@ -188,6 +190,7 @@ func (e espn) game(ctx context.Context, id string) (*pb.State, error) {
 	if len(c.Broadcasts) > 0 {
 		st.Broadcast = clip(c.Broadcasts[0].Media.ShortName, 48)
 	}
+	homeID := ""
 	for _, comp := range c.Competitors {
 		t := &pb.Team{
 			Abbreviation:   comp.Team.Abbreviation,
@@ -205,7 +208,7 @@ func (e espn) game(ctx context.Context, id string) (*pb.State, error) {
 			t.Record = clip(comp.Record[0].Summary, 16)
 		}
 		if comp.HomeAway == "home" {
-			st.Home = t
+			st.Home, homeID = t, comp.Team.ID
 		} else {
 			st.Away = t
 		}
@@ -216,9 +219,12 @@ func (e espn) game(ctx context.Context, id string) (*pb.State, error) {
 	if scoresRarely[e.league] {
 		plays := slices.Concat(resp.Plays, resp.KeyEvents)
 		for _, d := range resp.Drives.Previous {
-			plays = append(plays, d.Plays...)
+			for _, p := range d.Plays {
+				p.Team = cmp.Or(p.Team, d.Team)
+				plays = append(plays, p)
+			}
 		}
-		st.ScoredUnixMs = scored(plays)
+		st.Scores = scores(plays, homeID)
 	}
 	return st, nil
 }
@@ -230,34 +236,6 @@ var scoresRarely = map[pb.League]bool{
 	pb.League_LEAGUE_NHL: true,
 	pb.League_LEAGUE_MLB: true,
 	pb.League_LEAGUE_MLS: true,
-}
-
-type play struct {
-	ScoringPlay bool   `json:"scoringPlay"`
-	Wallclock   string `json:"wallclock"`
-}
-
-// scored is when each scoring play happened, in order, once each, at most
-// 40 (State's cap).
-func scored(plays []play) []int64 {
-	seen := map[int64]bool{}
-	var out []int64
-	for _, p := range plays {
-		if !p.ScoringPlay {
-			continue
-		}
-		t, err := time.Parse(time.RFC3339, p.Wallclock)
-		if err != nil || seen[t.UnixMilli()] {
-			continue
-		}
-		seen[t.UnixMilli()] = true
-		out = append(out, t.UnixMilli())
-	}
-	slices.Sort(out)
-	if len(out) > 40 {
-		out = out[:40]
-	}
-	return out
 }
 
 // ESPN writes times as "2026-11-08T18:00Z": RFC 3339 without seconds.

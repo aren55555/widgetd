@@ -87,9 +87,34 @@ message State {
   string mine = 9 [(buf.validate.field).string.max_len = 6];
   // Unset before the start, and when Kalshi has no market for the game.
   Market market = 10;
-  // When each score happened (ESPN's wall clock), for ticks on the chart.
-  // Only for leagues that score rarely: hockey, soccer, football, baseball.
-  repeated int64 scored_unix_ms = 11 [(buf.validate.field).repeated.max_items = 40];
+  reserved 11;
+  reserved "scored_unix_ms";
+  // Each score, in order, for marks on the chart. Only for leagues that
+  // score rarely: hockey, soccer, football, baseball.
+  repeated Score scores = 12 [(buf.validate.field).repeated.max_items = 40];
+}
+
+// Score is one scoring play.
+message Score {
+  // When it happened, by ESPN's wall clock.
+  int64 unix_ms = 1 [(buf.validate.field).int64.gt = 0];
+  // Which team scored: the home team, or else the away team.
+  bool home = 2;
+  // Who scored, if ESPN says (it does for hockey).
+  Credit scorer = 3;
+  repeated Credit assists = 4 [(buf.validate.field).repeated.max_items = 3];
+}
+
+// Credit is a player's part in a score.
+message Credit {
+  // The player's last name, as ESPN shortens it: "Celebrini".
+  string name = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 48
+  }];
+  // Their season total of goals (a scorer) or assists (an assister),
+  // counting this one; 0 if ESPN doesn't say (a shootout goal).
+  uint32 season_total = 2 [(buf.validate.field).uint32.lte = 999];
 }
 
 // End is what the server half stores per game: when it saw it end.

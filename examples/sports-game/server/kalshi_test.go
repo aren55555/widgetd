@@ -129,17 +129,3 @@ func TestKalshiMarket(t *testing.T) {
 		t.Fatalf("settled: %v, asked %d more", m, len(h.asked)-n)
 	}
 }
-
-func TestScored(t *testing.T) {
-	got := scored([]play{
-		{ScoringPlay: true, Wallclock: "2026-11-10T03:36:19Z"},
-		{ScoringPlay: false, Wallclock: "2026-11-10T03:20:00Z"},
-		{ScoringPlay: true, Wallclock: "2026-11-10T03:15:56Z"},
-		{ScoringPlay: true, Wallclock: "2026-11-10T03:15:56Z"}, // the same play twice (plays and key events)
-		{ScoringPlay: true, Wallclock: ""},
-	})
-	want := []int64{time.Date(2026, 11, 10, 3, 15, 56, 0, time.UTC).UnixMilli(), time.Date(2026, 11, 10, 3, 36, 19, 0, time.UTC).UnixMilli()}
-	if !slices.Equal(got, want) {
-		t.Fatalf("got %v, want %v", got, want)
-	}
-}
