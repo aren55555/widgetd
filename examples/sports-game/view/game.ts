@@ -110,14 +110,12 @@ interface CreditLike {
 
 /**
  * Who scored, for the hover on a score's mark:
- * "Celebrini (5); Smith (8) and Misa (2)". Totals are season totals; one
- * ESPN doesn't give (a shootout goal) is left out. Empty if no one's named.
+ * "Celebrini(8G), Kesselring(4A), Smith(7A)", the scorer's season goals
+ * then each assister's season assists. A total ESPN doesn't give (a
+ * shootout goal) is left out. Empty if no one's named.
  */
 export function creditLine(scorer: CreditLike | undefined, assists: readonly CreditLike[]): string {
   if (!scorer) return "";
-  const one = (c: CreditLike) => (c.seasonTotal ? `${c.name} (${c.seasonTotal})` : c.name);
-  const helpers = assists.map(one);
-  const tail =
-    helpers.length > 1 ? `${helpers.slice(0, -1).join(", ")} and ${helpers.at(-1) ?? ""}` : (helpers[0] ?? "");
-  return tail ? `${one(scorer)}; ${tail}` : one(scorer);
+  const one = (c: CreditLike, unit: "G" | "A") => (c.seasonTotal ? `${c.name}(${c.seasonTotal}${unit})` : c.name);
+  return [one(scorer, "G"), ...assists.map((a) => one(a, "A"))].join(", ");
 }

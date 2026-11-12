@@ -59,10 +59,12 @@ describe("chart", () => {
 
 test("creditLine", () => {
   const c = (name: string, seasonTotal = 0) => ({ name, seasonTotal });
-  expect(creditLine(c("Celebrini", 5), [c("Smith", 8), c("Misa", 2)])).toBe("Celebrini (5); Smith (8) and Misa (2)");
-  expect(creditLine(c("Celebrini", 5), [c("Smith", 8)])).toBe("Celebrini (5); Smith (8)");
-  expect(creditLine(c("Celebrini", 5), [])).toBe("Celebrini (5)"); // unassisted
+  expect(creditLine(c("Celebrini", 8), [c("Kesselring", 4), c("Smith", 7)])).toBe(
+    "Celebrini(8G), Kesselring(4A), Smith(7A)",
+  );
+  expect(creditLine(c("Celebrini", 8), [c("Smith", 7)])).toBe("Celebrini(8G), Smith(7A)");
+  expect(creditLine(c("Celebrini", 8), [])).toBe("Celebrini(8G)"); // unassisted
   expect(creditLine(c("Stenberg"), [])).toBe("Stenberg"); // a shootout goal: no total
-  expect(creditLine(c("A", 1), [c("B", 2), c("C", 3), c("D", 4)])).toBe("A (1); B (2), C (3) and D (4)");
+  expect(creditLine(c("A", 1), [c("B"), c("C", 3)])).toBe("A(1G), B, C(3A)"); // a total ESPN didn't give
   expect(creditLine(undefined, [])).toBe("");
 });
