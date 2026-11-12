@@ -40,6 +40,10 @@ CREATE TABLE IF NOT EXISTS devices (
 	paired_at  INTEGER NOT NULL,
 	last_seen  INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS screen_state (
+	device TEXT PRIMARY KEY REFERENCES devices(id) ON DELETE CASCADE,
+	value  BLOB NOT NULL         -- widgetdv1.ScreenState, binary
+);
 CREATE TABLE IF NOT EXISTS instances (
 	id         TEXT PRIMARY KEY,
 	widget     TEXT NOT NULL,

@@ -88,6 +88,30 @@ describe("CardStore", () => {
     s.localSet("i/a", { type: "x.Prefs", value: new Uint8Array(10) });
     expect(() => s.viewSet("i/a", "more", "x".repeat(100))).toThrow("quota");
   });
+
+  test("a screen's preferences copy to another screen", () => {
+    const from = new CardStore(memory());
+    // Card ids and keys may both hold ':'; the longest known id wins.
+    from.viewSet("i/a", "face", "analog");
+    from.viewSet("i/a:b", "x:y", "1");
+    from.localSet("i/a:b", { type: "x.Prefs", value: new Uint8Array([7]) });
+    from.viewSet("gone", "k", "v"); // a card this screen no longer knows of
+    const all = from.allPrefs(["i/a"]);
+    expect(all.sort((p, q) => p.cardId.localeCompare(q.cardId))).toEqual([
+      { cardId: "i/a", view: { face: "analog" } },
+      { cardId: "i/a:b", view: { "x:y": "1" }, local: { type: "x.Prefs", value: new Uint8Array([7]) } },
+    ]);
+
+    const to = new CardStore(memory());
+    to.viewSet("i/a", "stale", "1");
+    to.viewSet("i/c", "kept", "1");
+    to.putPrefs(all);
+    expect(to.viewGet("i/a", "stale")).toBeUndefined();
+    expect(to.viewGet("i/a", "face")).toBe("analog");
+    expect(to.viewGet("i/a:b", "x:y")).toBe("1");
+    expect(to.localGet("i/a:b")?.value).toEqual(new Uint8Array([7]));
+    expect(to.viewGet("i/c", "kept")).toBe("1");
+  });
 });
 
 describe("sync", () => {

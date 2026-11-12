@@ -6,13 +6,15 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
+import type { BoardOptions } from "./board_pb";
+import { file_widgetd_v1_board } from "./board_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file widgetd/v1/auth.proto.
  */
 export const file_widgetd_v1_auth: GenFile = /*@__PURE__*/
-  fileDesc("ChV3aWRnZXRkL3YxL2F1dGgucHJvdG8SCndpZGdldGQudjEiEwoRR2V0U2Vzc2lvblJlcXVlc3QiigEKEkdldFNlc3Npb25SZXNwb25zZRIeCgRyb2xlGAEgASgOMhAud2lkZ2V0ZC52MS5Sb2xlEhMKC2RldmljZV9uYW1lGAIgASgJEhgKEG5lZWRzX2Vucm9sbG1lbnQYAyABKAgSEgoKcHVibGljX3VybBgEIAEoCRIRCglhZG1pbl91cmwYBSABKAkiKQoSQmVnaW5FbnJvbGxSZXF1ZXN0EhMKC3NldHVwX3Rva2VuGAEgASgJIkAKE0JlZ2luRW5yb2xsUmVzcG9uc2USEwoLY2VyZW1vbnlfaWQYASABKAkSFAoMb3B0aW9uc19qc29uGAIgASgJIlEKE0ZpbmlzaEVucm9sbFJlcXVlc3QSEwoLY2VyZW1vbnlfaWQYASABKAkSFwoPY3JlZGVudGlhbF9qc29uGAIgASgJEgwKBG5hbWUYAyABKAkiFgoURmluaXNoRW5yb2xsUmVzcG9uc2UiEwoRQmVnaW5Mb2dpblJlcXVlc3QiPwoSQmVnaW5Mb2dpblJlc3BvbnNlEhMKC2NlcmVtb255X2lkGAEgASgJEhQKDG9wdGlvbnNfanNvbhgCIAEoCSJCChJGaW5pc2hMb2dpblJlcXVlc3QSEwoLY2VyZW1vbnlfaWQYASABKAkSFwoPY3JlZGVudGlhbF9qc29uGAIgASgJIhUKE0ZpbmlzaExvZ2luUmVzcG9uc2UiFQoTQmVnaW5QYWlyaW5nUmVxdWVzdCKNAQoUQmVnaW5QYWlyaW5nUmVzcG9uc2USEgoKcGFpcmluZ19pZBgBIAEoCRIOCgZzZWNyZXQYAiABKAkSDAoEY29kZRgDIAEoCRITCgthcHByb3ZlX3VybBgEIAEoCRIuCgpleHBpcmVzX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCI5ChNBd2FpdFBhaXJpbmdSZXF1ZXN0EhIKCnBhaXJpbmdfaWQYASABKAkSDgoGc2VjcmV0GAIgASgJIj8KFEF3YWl0UGFpcmluZ1Jlc3BvbnNlEicKBXN0YXRlGAEgASgOMhgud2lkZ2V0ZC52MS5QYWlyaW5nU3RhdGUiPAoWQ29tcGxldGVQYWlyaW5nUmVxdWVzdBISCgpwYWlyaW5nX2lkGAEgASgJEg4KBnNlY3JldBgCIAEoCSIuChdDb21wbGV0ZVBhaXJpbmdSZXNwb25zZRITCgtkZXZpY2VfbmFtZRgBIAEoCSInChFHZXRQYWlyaW5nUmVxdWVzdBISCgpwYWlyaW5nX2lkGAEgASgJImYKEkdldFBhaXJpbmdSZXNwb25zZRIMCgRjb2RlGAEgASgJEhIKCnVzZXJfYWdlbnQYAiABKAkSLgoKZXhwaXJlc19hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiQAoVQXBwcm92ZVBhaXJpbmdSZXF1ZXN0EhIKCnBhaXJpbmdfaWQYASABKAkSEwoLZGV2aWNlX25hbWUYAiABKAkiGAoWQXBwcm92ZVBhaXJpbmdSZXNwb25zZSKAAQoGRGV2aWNlEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSLQoJcGFpcmVkX2F0GAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBItCglsYXN0X3NlZW4YBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIhQKEkxpc3REZXZpY2VzUmVxdWVzdCI6ChNMaXN0RGV2aWNlc1Jlc3BvbnNlEiMKB2RldmljZXMYASADKAsyEi53aWRnZXRkLnYxLkRldmljZSIhChNSZXZva2VEZXZpY2VSZXF1ZXN0EgoKAmlkGAEgASgJIhYKFFJldm9rZURldmljZVJlc3BvbnNlKj0KBFJvbGUSFAoQUk9MRV9VTlNQRUNJRklFRBAAEg8KC1JPTEVfREVWSUNFEAESDgoKUk9MRV9BRE1JThACKn8KDFBhaXJpbmdTdGF0ZRIdChlQQUlSSU5HX1NUQVRFX1VOU1BFQ0lGSUVEEAASGQoVUEFJUklOR19TVEFURV9QRU5ESU5HEAESGgoWUEFJUklOR19TVEFURV9BUFBST1ZFRBACEhkKFVBBSVJJTkdfU1RBVEVfRVhQSVJFRBADMucHCgtBdXRoU2VydmljZRJLCgpHZXRTZXNzaW9uEh0ud2lkZ2V0ZC52MS5HZXRTZXNzaW9uUmVxdWVzdBoeLndpZGdldGQudjEuR2V0U2Vzc2lvblJlc3BvbnNlEk4KC0JlZ2luRW5yb2xsEh4ud2lkZ2V0ZC52MS5CZWdpbkVucm9sbFJlcXVlc3QaHy53aWRnZXRkLnYxLkJlZ2luRW5yb2xsUmVzcG9uc2USUQoMRmluaXNoRW5yb2xsEh8ud2lkZ2V0ZC52MS5GaW5pc2hFbnJvbGxSZXF1ZXN0GiAud2lkZ2V0ZC52MS5GaW5pc2hFbnJvbGxSZXNwb25zZRJLCgpCZWdpbkxvZ2luEh0ud2lkZ2V0ZC52MS5CZWdpbkxvZ2luUmVxdWVzdBoeLndpZGdldGQudjEuQmVnaW5Mb2dpblJlc3BvbnNlEk4KC0ZpbmlzaExvZ2luEh4ud2lkZ2V0ZC52MS5GaW5pc2hMb2dpblJlcXVlc3QaHy53aWRnZXRkLnYxLkZpbmlzaExvZ2luUmVzcG9uc2USUQoMQmVnaW5QYWlyaW5nEh8ud2lkZ2V0ZC52MS5CZWdpblBhaXJpbmdSZXF1ZXN0GiAud2lkZ2V0ZC52MS5CZWdpblBhaXJpbmdSZXNwb25zZRJTCgxBd2FpdFBhaXJpbmcSHy53aWRnZXRkLnYxLkF3YWl0UGFpcmluZ1JlcXVlc3QaIC53aWRnZXRkLnYxLkF3YWl0UGFpcmluZ1Jlc3BvbnNlMAESWgoPQ29tcGxldGVQYWlyaW5nEiIud2lkZ2V0ZC52MS5Db21wbGV0ZVBhaXJpbmdSZXF1ZXN0GiMud2lkZ2V0ZC52MS5Db21wbGV0ZVBhaXJpbmdSZXNwb25zZRJLCgpHZXRQYWlyaW5nEh0ud2lkZ2V0ZC52MS5HZXRQYWlyaW5nUmVxdWVzdBoeLndpZGdldGQudjEuR2V0UGFpcmluZ1Jlc3BvbnNlElcKDkFwcHJvdmVQYWlyaW5nEiEud2lkZ2V0ZC52MS5BcHByb3ZlUGFpcmluZ1JlcXVlc3QaIi53aWRnZXRkLnYxLkFwcHJvdmVQYWlyaW5nUmVzcG9uc2USTgoLTGlzdERldmljZXMSHi53aWRnZXRkLnYxLkxpc3REZXZpY2VzUmVxdWVzdBofLndpZGdldGQudjEuTGlzdERldmljZXNSZXNwb25zZRJRCgxSZXZva2VEZXZpY2USHy53aWRnZXRkLnYxLlJldm9rZURldmljZVJlcXVlc3QaIC53aWRnZXRkLnYxLlJldm9rZURldmljZVJlc3BvbnNlQjdaNWdpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvZ2VuL3dpZGdldGQvdjE7d2lkZ2V0ZHYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChV3aWRnZXRkL3YxL2F1dGgucHJvdG8SCndpZGdldGQudjEiEwoRR2V0U2Vzc2lvblJlcXVlc3QiigEKEkdldFNlc3Npb25SZXNwb25zZRIeCgRyb2xlGAEgASgOMhAud2lkZ2V0ZC52MS5Sb2xlEhMKC2RldmljZV9uYW1lGAIgASgJEhgKEG5lZWRzX2Vucm9sbG1lbnQYAyABKAgSEgoKcHVibGljX3VybBgEIAEoCRIRCglhZG1pbl91cmwYBSABKAkiKQoSQmVnaW5FbnJvbGxSZXF1ZXN0EhMKC3NldHVwX3Rva2VuGAEgASgJIkAKE0JlZ2luRW5yb2xsUmVzcG9uc2USEwoLY2VyZW1vbnlfaWQYASABKAkSFAoMb3B0aW9uc19qc29uGAIgASgJIlEKE0ZpbmlzaEVucm9sbFJlcXVlc3QSEwoLY2VyZW1vbnlfaWQYASABKAkSFwoPY3JlZGVudGlhbF9qc29uGAIgASgJEgwKBG5hbWUYAyABKAkiFgoURmluaXNoRW5yb2xsUmVzcG9uc2UiEwoRQmVnaW5Mb2dpblJlcXVlc3QiPwoSQmVnaW5Mb2dpblJlc3BvbnNlEhMKC2NlcmVtb255X2lkGAEgASgJEhQKDG9wdGlvbnNfanNvbhgCIAEoCSJCChJGaW5pc2hMb2dpblJlcXVlc3QSEwoLY2VyZW1vbnlfaWQYASABKAkSFwoPY3JlZGVudGlhbF9qc29uGAIgASgJIhUKE0ZpbmlzaExvZ2luUmVzcG9uc2UiFQoTQmVnaW5QYWlyaW5nUmVxdWVzdCKNAQoUQmVnaW5QYWlyaW5nUmVzcG9uc2USEgoKcGFpcmluZ19pZBgBIAEoCRIOCgZzZWNyZXQYAiABKAkSDAoEY29kZRgDIAEoCRITCgthcHByb3ZlX3VybBgEIAEoCRIuCgpleHBpcmVzX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCI5ChNBd2FpdFBhaXJpbmdSZXF1ZXN0EhIKCnBhaXJpbmdfaWQYASABKAkSDgoGc2VjcmV0GAIgASgJIj8KFEF3YWl0UGFpcmluZ1Jlc3BvbnNlEicKBXN0YXRlGAEgASgOMhgud2lkZ2V0ZC52MS5QYWlyaW5nU3RhdGUiPAoWQ29tcGxldGVQYWlyaW5nUmVxdWVzdBISCgpwYWlyaW5nX2lkGAEgASgJEg4KBnNlY3JldBgCIAEoCSJdChdDb21wbGV0ZVBhaXJpbmdSZXNwb25zZRITCgtkZXZpY2VfbmFtZRgBIAEoCRItCgxzY3JlZW5fc3RhdGUYAiABKAsyFy53aWRnZXRkLnYxLlNjcmVlblN0YXRlIl4KC1NjcmVlblN0YXRlEikKB29wdGlvbnMYASABKAsyGC53aWRnZXRkLnYxLkJvYXJkT3B0aW9ucxIkCgVjYXJkcxgCIAMoCzIVLndpZGdldGQudjEuQ2FyZFByZWZzIqEBCglDYXJkUHJlZnMSDwoHY2FyZF9pZBgBIAEoCRItCgR2aWV3GAIgAygLMh8ud2lkZ2V0ZC52MS5DYXJkUHJlZnMuVmlld0VudHJ5EhIKCmxvY2FsX3R5cGUYAyABKAkSEwoLbG9jYWxfdmFsdWUYBCABKAwaKwoJVmlld0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiQAoWU2F2ZVNjcmVlblN0YXRlUmVxdWVzdBImCgVzdGF0ZRgBIAEoCzIXLndpZGdldGQudjEuU2NyZWVuU3RhdGUiGQoXU2F2ZVNjcmVlblN0YXRlUmVzcG9uc2UiJwoRR2V0UGFpcmluZ1JlcXVlc3QSEgoKcGFpcmluZ19pZBgBIAEoCSJmChJHZXRQYWlyaW5nUmVzcG9uc2USDAoEY29kZRgBIAEoCRISCgp1c2VyX2FnZW50GAIgASgJEi4KCmV4cGlyZXNfYXQYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIlwKFUFwcHJvdmVQYWlyaW5nUmVxdWVzdBISCgpwYWlyaW5nX2lkGAEgASgJEhMKC2RldmljZV9uYW1lGAIgASgJEhoKEmNvbnRpbnVlX2RldmljZV9pZBgDIAEoCSIYChZBcHByb3ZlUGFpcmluZ1Jlc3BvbnNlIpEBCgZEZXZpY2USCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRItCglwYWlyZWRfYXQYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi0KCWxhc3Rfc2VlbhgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDwoHc2NyZWVucxgFIAEoBSIUChJMaXN0RGV2aWNlc1JlcXVlc3QiOgoTTGlzdERldmljZXNSZXNwb25zZRIjCgdkZXZpY2VzGAEgAygLMhIud2lkZ2V0ZC52MS5EZXZpY2UiIQoTUmV2b2tlRGV2aWNlUmVxdWVzdBIKCgJpZBgBIAEoCSIWChRSZXZva2VEZXZpY2VSZXNwb25zZSo9CgRSb2xlEhQKEFJPTEVfVU5TUEVDSUZJRUQQABIPCgtST0xFX0RFVklDRRABEg4KClJPTEVfQURNSU4QAip/CgxQYWlyaW5nU3RhdGUSHQoZUEFJUklOR19TVEFURV9VTlNQRUNJRklFRBAAEhkKFVBBSVJJTkdfU1RBVEVfUEVORElORxABEhoKFlBBSVJJTkdfU1RBVEVfQVBQUk9WRUQQAhIZChVQQUlSSU5HX1NUQVRFX0VYUElSRUQQAzLDCAoLQXV0aFNlcnZpY2USSwoKR2V0U2Vzc2lvbhIdLndpZGdldGQudjEuR2V0U2Vzc2lvblJlcXVlc3QaHi53aWRnZXRkLnYxLkdldFNlc3Npb25SZXNwb25zZRJOCgtCZWdpbkVucm9sbBIeLndpZGdldGQudjEuQmVnaW5FbnJvbGxSZXF1ZXN0Gh8ud2lkZ2V0ZC52MS5CZWdpbkVucm9sbFJlc3BvbnNlElEKDEZpbmlzaEVucm9sbBIfLndpZGdldGQudjEuRmluaXNoRW5yb2xsUmVxdWVzdBogLndpZGdldGQudjEuRmluaXNoRW5yb2xsUmVzcG9uc2USSwoKQmVnaW5Mb2dpbhIdLndpZGdldGQudjEuQmVnaW5Mb2dpblJlcXVlc3QaHi53aWRnZXRkLnYxLkJlZ2luTG9naW5SZXNwb25zZRJOCgtGaW5pc2hMb2dpbhIeLndpZGdldGQudjEuRmluaXNoTG9naW5SZXF1ZXN0Gh8ud2lkZ2V0ZC52MS5GaW5pc2hMb2dpblJlc3BvbnNlElEKDEJlZ2luUGFpcmluZxIfLndpZGdldGQudjEuQmVnaW5QYWlyaW5nUmVxdWVzdBogLndpZGdldGQudjEuQmVnaW5QYWlyaW5nUmVzcG9uc2USUwoMQXdhaXRQYWlyaW5nEh8ud2lkZ2V0ZC52MS5Bd2FpdFBhaXJpbmdSZXF1ZXN0GiAud2lkZ2V0ZC52MS5Bd2FpdFBhaXJpbmdSZXNwb25zZTABEloKD0NvbXBsZXRlUGFpcmluZxIiLndpZGdldGQudjEuQ29tcGxldGVQYWlyaW5nUmVxdWVzdBojLndpZGdldGQudjEuQ29tcGxldGVQYWlyaW5nUmVzcG9uc2USWgoPU2F2ZVNjcmVlblN0YXRlEiIud2lkZ2V0ZC52MS5TYXZlU2NyZWVuU3RhdGVSZXF1ZXN0GiMud2lkZ2V0ZC52MS5TYXZlU2NyZWVuU3RhdGVSZXNwb25zZRJLCgpHZXRQYWlyaW5nEh0ud2lkZ2V0ZC52MS5HZXRQYWlyaW5nUmVxdWVzdBoeLndpZGdldGQudjEuR2V0UGFpcmluZ1Jlc3BvbnNlElcKDkFwcHJvdmVQYWlyaW5nEiEud2lkZ2V0ZC52MS5BcHByb3ZlUGFpcmluZ1JlcXVlc3QaIi53aWRnZXRkLnYxLkFwcHJvdmVQYWlyaW5nUmVzcG9uc2USTgoLTGlzdERldmljZXMSHi53aWRnZXRkLnYxLkxpc3REZXZpY2VzUmVxdWVzdBofLndpZGdldGQudjEuTGlzdERldmljZXNSZXNwb25zZRJRCgxSZXZva2VEZXZpY2USHy53aWRnZXRkLnYxLlJldm9rZURldmljZVJlcXVlc3QaIC53aWRnZXRkLnYxLlJldm9rZURldmljZVJlc3BvbnNlQjdaNWdpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvZ2VuL3dpZGdldGQvdjE7d2lkZ2V0ZHYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_widgetd_v1_board]);
 
 /**
  * @generated from message widgetd.v1.GetSessionRequest
@@ -360,6 +362,14 @@ export type CompletePairingResponse = Message<"widgetd.v1.CompletePairingRespons
    * @generated from field: string device_name = 1;
    */
   deviceName: string;
+
+  /**
+   * Set when the screen continues an existing one: the settings that screen
+   * last saved, to start from.
+   *
+   * @generated from field: widgetd.v1.ScreenState screen_state = 2;
+   */
+  screenState?: ScreenState | undefined;
 };
 
 /**
@@ -368,6 +378,100 @@ export type CompletePairingResponse = Message<"widgetd.v1.CompletePairingRespons
  */
 export const CompletePairingResponseSchema: GenMessage<CompletePairingResponse> = /*@__PURE__*/
   messageDesc(file_widgetd_v1_auth, 15);
+
+/**
+ * What makes a screen look and behave as it does, beyond the cards every
+ * screen shares: its BoardOptions (the page's ?o=) and what each card's view
+ * kept on it.
+ *
+ * @generated from message widgetd.v1.ScreenState
+ */
+export type ScreenState = Message<"widgetd.v1.ScreenState"> & {
+  /**
+   * @generated from field: widgetd.v1.BoardOptions options = 1;
+   */
+  options?: BoardOptions | undefined;
+
+  /**
+   * @generated from field: repeated widgetd.v1.CardPrefs cards = 2;
+   */
+  cards: CardPrefs[];
+};
+
+/**
+ * Describes the message widgetd.v1.ScreenState.
+ * Use `create(ScreenStateSchema)` to create a new message.
+ */
+export const ScreenStateSchema: GenMessage<ScreenState> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_auth, 16);
+
+/**
+ * One card's view-side storage on a screen.
+ *
+ * @generated from message widgetd.v1.CardPrefs
+ */
+export type CardPrefs = Message<"widgetd.v1.CardPrefs"> & {
+  /**
+   * @generated from field: string card_id = 1;
+   */
+  cardId: string;
+
+  /**
+   * The view's string preferences.
+   *
+   * @generated from field: map<string, string> view = 2;
+   */
+  view: { [key: string]: string };
+
+  /**
+   * The view's typed local value, if it kept one.
+   *
+   * @generated from field: string local_type = 3;
+   */
+  localType: string;
+
+  /**
+   * @generated from field: bytes local_value = 4;
+   */
+  localValue: Uint8Array;
+};
+
+/**
+ * Describes the message widgetd.v1.CardPrefs.
+ * Use `create(CardPrefsSchema)` to create a new message.
+ */
+export const CardPrefsSchema: GenMessage<CardPrefs> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_auth, 17);
+
+/**
+ * @generated from message widgetd.v1.SaveScreenStateRequest
+ */
+export type SaveScreenStateRequest = Message<"widgetd.v1.SaveScreenStateRequest"> & {
+  /**
+   * @generated from field: widgetd.v1.ScreenState state = 1;
+   */
+  state?: ScreenState | undefined;
+};
+
+/**
+ * Describes the message widgetd.v1.SaveScreenStateRequest.
+ * Use `create(SaveScreenStateRequestSchema)` to create a new message.
+ */
+export const SaveScreenStateRequestSchema: GenMessage<SaveScreenStateRequest> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_auth, 18);
+
+/**
+ * @generated from message widgetd.v1.SaveScreenStateResponse
+ */
+export type SaveScreenStateResponse = Message<"widgetd.v1.SaveScreenStateResponse"> & {
+};
+
+/**
+ * Describes the message widgetd.v1.SaveScreenStateResponse.
+ * Use `create(SaveScreenStateResponseSchema)` to create a new message.
+ */
+export const SaveScreenStateResponseSchema: GenMessage<SaveScreenStateResponse> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_auth, 19);
 
 /**
  * @generated from message widgetd.v1.GetPairingRequest
@@ -384,7 +488,7 @@ export type GetPairingRequest = Message<"widgetd.v1.GetPairingRequest"> & {
  * Use `create(GetPairingRequestSchema)` to create a new message.
  */
 export const GetPairingRequestSchema: GenMessage<GetPairingRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_auth, 16);
+  messageDesc(file_widgetd_v1_auth, 20);
 
 /**
  * @generated from message widgetd.v1.GetPairingResponse
@@ -411,7 +515,7 @@ export type GetPairingResponse = Message<"widgetd.v1.GetPairingResponse"> & {
  * Use `create(GetPairingResponseSchema)` to create a new message.
  */
 export const GetPairingResponseSchema: GenMessage<GetPairingResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_auth, 17);
+  messageDesc(file_widgetd_v1_auth, 21);
 
 /**
  * @generated from message widgetd.v1.ApprovePairingRequest
@@ -423,9 +527,20 @@ export type ApprovePairingRequest = Message<"widgetd.v1.ApprovePairingRequest"> 
   pairingId: string;
 
   /**
+   * The new screen's name. Ignored when continue_device_id is set.
+   *
    * @generated from field: string device_name = 2;
    */
   deviceName: string;
+
+  /**
+   * Pair the screen as this existing device instead of a new one: it shares
+   * that device's identity (revoking it signs out both) and starts from the
+   * settings that device last saved. The other screen keeps working.
+   *
+   * @generated from field: string continue_device_id = 3;
+   */
+  continueDeviceId: string;
 };
 
 /**
@@ -433,7 +548,7 @@ export type ApprovePairingRequest = Message<"widgetd.v1.ApprovePairingRequest"> 
  * Use `create(ApprovePairingRequestSchema)` to create a new message.
  */
 export const ApprovePairingRequestSchema: GenMessage<ApprovePairingRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_auth, 18);
+  messageDesc(file_widgetd_v1_auth, 22);
 
 /**
  * @generated from message widgetd.v1.ApprovePairingResponse
@@ -446,7 +561,7 @@ export type ApprovePairingResponse = Message<"widgetd.v1.ApprovePairingResponse"
  * Use `create(ApprovePairingResponseSchema)` to create a new message.
  */
 export const ApprovePairingResponseSchema: GenMessage<ApprovePairingResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_auth, 19);
+  messageDesc(file_widgetd_v1_auth, 23);
 
 /**
  * @generated from message widgetd.v1.Device
@@ -471,6 +586,13 @@ export type Device = Message<"widgetd.v1.Device"> & {
    * @generated from field: google.protobuf.Timestamp last_seen = 4;
    */
   lastSeen?: Timestamp | undefined;
+
+  /**
+   * How many screens are signed in as this device.
+   *
+   * @generated from field: int32 screens = 5;
+   */
+  screens: number;
 };
 
 /**
@@ -478,7 +600,7 @@ export type Device = Message<"widgetd.v1.Device"> & {
  * Use `create(DeviceSchema)` to create a new message.
  */
 export const DeviceSchema: GenMessage<Device> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_auth, 20);
+  messageDesc(file_widgetd_v1_auth, 24);
 
 /**
  * @generated from message widgetd.v1.ListDevicesRequest
@@ -491,7 +613,7 @@ export type ListDevicesRequest = Message<"widgetd.v1.ListDevicesRequest"> & {
  * Use `create(ListDevicesRequestSchema)` to create a new message.
  */
 export const ListDevicesRequestSchema: GenMessage<ListDevicesRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_auth, 21);
+  messageDesc(file_widgetd_v1_auth, 25);
 
 /**
  * @generated from message widgetd.v1.ListDevicesResponse
@@ -508,7 +630,7 @@ export type ListDevicesResponse = Message<"widgetd.v1.ListDevicesResponse"> & {
  * Use `create(ListDevicesResponseSchema)` to create a new message.
  */
 export const ListDevicesResponseSchema: GenMessage<ListDevicesResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_auth, 22);
+  messageDesc(file_widgetd_v1_auth, 26);
 
 /**
  * @generated from message widgetd.v1.RevokeDeviceRequest
@@ -525,7 +647,7 @@ export type RevokeDeviceRequest = Message<"widgetd.v1.RevokeDeviceRequest"> & {
  * Use `create(RevokeDeviceRequestSchema)` to create a new message.
  */
 export const RevokeDeviceRequestSchema: GenMessage<RevokeDeviceRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_auth, 23);
+  messageDesc(file_widgetd_v1_auth, 27);
 
 /**
  * @generated from message widgetd.v1.RevokeDeviceResponse
@@ -538,7 +660,7 @@ export type RevokeDeviceResponse = Message<"widgetd.v1.RevokeDeviceResponse"> & 
  * Use `create(RevokeDeviceResponseSchema)` to create a new message.
  */
 export const RevokeDeviceResponseSchema: GenMessage<RevokeDeviceResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_auth, 24);
+  messageDesc(file_widgetd_v1_auth, 28);
 
 /**
  * @generated from enum widgetd.v1.Role
@@ -687,6 +809,18 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof CompletePairingRequestSchema;
     output: typeof CompletePairingResponseSchema;
+  },
+  /**
+   * A paired screen keeps its settings on the server, so a screen that
+   * continues it (see ApprovePairingRequest.continue_device_id) starts with
+   * them. Device session required.
+   *
+   * @generated from rpc widgetd.v1.AuthService.SaveScreenState
+   */
+  saveScreenState: {
+    methodKind: "unary";
+    input: typeof SaveScreenStateRequestSchema;
+    output: typeof SaveScreenStateResponseSchema;
   },
   /**
    * Admin side of pairing, and device management. Admin session required.

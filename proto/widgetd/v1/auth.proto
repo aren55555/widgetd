@@ -3,6 +3,7 @@ syntax = "proto3";
 package widgetd.v1;
 
 import "google/protobuf/timestamp.proto";
+import "widgetd/v1/board.proto";
 
 option go_package = "github.com/aren55555/widgetd/gen/widgetd/v1;widgetdv1";
 
@@ -34,6 +35,11 @@ service AuthService {
   rpc BeginPairing(BeginPairingRequest) returns (BeginPairingResponse);
   rpc AwaitPairing(AwaitPairingRequest) returns (stream AwaitPairingResponse);
   rpc CompletePairing(CompletePairingRequest) returns (CompletePairingResponse);
+
+  // A paired screen keeps its settings on the server, so a screen that
+  // continues it (see ApprovePairingRequest.continue_device_id) starts with
+  // them. Device session required.
+  rpc SaveScreenState(SaveScreenStateRequest) returns (SaveScreenStateResponse);
 
   // Admin side of pairing, and device management. Admin session required.
   rpc GetPairing(GetPairingRequest) returns (GetPairingResponse);
@@ -138,7 +144,34 @@ message CompletePairingRequest {
 
 message CompletePairingResponse {
   string device_name = 1;
+  // Set when the screen continues an existing one: the settings that screen
+  // last saved, to start from.
+  ScreenState screen_state = 2;
 }
+
+// What makes a screen look and behave as it does, beyond the cards every
+// screen shares: its BoardOptions (the page's ?o=) and what each card's view
+// kept on it.
+message ScreenState {
+  BoardOptions options = 1;
+  repeated CardPrefs cards = 2;
+}
+
+// One card's view-side storage on a screen.
+message CardPrefs {
+  string card_id = 1;
+  // The view's string preferences.
+  map<string, string> view = 2;
+  // The view's typed local value, if it kept one.
+  string local_type = 3;
+  bytes local_value = 4;
+}
+
+message SaveScreenStateRequest {
+  ScreenState state = 1;
+}
+
+message SaveScreenStateResponse {}
 
 message GetPairingRequest {
   string pairing_id = 1;
@@ -152,7 +185,12 @@ message GetPairingResponse {
 
 message ApprovePairingRequest {
   string pairing_id = 1;
+  // The new screen's name. Ignored when continue_device_id is set.
   string device_name = 2;
+  // Pair the screen as this existing device instead of a new one: it shares
+  // that device's identity (revoking it signs out both) and starts from the
+  // settings that device last saved. The other screen keeps working.
+  string continue_device_id = 3;
 }
 
 message ApprovePairingResponse {}
@@ -162,6 +200,8 @@ message Device {
   string name = 2;
   google.protobuf.Timestamp paired_at = 3;
   google.protobuf.Timestamp last_seen = 4;
+  // How many screens are signed in as this device.
+  int32 screens = 5;
 }
 
 message ListDevicesRequest {}

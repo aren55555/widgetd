@@ -164,3 +164,94 @@ func TestPublicURLMustBeSecure(t *testing.T) {
 		}
 	}
 }
+
+// pair runs a whole pairing as approve says, and returns the device cookie
+// and what CompletePairing answered.
+func (h *harness) pair(approve *widgetdv1.ApprovePairingRequest) (string, *widgetdv1.CompletePairingResponse) {
+	h.t.Helper()
+	ctx := context.Background()
+	c := h.authClient()
+	begin, err := c.BeginPairing(ctx, connect.NewRequest(&widgetdv1.BeginPairingRequest{}))
+	if err != nil {
+		h.t.Fatal(err)
+	}
+	approve.PairingId = begin.Msg.GetPairingId()
+	if _, err := c.ApprovePairing(ctx, withCookie(approve, h.adminCookie())); err != nil {
+		h.t.Fatal(err)
+	}
+	done, err := c.CompletePairing(ctx, connect.NewRequest(&widgetdv1.CompletePairingRequest{PairingId: begin.Msg.GetPairingId(), Secret: begin.Msg.GetSecret()}))
+	if err != nil {
+		h.t.Fatal(err)
+	}
+	return strings.SplitN(done.Header().Get("Set-Cookie"), ";", 2)[0], done.Msg
+}
+
+func TestContinueScreen(t *testing.T) {
+	h := newHarness(t)
+	ctx := context.Background()
+	c := h.authClient()
+	admin := h.adminCookie()
+
+	first, _ := h.pair(&widgetdv1.ApprovePairingRequest{DeviceName: "Kitchen"})
+	cols := uint32(3)
+	saved := &widgetdv1.ScreenState{
+		Options: &widgetdv1.BoardOptions{Cols: &cols},
+		Cards: []*widgetdv1.CardPrefs{{
+			CardId: "clock", View: map[string]string{"face": "analog"}, LocalType: "clock.v1.Local", LocalValue: []byte{1, 2},
+		}},
+	}
+	if _, err := c.SaveScreenState(ctx, withCookie(&widgetdv1.SaveScreenStateRequest{State: saved}, first)); err != nil {
+		t.Fatal(err)
+	}
+
+	// Only a paired screen saves state, and only state that passes board.proto's rules.
+	if _, err := c.SaveScreenState(ctx, withCookie(&widgetdv1.SaveScreenStateRequest{}, admin)); connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("admin saving screen state: %v", err)
+	}
+	bad := uint32(99)
+	if _, err := c.SaveScreenState(ctx, withCookie(&widgetdv1.SaveScreenStateRequest{State: &widgetdv1.ScreenState{Options: &widgetdv1.BoardOptions{Cols: &bad}}}, first)); connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("saving cols 99: %v", err)
+	}
+
+	list, err := c.ListDevices(ctx, withCookie(&widgetdv1.ListDevicesRequest{}, admin))
+	if err != nil {
+		t.Fatal(err)
+	}
+	kitchen := list.Msg.GetDevices()[0]
+	if _, err := c.ApprovePairing(ctx, withCookie(&widgetdv1.ApprovePairingRequest{PairingId: "x", ContinueDeviceId: "nope"}, admin)); connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatalf("continuing a device that doesn't exist: %v", err)
+	}
+
+	// A second screen continues Kitchen without the first one's help: same
+	// identity and name, the saved settings, and no new device.
+	second, done := h.pair(&widgetdv1.ApprovePairingRequest{ContinueDeviceId: kitchen.GetId()})
+	if done.GetDeviceName() != "Kitchen" || done.GetScreenState().GetOptions().GetCols() != 3 ||
+		done.GetScreenState().GetCards()[0].GetView()["face"] != "analog" {
+		t.Fatalf("complete = %v", done)
+	}
+	list, err = c.ListDevices(ctx, withCookie(&widgetdv1.ListDevicesRequest{}, admin))
+	if err != nil || len(list.Msg.GetDevices()) != 1 || list.Msg.GetDevices()[0].GetScreens() != 2 {
+		t.Fatalf("devices = %v, %v", list, err)
+	}
+
+	// Both keep working...
+	f1, f2 := h.open(first), h.open(second)
+	f1.burst()
+	f2.burst()
+
+	// ...until Kitchen is unpaired, which ends both.
+	if _, err := c.RevokeDevice(ctx, withCookie(&widgetdv1.RevokeDeviceRequest{Id: kitchen.GetId()}, admin)); err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range []*frames{f1, f2} {
+		for f.stream.Receive() {
+		}
+		if connect.CodeOf(f.stream.Err()) != connect.CodeUnauthenticated {
+			t.Fatalf("revoked stream: %v", f.stream.Err())
+		}
+	}
+	var n int
+	if err := h.srv.db.QueryRow(`SELECT COUNT(*) FROM screen_state`).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("screen_state rows after unpairing = %d, %v", n, err)
+	}
+}

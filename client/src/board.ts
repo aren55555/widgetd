@@ -22,7 +22,7 @@ import { create, toBinary } from "@bufbuild/protobuf";
 import { renderSVG } from "uqr";
 import { THEME_TOKENS, type FromFrame, type ToFrame } from "@widgetd/sdk/bridge";
 
-import { AuthService, PairingState, Role } from "./gen/widgetd/v1/auth_pb.ts";
+import { AuthService, PairingState, Role, ScreenStateSchema, type ScreenState } from "./gen/widgetd/v1/auth_pb.ts";
 import { WidgetAdminService } from "./gen/widgetd/v1/admin_pb.ts";
 import {
   ResumeSchema,
@@ -44,7 +44,7 @@ import {
 } from "./lib/sync.ts";
 import type { Cursor } from "@widgetd/sdk/bridge";
 import { browserEnv, PreferencesSchema, resolvePrefs, toMessage, type ResolvedPrefs } from "@widgetd/sdk/prefs";
-import { readBoardOptions, resolveLayout, type Layout } from "./lib/options.ts";
+import { encodeBoardOptions, readBoardOptions, resolveLayout, type Layout } from "./lib/options.ts";
 import { appVersion, layoutRows, offlineText, prefsRows, type Row } from "./lib/prefs.ts";
 import { WIDGET_ICON_CSS, widgetIcon } from "./lib/icon.ts";
 import type { Icon } from "./gen/widgetd/v1/stream_pb.ts";
@@ -155,6 +155,8 @@ function iconButton(icon: keyof typeof ICONS, label: string, onClick: () => void
 
 const RECONNECT_MIN = 1000;
 const RECONNECT_MAX = 30_000;
+/** How long after a change of settings a screen waits to save them, so a burst of changes is one save. */
+const SAVE_SCREEN_AFTER = 2000;
 
 /** One card: its iframe, what it has been handed, and what waits for it. */
 interface CardHost {
@@ -190,6 +192,9 @@ class WidgetBoard extends HTMLElement {
   adminUrl = "";
   private abort?: AbortController;
   private stopped = true;
+  /** Whether this page is a paired screen, which keeps a copy of its settings on the server. */
+  private isScreen = false;
+  private saveTimer?: ReturnType<typeof setTimeout>;
 
   /** Columns and the offline threshold, from `?o=`, the attribute or the defaults. */
   private layout!: Layout;
@@ -237,6 +242,7 @@ class WidgetBoard extends HTMLElement {
     this.abort?.abort();
     clearTimeout(this.offlineTimer);
     this.offlineSince = undefined;
+    clearTimeout(this.saveTimer);
     window.removeEventListener("message", this.onMessage);
     window.removeEventListener("keydown", this.onKey);
   }
@@ -282,6 +288,8 @@ class WidgetBoard extends HTMLElement {
           await this.pair();
           continue;
         }
+        this.isScreen = session.role === Role.DEVICE;
+        this.saveScreenSoon();
         await this.stream();
         delay = RECONNECT_MIN;
       } catch (e) {
@@ -371,10 +379,59 @@ class WidgetBoard extends HTMLElement {
       { signal: this.abort.signal },
     )) {
       if (r.state === PairingState.APPROVED) {
-        await auth.completePairing({ pairingId: p.pairingId, secret: p.secret });
+        const done = await auth.completePairing({ pairingId: p.pairingId, secret: p.secret });
+        if (done.screenState) this.adoptScreen(done.screenState);
         return;
       }
       if (r.state === PairingState.EXPIRED) return; // loop starts a fresh pairing
+    }
+  }
+
+  // ---- screen state ----
+
+  /**
+   * Start from the settings of the screen this one continues: its cards'
+   * preferences, and its ?o= unless this page's URL has its own. The ?o= goes
+   * into the URL, so a reload keeps it, as it would on the other screen.
+   */
+  private adoptScreen(s: ScreenState) {
+    this.store.putPrefs(
+      s.cards.map((c) => ({
+        cardId: c.cardId,
+        view: { ...c.view },
+        ...(c.localType ? { local: { type: c.localType, value: c.localValue } } : {}),
+      })),
+    );
+    const url = new URL(location.href);
+    const o = s.options ? encodeBoardOptions(s.options) : "";
+    if (!o || url.searchParams.has("o")) return;
+    url.searchParams.set("o", o);
+    history.replaceState(history.state, "", url);
+    this.resolveOptions();
+  }
+
+  /** Send this screen's settings to the server shortly, so a screen that continues it starts from them. */
+  private saveScreenSoon() {
+    if (!this.isScreen) return;
+    clearTimeout(this.saveTimer);
+    this.saveTimer = setTimeout(() => void this.saveScreen(), SAVE_SCREEN_AFTER);
+  }
+
+  private async saveScreen() {
+    const state = create(ScreenStateSchema, {
+      options: readBoardOptions(location.search).options,
+      cards: this.store.allPrefs(this.cards.keys()).map((c) => ({
+        cardId: c.cardId,
+        view: c.view,
+        localType: c.local?.type ?? "",
+        localValue: c.local?.value ?? new Uint8Array(),
+      })),
+    });
+    try {
+      await createClient(AuthService, this.transport()).saveScreenState({ state });
+    } catch (e) {
+      // Best effort: the next change or reconnect tries again.
+      console.warn("widget-board: couldn't save this screen's settings:", e);
     }
   }
 
@@ -844,6 +901,7 @@ class WidgetBoard extends HTMLElement {
         try {
           this.store.viewSet(card.id, String(m.key), m.value === null ? null : String(m.value));
           reply({ t: "storage", id: m.id });
+          this.saveScreenSoon();
         } catch (err) {
           reply({ t: "storage", id: m.id, error: (err as Error).message });
         }
@@ -857,6 +915,7 @@ class WidgetBoard extends HTMLElement {
         try {
           this.store.localSet(card.id, l);
           reply({ t: "storage", id: m.id });
+          this.saveScreenSoon();
         } catch (err) {
           reply({ t: "storage", id: m.id, error: (err as Error).message });
         }

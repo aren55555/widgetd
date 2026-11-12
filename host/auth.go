@@ -17,9 +17,11 @@ import (
 	"sync"
 	"time"
 
+	"buf.build/go/protovalidate"
 	"connectrpc.com/connect"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	widgetdv1 "github.com/aren55555/widgetd/gen/widgetd/v1"
@@ -32,6 +34,7 @@ const (
 	ceremonyTTL     = 5 * time.Minute
 	pairingTTL      = 10 * time.Minute
 	maxPairings     = 32
+	maxScreenState  = 1 << 20                            // a ScreenState, encoded: a few cards' view storage
 	pairingAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" // no 0/O, 1/I
 )
 
@@ -72,6 +75,7 @@ type pairing struct {
 	expires    time.Time
 	approved   bool
 	name       string
+	deviceID   string        // set when approved to continue an existing device
 	changed    chan struct{} // closed and replaced on every state change
 }
 
@@ -553,13 +557,28 @@ func (s *authService) CompletePairing(ctx context.Context, req *connect.Request[
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("not approved yet"))
 	}
 	delete(a.pairings, req.Msg.GetPairingId()) // single use
-	name := p.name
+	name, deviceID := p.name, p.deviceID
 	a.mu.Unlock()
 
-	deviceID := randomToken(12)
+	resp := connect.NewResponse(&widgetdv1.CompletePairingResponse{DeviceName: name})
 	now := time.Now().Unix()
-	if _, err := a.db.Exec(`INSERT INTO devices (id, name, paired_at, last_seen) VALUES (?, ?, ?, ?)`, deviceID, name, now, now); err != nil {
-		return nil, err
+	if deviceID == "" {
+		deviceID = randomToken(12)
+		if _, err := a.db.Exec(`INSERT INTO devices (id, name, paired_at, last_seen) VALUES (?, ?, ?, ?)`, deviceID, name, now, now); err != nil {
+			return nil, err
+		}
+	} else {
+		// Continuing a device: it may have been revoked since the approval.
+		err := a.db.QueryRow(`SELECT name FROM devices WHERE id = ?`, deviceID).Scan(&resp.Msg.DeviceName)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("that screen was unpaired; start again"))
+		}
+		if err != nil {
+			return nil, err
+		}
+		if resp.Msg.ScreenState, err = a.screenState(deviceID); err != nil {
+			return nil, err
+		}
 	}
 	// The screen may be on plain http (a dashboard on a LAN or tailnet
 	// address), so the device cookie is only Secure when the request was.
@@ -567,9 +586,51 @@ func (s *authService) CompletePairing(ctx context.Context, req *connect.Request[
 	if err != nil {
 		return nil, err
 	}
-	resp := connect.NewResponse(&widgetdv1.CompletePairingResponse{DeviceName: name})
 	resp.Header().Add("Set-Cookie", ck.String())
 	return resp, nil
+}
+
+// screenState is what the device last saved, or nil if it hasn't.
+func (a *auth) screenState(deviceID string) (*widgetdv1.ScreenState, error) {
+	var b []byte
+	err := a.db.QueryRow(`SELECT value FROM screen_state WHERE device = ?`, deviceID).Scan(&b)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	st := &widgetdv1.ScreenState{}
+	if err := proto.Unmarshal(b, st); err != nil {
+		return nil, fmt.Errorf("screen state of %s: %w", deviceID, err)
+	}
+	return st, nil
+}
+
+func (s *authService) SaveScreenState(ctx context.Context, req *connect.Request[widgetdv1.SaveScreenStateRequest]) (*connect.Response[widgetdv1.SaveScreenStateResponse], error) {
+	c := s.a.callerOf(req.Header())
+	if c.role != widgetdv1.Role_ROLE_DEVICE {
+		return nil, connect.NewError(connect.CodePermissionDenied, errors.New("only a paired screen has screen state"))
+	}
+	st := req.Msg.GetState()
+	if st == nil {
+		st = &widgetdv1.ScreenState{}
+	}
+	if err := protovalidate.Validate(st); err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	b, err := proto.Marshal(st)
+	if err != nil {
+		return nil, err
+	}
+	if len(b) > maxScreenState {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("screen state is %d bytes, over the %d limit", len(b), maxScreenState))
+	}
+	// The device row may be gone (revoked mid-request); the foreign key then fails the insert.
+	if _, err := s.a.db.Exec(`INSERT INTO screen_state (device, value) VALUES (?, ?) ON CONFLICT (device) DO UPDATE SET value = excluded.value`, c.subject, b); err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&widgetdv1.SaveScreenStateResponse{}), nil
 }
 
 func (s *authService) GetPairing(ctx context.Context, req *connect.Request[widgetdv1.GetPairingRequest]) (*connect.Response[widgetdv1.GetPairingResponse], error) {
@@ -591,11 +652,19 @@ func (s *authService) ApprovePairing(ctx context.Context, req *connect.Request[w
 	if err := requireAdmin(s.a.callerOf(req.Header())); err != nil {
 		return nil, err
 	}
-	name := strings.TrimSpace(req.Msg.GetDeviceName())
-	if name == "" || len(name) > 64 {
+	a := s.a
+	name, continued := strings.TrimSpace(req.Msg.GetDeviceName()), req.Msg.GetContinueDeviceId()
+	if continued != "" {
+		err := a.db.QueryRow(`SELECT name FROM devices WHERE id = ?`, continued).Scan(&name)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, connect.NewError(connect.CodeNotFound, errors.New("no such screen"))
+		}
+		if err != nil {
+			return nil, err
+		}
+	} else if name == "" || len(name) > 64 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("give the screen a name (up to 64 characters)"))
 	}
-	a := s.a
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	p, ok := a.pairings[req.Msg.GetPairingId()]
@@ -605,7 +674,7 @@ func (s *authService) ApprovePairing(ctx context.Context, req *connect.Request[w
 	if p.approved {
 		return nil, connect.NewError(connect.CodeAlreadyExists, errors.New("already approved"))
 	}
-	p.approved, p.name = true, name
+	p.approved, p.name, p.deviceID = true, name, continued
 	close(p.changed)
 	p.changed = make(chan struct{})
 	return connect.NewResponse(&widgetdv1.ApprovePairingResponse{}), nil
@@ -615,7 +684,9 @@ func (s *authService) ListDevices(ctx context.Context, req *connect.Request[widg
 	if err := requireAdmin(s.a.callerOf(req.Header())); err != nil {
 		return nil, err
 	}
-	rows, err := s.a.db.Query(`SELECT id, name, paired_at, last_seen FROM devices ORDER BY paired_at`)
+	rows, err := s.a.db.Query(`SELECT d.id, d.name, d.paired_at, d.last_seen,
+		(SELECT COUNT(*) FROM sessions s WHERE s.role = ? AND s.subject = d.id AND s.expires_at > ?)
+		FROM devices d ORDER BY d.paired_at`, int32(widgetdv1.Role_ROLE_DEVICE), time.Now().Unix())
 	if err != nil {
 		return nil, err
 	}
@@ -624,7 +695,7 @@ func (s *authService) ListDevices(ctx context.Context, req *connect.Request[widg
 	for rows.Next() {
 		var d widgetdv1.Device
 		var paired, seen int64
-		if err := rows.Scan(&d.Id, &d.Name, &paired, &seen); err != nil {
+		if err := rows.Scan(&d.Id, &d.Name, &paired, &seen, &d.Screens); err != nil {
 			return nil, err
 		}
 		d.PairedAt, d.LastSeen = timestamppb.New(time.Unix(paired, 0)), timestamppb.New(time.Unix(seen, 0))

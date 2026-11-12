@@ -53,6 +53,9 @@ const (
 	// AuthServiceCompletePairingProcedure is the fully-qualified name of the AuthService's
 	// CompletePairing RPC.
 	AuthServiceCompletePairingProcedure = "/widgetd.v1.AuthService/CompletePairing"
+	// AuthServiceSaveScreenStateProcedure is the fully-qualified name of the AuthService's
+	// SaveScreenState RPC.
+	AuthServiceSaveScreenStateProcedure = "/widgetd.v1.AuthService/SaveScreenState"
 	// AuthServiceGetPairingProcedure is the fully-qualified name of the AuthService's GetPairing RPC.
 	AuthServiceGetPairingProcedure = "/widgetd.v1.AuthService/GetPairing"
 	// AuthServiceApprovePairingProcedure is the fully-qualified name of the AuthService's
@@ -80,6 +83,10 @@ type AuthServiceClient interface {
 	BeginPairing(context.Context, *connect.Request[v1.BeginPairingRequest]) (*connect.Response[v1.BeginPairingResponse], error)
 	AwaitPairing(context.Context, *connect.Request[v1.AwaitPairingRequest]) (*connect.ServerStreamForClient[v1.AwaitPairingResponse], error)
 	CompletePairing(context.Context, *connect.Request[v1.CompletePairingRequest]) (*connect.Response[v1.CompletePairingResponse], error)
+	// A paired screen keeps its settings on the server, so a screen that
+	// continues it (see ApprovePairingRequest.continue_device_id) starts with
+	// them. Device session required.
+	SaveScreenState(context.Context, *connect.Request[v1.SaveScreenStateRequest]) (*connect.Response[v1.SaveScreenStateResponse], error)
 	// Admin side of pairing, and device management. Admin session required.
 	GetPairing(context.Context, *connect.Request[v1.GetPairingRequest]) (*connect.Response[v1.GetPairingResponse], error)
 	ApprovePairing(context.Context, *connect.Request[v1.ApprovePairingRequest]) (*connect.Response[v1.ApprovePairingResponse], error)
@@ -146,6 +153,12 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(authServiceMethods.ByName("CompletePairing")),
 			connect.WithClientOptions(opts...),
 		),
+		saveScreenState: connect.NewClient[v1.SaveScreenStateRequest, v1.SaveScreenStateResponse](
+			httpClient,
+			baseURL+AuthServiceSaveScreenStateProcedure,
+			connect.WithSchema(authServiceMethods.ByName("SaveScreenState")),
+			connect.WithClientOptions(opts...),
+		),
 		getPairing: connect.NewClient[v1.GetPairingRequest, v1.GetPairingResponse](
 			httpClient,
 			baseURL+AuthServiceGetPairingProcedure,
@@ -183,6 +196,7 @@ type authServiceClient struct {
 	beginPairing    *connect.Client[v1.BeginPairingRequest, v1.BeginPairingResponse]
 	awaitPairing    *connect.Client[v1.AwaitPairingRequest, v1.AwaitPairingResponse]
 	completePairing *connect.Client[v1.CompletePairingRequest, v1.CompletePairingResponse]
+	saveScreenState *connect.Client[v1.SaveScreenStateRequest, v1.SaveScreenStateResponse]
 	getPairing      *connect.Client[v1.GetPairingRequest, v1.GetPairingResponse]
 	approvePairing  *connect.Client[v1.ApprovePairingRequest, v1.ApprovePairingResponse]
 	listDevices     *connect.Client[v1.ListDevicesRequest, v1.ListDevicesResponse]
@@ -229,6 +243,11 @@ func (c *authServiceClient) CompletePairing(ctx context.Context, req *connect.Re
 	return c.completePairing.CallUnary(ctx, req)
 }
 
+// SaveScreenState calls widgetd.v1.AuthService.SaveScreenState.
+func (c *authServiceClient) SaveScreenState(ctx context.Context, req *connect.Request[v1.SaveScreenStateRequest]) (*connect.Response[v1.SaveScreenStateResponse], error) {
+	return c.saveScreenState.CallUnary(ctx, req)
+}
+
 // GetPairing calls widgetd.v1.AuthService.GetPairing.
 func (c *authServiceClient) GetPairing(ctx context.Context, req *connect.Request[v1.GetPairingRequest]) (*connect.Response[v1.GetPairingResponse], error) {
 	return c.getPairing.CallUnary(ctx, req)
@@ -264,6 +283,10 @@ type AuthServiceHandler interface {
 	BeginPairing(context.Context, *connect.Request[v1.BeginPairingRequest]) (*connect.Response[v1.BeginPairingResponse], error)
 	AwaitPairing(context.Context, *connect.Request[v1.AwaitPairingRequest], *connect.ServerStream[v1.AwaitPairingResponse]) error
 	CompletePairing(context.Context, *connect.Request[v1.CompletePairingRequest]) (*connect.Response[v1.CompletePairingResponse], error)
+	// A paired screen keeps its settings on the server, so a screen that
+	// continues it (see ApprovePairingRequest.continue_device_id) starts with
+	// them. Device session required.
+	SaveScreenState(context.Context, *connect.Request[v1.SaveScreenStateRequest]) (*connect.Response[v1.SaveScreenStateResponse], error)
 	// Admin side of pairing, and device management. Admin session required.
 	GetPairing(context.Context, *connect.Request[v1.GetPairingRequest]) (*connect.Response[v1.GetPairingResponse], error)
 	ApprovePairing(context.Context, *connect.Request[v1.ApprovePairingRequest]) (*connect.Response[v1.ApprovePairingResponse], error)
@@ -326,6 +349,12 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(authServiceMethods.ByName("CompletePairing")),
 		connect.WithHandlerOptions(opts...),
 	)
+	authServiceSaveScreenStateHandler := connect.NewUnaryHandler(
+		AuthServiceSaveScreenStateProcedure,
+		svc.SaveScreenState,
+		connect.WithSchema(authServiceMethods.ByName("SaveScreenState")),
+		connect.WithHandlerOptions(opts...),
+	)
 	authServiceGetPairingHandler := connect.NewUnaryHandler(
 		AuthServiceGetPairingProcedure,
 		svc.GetPairing,
@@ -368,6 +397,8 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 			authServiceAwaitPairingHandler.ServeHTTP(w, r)
 		case AuthServiceCompletePairingProcedure:
 			authServiceCompletePairingHandler.ServeHTTP(w, r)
+		case AuthServiceSaveScreenStateProcedure:
+			authServiceSaveScreenStateHandler.ServeHTTP(w, r)
 		case AuthServiceGetPairingProcedure:
 			authServiceGetPairingHandler.ServeHTTP(w, r)
 		case AuthServiceApprovePairingProcedure:
@@ -415,6 +446,10 @@ func (UnimplementedAuthServiceHandler) AwaitPairing(context.Context, *connect.Re
 
 func (UnimplementedAuthServiceHandler) CompletePairing(context.Context, *connect.Request[v1.CompletePairingRequest]) (*connect.Response[v1.CompletePairingResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.AuthService.CompletePairing is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) SaveScreenState(context.Context, *connect.Request[v1.SaveScreenStateRequest]) (*connect.Response[v1.SaveScreenStateResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.AuthService.SaveScreenState is not implemented"))
 }
 
 func (UnimplementedAuthServiceHandler) GetPairing(context.Context, *connect.Request[v1.GetPairingRequest]) (*connect.Response[v1.GetPairingResponse], error) {

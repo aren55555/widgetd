@@ -273,19 +273,23 @@ function Enroll(props: { token: string }) {
 
 function Approve(props: { pairingId: string }) {
   const [pairing] = createResource(() => auth.getPairing({ pairingId: props.pairingId }));
+  const [devices] = createResource(async () => (await auth.listDevices({})).devices);
   const [name, setName] = createSignal<string>();
+  /** The device this screen continues, or "" for a new one. */
+  const [continued, setContinued] = createSignal("");
   const [approved, setApproved] = createSignal<string>();
   const st = createStatus();
   return (
     <Show when={pairing()}>
       {(p) => {
         const screenName = () => name() ?? deviceGuess(p().userAgent);
+        const continuedName = () => devices()?.find((d) => d.id === continued())?.name;
         return (
           <Show
             when={approved() === undefined}
             fallback={
               <Page title="Approved">
-                <p>{approved()} can now show widgets.</p>
+                <p>{approved()}</p>
                 <AdminLink>Paired screens</AdminLink>
               </Page>
             }
@@ -294,23 +298,57 @@ function Approve(props: { pairingId: string }) {
               <p>Check the screen shows this code:</p>
               <p class={ui.code}>{p().code}</p>
               <p class={ui.muted}>{p().userAgent || "unknown browser"}</p>
-              <label class="block">
-                Name{" "}
-                <input
-                  class={ui.input}
-                  value={screenName()}
-                  onInput={(e) => setName(e.currentTarget.value)}
-                  maxLength={64}
-                  aria-label="Screen name"
-                />
-              </label>
+              <Show when={devices()?.length}>
+                <label class={ui.label}>
+                  This screen is
+                  <select class={ui.select} disabled={st.busy()} onChange={(e) => setContinued(e.currentTarget.value)}>
+                    <option value="" selected={!continued()}>
+                      A new screen
+                    </option>
+                    <For each={devices()}>
+                      {(d) => (
+                        <option value={d.id} selected={d.id === continued()}>
+                          {d.name}, continued
+                        </option>
+                      )}
+                    </For>
+                  </select>
+                </label>
+              </Show>
+              <Show
+                when={!continued()}
+                fallback={
+                  <p class={ui.muted}>
+                    It'll show the same board as {continuedName()}, with its settings, and both keep working. Unpairing{" "}
+                    {continuedName()} signs out both.
+                  </p>
+                }
+              >
+                <label class="block">
+                  Name{" "}
+                  <input
+                    class={ui.input}
+                    value={screenName()}
+                    onInput={(e) => setName(e.currentTarget.value)}
+                    maxLength={64}
+                    aria-label="Screen name"
+                  />
+                </label>
+              </Show>
               <button
                 class={ui.btn.primary}
                 disabled={st.busy()}
                 onClick={st.run(async () => {
+                  const continueDeviceId = continued();
+                  if (continueDeviceId) {
+                    const n = continuedName() ?? "The screen";
+                    await auth.approvePairing({ pairingId: props.pairingId, continueDeviceId });
+                    setApproved(`The new screen now shows the same board as ${n}.`);
+                    return;
+                  }
                   const deviceName = screenName().trim();
                   await auth.approvePairing({ pairingId: props.pairingId, deviceName });
-                  setApproved(deviceName);
+                  setApproved(`${deviceName} can now show widgets.`);
                 })}
               >
                 Approve this screen
@@ -693,6 +731,9 @@ function ScreenItem(props: { device: Device; reload: () => Promise<void> }) {
     <li class={ui.item}>
       <div>
         <strong>{d.name}</strong>
+        <Show when={d.screens > 1}>
+          <span class={ui.muted}> · {d.screens} screens</span>
+        </Show>
         <span class={ui.muted}> last seen {d.lastSeen ? timestampDate(d.lastSeen).toLocaleString() : "never"}</span>
       </div>
       <button

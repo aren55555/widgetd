@@ -19,6 +19,13 @@ export interface Stored {
   state: Uint8Array;
 }
 
+/** One card's preferences: its view's string keys and its typed local value. */
+export interface CardPrefs {
+  cardId: string;
+  view: Record<string, string>;
+  local?: Local;
+}
+
 /** The subset of the Web Storage API the store needs, so tests can fake it. */
 export type KVBackend = Pick<Storage, "getItem" | "setItem" | "removeItem" | "key" | "length">;
 
@@ -143,6 +150,58 @@ export class CardStore {
     if (this.used(cardId, k) + key.length + value.length > VIEW_QUOTA)
       throw new Error(`storage quota of ${VIEW_QUOTA} bytes exceeded`);
     this.ls.setItem(k, value);
+  }
+
+  /**
+   * The preferences and local value of `cardIds` and of every card with
+   * stored state, to keep a copy on the server. A view key doesn't say
+   * where its card id ends (both may hold ':'), so it goes to the longest
+   * known card id it starts with.
+   */
+  allPrefs(cardIds: Iterable<string> = []): CardPrefs[] {
+    const ids = new Set(cardIds);
+    const state = `${this.prefix}state:`;
+    const local = `${this.prefix}local:`;
+    const keys = this.keys();
+    for (const k of keys) {
+      if (k.startsWith(state)) ids.add(k.slice(state.length));
+      else if (k.startsWith(local)) ids.add(k.slice(local.length));
+    }
+    const byLength = [...ids].sort((a, b) => b.length - a.length);
+    const byCard = new Map<string, CardPrefs>();
+    const card = (cardId: string) => {
+      let c = byCard.get(cardId);
+      if (!c) byCard.set(cardId, (c = { cardId, view: {} }));
+      return c;
+    };
+    for (const k of keys) {
+      const cardId = byLength.find((id) => k.startsWith(this.viewPrefix(id)));
+      if (cardId === undefined) continue;
+      const v = this.ls.getItem(k);
+      if (v !== null) card(cardId).view[k.slice(this.viewPrefix(cardId).length)] = v;
+    }
+    for (const id of ids) {
+      const l = this.localGet(id);
+      if (l) card(id).local = l;
+    }
+    return [...byCard.values()];
+  }
+
+  /**
+   * Take on another screen's preferences: each card listed has its own
+   * replaced; others are left alone. Best effort, like save.
+   */
+  putPrefs(cards: CardPrefs[]): void {
+    for (const c of cards) {
+      try {
+        for (const k of this.keys()) if (k.startsWith(this.viewPrefix(c.cardId))) this.ls.removeItem(k);
+        this.ls.removeItem(this.localKey(c.cardId));
+        for (const [key, value] of Object.entries(c.view)) this.viewSet(c.cardId, key, value);
+        if (c.local) this.localSet(c.cardId, c.local);
+      } catch {
+        /* over quota: the card starts without them */
+      }
+    }
   }
 
   /** When this screen last heard from the server (ms since the epoch), as of the last write. */

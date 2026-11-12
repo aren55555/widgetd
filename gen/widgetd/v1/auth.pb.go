@@ -880,8 +880,11 @@ func (x *CompletePairingRequest) GetSecret() string {
 }
 
 type CompletePairingResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	DeviceName    string                 `protobuf:"bytes,1,opt,name=device_name,json=deviceName,proto3" json:"device_name,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	DeviceName string                 `protobuf:"bytes,1,opt,name=device_name,json=deviceName,proto3" json:"device_name,omitempty"`
+	// Set when the screen continues an existing one: the settings that screen
+	// last saved, to start from.
+	ScreenState   *ScreenState `protobuf:"bytes,2,opt,name=screen_state,json=screenState,proto3" json:"screen_state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -923,6 +926,219 @@ func (x *CompletePairingResponse) GetDeviceName() string {
 	return ""
 }
 
+func (x *CompletePairingResponse) GetScreenState() *ScreenState {
+	if x != nil {
+		return x.ScreenState
+	}
+	return nil
+}
+
+// What makes a screen look and behave as it does, beyond the cards every
+// screen shares: its BoardOptions (the page's ?o=) and what each card's view
+// kept on it.
+type ScreenState struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Options       *BoardOptions          `protobuf:"bytes,1,opt,name=options,proto3" json:"options,omitempty"`
+	Cards         []*CardPrefs           `protobuf:"bytes,2,rep,name=cards,proto3" json:"cards,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ScreenState) Reset() {
+	*x = ScreenState{}
+	mi := &file_widgetd_v1_auth_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ScreenState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ScreenState) ProtoMessage() {}
+
+func (x *ScreenState) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_auth_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ScreenState.ProtoReflect.Descriptor instead.
+func (*ScreenState) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ScreenState) GetOptions() *BoardOptions {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+func (x *ScreenState) GetCards() []*CardPrefs {
+	if x != nil {
+		return x.Cards
+	}
+	return nil
+}
+
+// One card's view-side storage on a screen.
+type CardPrefs struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	CardId string                 `protobuf:"bytes,1,opt,name=card_id,json=cardId,proto3" json:"card_id,omitempty"`
+	// The view's string preferences.
+	View map[string]string `protobuf:"bytes,2,rep,name=view,proto3" json:"view,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// The view's typed local value, if it kept one.
+	LocalType     string `protobuf:"bytes,3,opt,name=local_type,json=localType,proto3" json:"local_type,omitempty"`
+	LocalValue    []byte `protobuf:"bytes,4,opt,name=local_value,json=localValue,proto3" json:"local_value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CardPrefs) Reset() {
+	*x = CardPrefs{}
+	mi := &file_widgetd_v1_auth_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CardPrefs) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CardPrefs) ProtoMessage() {}
+
+func (x *CardPrefs) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_auth_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CardPrefs.ProtoReflect.Descriptor instead.
+func (*CardPrefs) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *CardPrefs) GetCardId() string {
+	if x != nil {
+		return x.CardId
+	}
+	return ""
+}
+
+func (x *CardPrefs) GetView() map[string]string {
+	if x != nil {
+		return x.View
+	}
+	return nil
+}
+
+func (x *CardPrefs) GetLocalType() string {
+	if x != nil {
+		return x.LocalType
+	}
+	return ""
+}
+
+func (x *CardPrefs) GetLocalValue() []byte {
+	if x != nil {
+		return x.LocalValue
+	}
+	return nil
+}
+
+type SaveScreenStateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	State         *ScreenState           `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SaveScreenStateRequest) Reset() {
+	*x = SaveScreenStateRequest{}
+	mi := &file_widgetd_v1_auth_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SaveScreenStateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SaveScreenStateRequest) ProtoMessage() {}
+
+func (x *SaveScreenStateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_auth_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SaveScreenStateRequest.ProtoReflect.Descriptor instead.
+func (*SaveScreenStateRequest) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *SaveScreenStateRequest) GetState() *ScreenState {
+	if x != nil {
+		return x.State
+	}
+	return nil
+}
+
+type SaveScreenStateResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SaveScreenStateResponse) Reset() {
+	*x = SaveScreenStateResponse{}
+	mi := &file_widgetd_v1_auth_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SaveScreenStateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SaveScreenStateResponse) ProtoMessage() {}
+
+func (x *SaveScreenStateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_auth_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SaveScreenStateResponse.ProtoReflect.Descriptor instead.
+func (*SaveScreenStateResponse) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{19}
+}
+
 type GetPairingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PairingId     string                 `protobuf:"bytes,1,opt,name=pairing_id,json=pairingId,proto3" json:"pairing_id,omitempty"`
@@ -932,7 +1148,7 @@ type GetPairingRequest struct {
 
 func (x *GetPairingRequest) Reset() {
 	*x = GetPairingRequest{}
-	mi := &file_widgetd_v1_auth_proto_msgTypes[16]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -944,7 +1160,7 @@ func (x *GetPairingRequest) String() string {
 func (*GetPairingRequest) ProtoMessage() {}
 
 func (x *GetPairingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_auth_proto_msgTypes[16]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -957,7 +1173,7 @@ func (x *GetPairingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPairingRequest.ProtoReflect.Descriptor instead.
 func (*GetPairingRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{16}
+	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetPairingRequest) GetPairingId() string {
@@ -978,7 +1194,7 @@ type GetPairingResponse struct {
 
 func (x *GetPairingResponse) Reset() {
 	*x = GetPairingResponse{}
-	mi := &file_widgetd_v1_auth_proto_msgTypes[17]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -990,7 +1206,7 @@ func (x *GetPairingResponse) String() string {
 func (*GetPairingResponse) ProtoMessage() {}
 
 func (x *GetPairingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_auth_proto_msgTypes[17]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1003,7 +1219,7 @@ func (x *GetPairingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPairingResponse.ProtoReflect.Descriptor instead.
 func (*GetPairingResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{17}
+	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GetPairingResponse) GetCode() string {
@@ -1028,16 +1244,21 @@ func (x *GetPairingResponse) GetExpiresAt() *timestamppb.Timestamp {
 }
 
 type ApprovePairingRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PairingId     string                 `protobuf:"bytes,1,opt,name=pairing_id,json=pairingId,proto3" json:"pairing_id,omitempty"`
-	DeviceName    string                 `protobuf:"bytes,2,opt,name=device_name,json=deviceName,proto3" json:"device_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	PairingId string                 `protobuf:"bytes,1,opt,name=pairing_id,json=pairingId,proto3" json:"pairing_id,omitempty"`
+	// The new screen's name. Ignored when continue_device_id is set.
+	DeviceName string `protobuf:"bytes,2,opt,name=device_name,json=deviceName,proto3" json:"device_name,omitempty"`
+	// Pair the screen as this existing device instead of a new one: it shares
+	// that device's identity (revoking it signs out both) and starts from the
+	// settings that device last saved. The other screen keeps working.
+	ContinueDeviceId string `protobuf:"bytes,3,opt,name=continue_device_id,json=continueDeviceId,proto3" json:"continue_device_id,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ApprovePairingRequest) Reset() {
 	*x = ApprovePairingRequest{}
-	mi := &file_widgetd_v1_auth_proto_msgTypes[18]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1049,7 +1270,7 @@ func (x *ApprovePairingRequest) String() string {
 func (*ApprovePairingRequest) ProtoMessage() {}
 
 func (x *ApprovePairingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_auth_proto_msgTypes[18]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1062,7 +1283,7 @@ func (x *ApprovePairingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApprovePairingRequest.ProtoReflect.Descriptor instead.
 func (*ApprovePairingRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{18}
+	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ApprovePairingRequest) GetPairingId() string {
@@ -1079,6 +1300,13 @@ func (x *ApprovePairingRequest) GetDeviceName() string {
 	return ""
 }
 
+func (x *ApprovePairingRequest) GetContinueDeviceId() string {
+	if x != nil {
+		return x.ContinueDeviceId
+	}
+	return ""
+}
+
 type ApprovePairingResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1087,7 +1315,7 @@ type ApprovePairingResponse struct {
 
 func (x *ApprovePairingResponse) Reset() {
 	*x = ApprovePairingResponse{}
-	mi := &file_widgetd_v1_auth_proto_msgTypes[19]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1099,7 +1327,7 @@ func (x *ApprovePairingResponse) String() string {
 func (*ApprovePairingResponse) ProtoMessage() {}
 
 func (x *ApprovePairingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_auth_proto_msgTypes[19]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1112,22 +1340,24 @@ func (x *ApprovePairingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApprovePairingResponse.ProtoReflect.Descriptor instead.
 func (*ApprovePairingResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{19}
+	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{23}
 }
 
 type Device struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	PairedAt      *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=paired_at,json=pairedAt,proto3" json:"paired_at,omitempty"`
-	LastSeen      *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_seen,json=lastSeen,proto3" json:"last_seen,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Id       string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name     string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	PairedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=paired_at,json=pairedAt,proto3" json:"paired_at,omitempty"`
+	LastSeen *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_seen,json=lastSeen,proto3" json:"last_seen,omitempty"`
+	// How many screens are signed in as this device.
+	Screens       int32 `protobuf:"varint,5,opt,name=screens,proto3" json:"screens,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Device) Reset() {
 	*x = Device{}
-	mi := &file_widgetd_v1_auth_proto_msgTypes[20]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1139,7 +1369,7 @@ func (x *Device) String() string {
 func (*Device) ProtoMessage() {}
 
 func (x *Device) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_auth_proto_msgTypes[20]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1152,7 +1382,7 @@ func (x *Device) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Device.ProtoReflect.Descriptor instead.
 func (*Device) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{20}
+	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *Device) GetId() string {
@@ -1183,6 +1413,13 @@ func (x *Device) GetLastSeen() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Device) GetScreens() int32 {
+	if x != nil {
+		return x.Screens
+	}
+	return 0
+}
+
 type ListDevicesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1191,7 +1428,7 @@ type ListDevicesRequest struct {
 
 func (x *ListDevicesRequest) Reset() {
 	*x = ListDevicesRequest{}
-	mi := &file_widgetd_v1_auth_proto_msgTypes[21]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1203,7 +1440,7 @@ func (x *ListDevicesRequest) String() string {
 func (*ListDevicesRequest) ProtoMessage() {}
 
 func (x *ListDevicesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_auth_proto_msgTypes[21]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1216,7 +1453,7 @@ func (x *ListDevicesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDevicesRequest.ProtoReflect.Descriptor instead.
 func (*ListDevicesRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{21}
+	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{25}
 }
 
 type ListDevicesResponse struct {
@@ -1228,7 +1465,7 @@ type ListDevicesResponse struct {
 
 func (x *ListDevicesResponse) Reset() {
 	*x = ListDevicesResponse{}
-	mi := &file_widgetd_v1_auth_proto_msgTypes[22]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1240,7 +1477,7 @@ func (x *ListDevicesResponse) String() string {
 func (*ListDevicesResponse) ProtoMessage() {}
 
 func (x *ListDevicesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_auth_proto_msgTypes[22]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1253,7 +1490,7 @@ func (x *ListDevicesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDevicesResponse.ProtoReflect.Descriptor instead.
 func (*ListDevicesResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{22}
+	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ListDevicesResponse) GetDevices() []*Device {
@@ -1272,7 +1509,7 @@ type RevokeDeviceRequest struct {
 
 func (x *RevokeDeviceRequest) Reset() {
 	*x = RevokeDeviceRequest{}
-	mi := &file_widgetd_v1_auth_proto_msgTypes[23]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1284,7 +1521,7 @@ func (x *RevokeDeviceRequest) String() string {
 func (*RevokeDeviceRequest) ProtoMessage() {}
 
 func (x *RevokeDeviceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_auth_proto_msgTypes[23]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1297,7 +1534,7 @@ func (x *RevokeDeviceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeDeviceRequest.ProtoReflect.Descriptor instead.
 func (*RevokeDeviceRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{23}
+	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *RevokeDeviceRequest) GetId() string {
@@ -1315,7 +1552,7 @@ type RevokeDeviceResponse struct {
 
 func (x *RevokeDeviceResponse) Reset() {
 	*x = RevokeDeviceResponse{}
-	mi := &file_widgetd_v1_auth_proto_msgTypes[24]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1327,7 +1564,7 @@ func (x *RevokeDeviceResponse) String() string {
 func (*RevokeDeviceResponse) ProtoMessage() {}
 
 func (x *RevokeDeviceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_auth_proto_msgTypes[24]
+	mi := &file_widgetd_v1_auth_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1340,7 +1577,7 @@ func (x *RevokeDeviceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeDeviceResponse.ProtoReflect.Descriptor instead.
 func (*RevokeDeviceResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{24}
+	return file_widgetd_v1_auth_proto_rawDescGZIP(), []int{28}
 }
 
 var File_widgetd_v1_auth_proto protoreflect.FileDescriptor
@@ -1348,7 +1585,7 @@ var File_widgetd_v1_auth_proto protoreflect.FileDescriptor
 const file_widgetd_v1_auth_proto_rawDesc = "" +
 	"\n" +
 	"\x15widgetd/v1/auth.proto\x12\n" +
-	"widgetd.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x13\n" +
+	"widgetd.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16widgetd/v1/board.proto\"\x13\n" +
 	"\x11GetSessionRequest\"\xc2\x01\n" +
 	"\x12GetSessionResponse\x12$\n" +
 	"\x04role\x18\x01 \x01(\x0e2\x10.widgetd.v1.RoleR\x04role\x12\x1f\n" +
@@ -1400,10 +1637,27 @@ const file_widgetd_v1_auth_proto_rawDesc = "" +
 	"\x16CompletePairingRequest\x12\x1d\n" +
 	"\n" +
 	"pairing_id\x18\x01 \x01(\tR\tpairingId\x12\x16\n" +
-	"\x06secret\x18\x02 \x01(\tR\x06secret\":\n" +
+	"\x06secret\x18\x02 \x01(\tR\x06secret\"v\n" +
 	"\x17CompletePairingResponse\x12\x1f\n" +
 	"\vdevice_name\x18\x01 \x01(\tR\n" +
-	"deviceName\"2\n" +
+	"deviceName\x12:\n" +
+	"\fscreen_state\x18\x02 \x01(\v2\x17.widgetd.v1.ScreenStateR\vscreenState\"n\n" +
+	"\vScreenState\x122\n" +
+	"\aoptions\x18\x01 \x01(\v2\x18.widgetd.v1.BoardOptionsR\aoptions\x12+\n" +
+	"\x05cards\x18\x02 \x03(\v2\x15.widgetd.v1.CardPrefsR\x05cards\"\xd2\x01\n" +
+	"\tCardPrefs\x12\x17\n" +
+	"\acard_id\x18\x01 \x01(\tR\x06cardId\x123\n" +
+	"\x04view\x18\x02 \x03(\v2\x1f.widgetd.v1.CardPrefs.ViewEntryR\x04view\x12\x1d\n" +
+	"\n" +
+	"local_type\x18\x03 \x01(\tR\tlocalType\x12\x1f\n" +
+	"\vlocal_value\x18\x04 \x01(\fR\n" +
+	"localValue\x1a7\n" +
+	"\tViewEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"G\n" +
+	"\x16SaveScreenStateRequest\x12-\n" +
+	"\x05state\x18\x01 \x01(\v2\x17.widgetd.v1.ScreenStateR\x05state\"\x19\n" +
+	"\x17SaveScreenStateResponse\"2\n" +
 	"\x11GetPairingRequest\x12\x1d\n" +
 	"\n" +
 	"pairing_id\x18\x01 \x01(\tR\tpairingId\"\x82\x01\n" +
@@ -1412,18 +1666,20 @@ const file_widgetd_v1_auth_proto_rawDesc = "" +
 	"\n" +
 	"user_agent\x18\x02 \x01(\tR\tuserAgent\x129\n" +
 	"\n" +
-	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"W\n" +
+	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x85\x01\n" +
 	"\x15ApprovePairingRequest\x12\x1d\n" +
 	"\n" +
 	"pairing_id\x18\x01 \x01(\tR\tpairingId\x12\x1f\n" +
 	"\vdevice_name\x18\x02 \x01(\tR\n" +
-	"deviceName\"\x18\n" +
-	"\x16ApprovePairingResponse\"\x9e\x01\n" +
+	"deviceName\x12,\n" +
+	"\x12continue_device_id\x18\x03 \x01(\tR\x10continueDeviceId\"\x18\n" +
+	"\x16ApprovePairingResponse\"\xb8\x01\n" +
 	"\x06Device\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x127\n" +
 	"\tpaired_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bpairedAt\x127\n" +
-	"\tlast_seen\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\blastSeen\"\x14\n" +
+	"\tlast_seen\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\blastSeen\x12\x18\n" +
+	"\ascreens\x18\x05 \x01(\x05R\ascreens\"\x14\n" +
 	"\x12ListDevicesRequest\"C\n" +
 	"\x13ListDevicesResponse\x12,\n" +
 	"\adevices\x18\x01 \x03(\v2\x12.widgetd.v1.DeviceR\adevices\"%\n" +
@@ -1439,7 +1695,7 @@ const file_widgetd_v1_auth_proto_rawDesc = "" +
 	"\x19PAIRING_STATE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15PAIRING_STATE_PENDING\x10\x01\x12\x1a\n" +
 	"\x16PAIRING_STATE_APPROVED\x10\x02\x12\x19\n" +
-	"\x15PAIRING_STATE_EXPIRED\x10\x032\xe7\a\n" +
+	"\x15PAIRING_STATE_EXPIRED\x10\x032\xc3\b\n" +
 	"\vAuthService\x12K\n" +
 	"\n" +
 	"GetSession\x12\x1d.widgetd.v1.GetSessionRequest\x1a\x1e.widgetd.v1.GetSessionResponse\x12N\n" +
@@ -1450,7 +1706,8 @@ const file_widgetd_v1_auth_proto_rawDesc = "" +
 	"\vFinishLogin\x12\x1e.widgetd.v1.FinishLoginRequest\x1a\x1f.widgetd.v1.FinishLoginResponse\x12Q\n" +
 	"\fBeginPairing\x12\x1f.widgetd.v1.BeginPairingRequest\x1a .widgetd.v1.BeginPairingResponse\x12S\n" +
 	"\fAwaitPairing\x12\x1f.widgetd.v1.AwaitPairingRequest\x1a .widgetd.v1.AwaitPairingResponse0\x01\x12Z\n" +
-	"\x0fCompletePairing\x12\".widgetd.v1.CompletePairingRequest\x1a#.widgetd.v1.CompletePairingResponse\x12K\n" +
+	"\x0fCompletePairing\x12\".widgetd.v1.CompletePairingRequest\x1a#.widgetd.v1.CompletePairingResponse\x12Z\n" +
+	"\x0fSaveScreenState\x12\".widgetd.v1.SaveScreenStateRequest\x1a#.widgetd.v1.SaveScreenStateResponse\x12K\n" +
 	"\n" +
 	"GetPairing\x12\x1d.widgetd.v1.GetPairingRequest\x1a\x1e.widgetd.v1.GetPairingResponse\x12W\n" +
 	"\x0eApprovePairing\x12!.widgetd.v1.ApprovePairingRequest\x1a\".widgetd.v1.ApprovePairingResponse\x12N\n" +
@@ -1470,7 +1727,7 @@ func file_widgetd_v1_auth_proto_rawDescGZIP() []byte {
 }
 
 var file_widgetd_v1_auth_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_widgetd_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_widgetd_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_widgetd_v1_auth_proto_goTypes = []any{
 	(Role)(0),                       // 0: widgetd.v1.Role
 	(PairingState)(0),               // 1: widgetd.v1.PairingState
@@ -1490,54 +1747,67 @@ var file_widgetd_v1_auth_proto_goTypes = []any{
 	(*AwaitPairingResponse)(nil),    // 15: widgetd.v1.AwaitPairingResponse
 	(*CompletePairingRequest)(nil),  // 16: widgetd.v1.CompletePairingRequest
 	(*CompletePairingResponse)(nil), // 17: widgetd.v1.CompletePairingResponse
-	(*GetPairingRequest)(nil),       // 18: widgetd.v1.GetPairingRequest
-	(*GetPairingResponse)(nil),      // 19: widgetd.v1.GetPairingResponse
-	(*ApprovePairingRequest)(nil),   // 20: widgetd.v1.ApprovePairingRequest
-	(*ApprovePairingResponse)(nil),  // 21: widgetd.v1.ApprovePairingResponse
-	(*Device)(nil),                  // 22: widgetd.v1.Device
-	(*ListDevicesRequest)(nil),      // 23: widgetd.v1.ListDevicesRequest
-	(*ListDevicesResponse)(nil),     // 24: widgetd.v1.ListDevicesResponse
-	(*RevokeDeviceRequest)(nil),     // 25: widgetd.v1.RevokeDeviceRequest
-	(*RevokeDeviceResponse)(nil),    // 26: widgetd.v1.RevokeDeviceResponse
-	(*timestamppb.Timestamp)(nil),   // 27: google.protobuf.Timestamp
+	(*ScreenState)(nil),             // 18: widgetd.v1.ScreenState
+	(*CardPrefs)(nil),               // 19: widgetd.v1.CardPrefs
+	(*SaveScreenStateRequest)(nil),  // 20: widgetd.v1.SaveScreenStateRequest
+	(*SaveScreenStateResponse)(nil), // 21: widgetd.v1.SaveScreenStateResponse
+	(*GetPairingRequest)(nil),       // 22: widgetd.v1.GetPairingRequest
+	(*GetPairingResponse)(nil),      // 23: widgetd.v1.GetPairingResponse
+	(*ApprovePairingRequest)(nil),   // 24: widgetd.v1.ApprovePairingRequest
+	(*ApprovePairingResponse)(nil),  // 25: widgetd.v1.ApprovePairingResponse
+	(*Device)(nil),                  // 26: widgetd.v1.Device
+	(*ListDevicesRequest)(nil),      // 27: widgetd.v1.ListDevicesRequest
+	(*ListDevicesResponse)(nil),     // 28: widgetd.v1.ListDevicesResponse
+	(*RevokeDeviceRequest)(nil),     // 29: widgetd.v1.RevokeDeviceRequest
+	(*RevokeDeviceResponse)(nil),    // 30: widgetd.v1.RevokeDeviceResponse
+	nil,                             // 31: widgetd.v1.CardPrefs.ViewEntry
+	(*timestamppb.Timestamp)(nil),   // 32: google.protobuf.Timestamp
+	(*BoardOptions)(nil),            // 33: widgetd.v1.BoardOptions
 }
 var file_widgetd_v1_auth_proto_depIdxs = []int32{
 	0,  // 0: widgetd.v1.GetSessionResponse.role:type_name -> widgetd.v1.Role
-	27, // 1: widgetd.v1.BeginPairingResponse.expires_at:type_name -> google.protobuf.Timestamp
+	32, // 1: widgetd.v1.BeginPairingResponse.expires_at:type_name -> google.protobuf.Timestamp
 	1,  // 2: widgetd.v1.AwaitPairingResponse.state:type_name -> widgetd.v1.PairingState
-	27, // 3: widgetd.v1.GetPairingResponse.expires_at:type_name -> google.protobuf.Timestamp
-	27, // 4: widgetd.v1.Device.paired_at:type_name -> google.protobuf.Timestamp
-	27, // 5: widgetd.v1.Device.last_seen:type_name -> google.protobuf.Timestamp
-	22, // 6: widgetd.v1.ListDevicesResponse.devices:type_name -> widgetd.v1.Device
-	2,  // 7: widgetd.v1.AuthService.GetSession:input_type -> widgetd.v1.GetSessionRequest
-	4,  // 8: widgetd.v1.AuthService.BeginEnroll:input_type -> widgetd.v1.BeginEnrollRequest
-	6,  // 9: widgetd.v1.AuthService.FinishEnroll:input_type -> widgetd.v1.FinishEnrollRequest
-	8,  // 10: widgetd.v1.AuthService.BeginLogin:input_type -> widgetd.v1.BeginLoginRequest
-	10, // 11: widgetd.v1.AuthService.FinishLogin:input_type -> widgetd.v1.FinishLoginRequest
-	12, // 12: widgetd.v1.AuthService.BeginPairing:input_type -> widgetd.v1.BeginPairingRequest
-	14, // 13: widgetd.v1.AuthService.AwaitPairing:input_type -> widgetd.v1.AwaitPairingRequest
-	16, // 14: widgetd.v1.AuthService.CompletePairing:input_type -> widgetd.v1.CompletePairingRequest
-	18, // 15: widgetd.v1.AuthService.GetPairing:input_type -> widgetd.v1.GetPairingRequest
-	20, // 16: widgetd.v1.AuthService.ApprovePairing:input_type -> widgetd.v1.ApprovePairingRequest
-	23, // 17: widgetd.v1.AuthService.ListDevices:input_type -> widgetd.v1.ListDevicesRequest
-	25, // 18: widgetd.v1.AuthService.RevokeDevice:input_type -> widgetd.v1.RevokeDeviceRequest
-	3,  // 19: widgetd.v1.AuthService.GetSession:output_type -> widgetd.v1.GetSessionResponse
-	5,  // 20: widgetd.v1.AuthService.BeginEnroll:output_type -> widgetd.v1.BeginEnrollResponse
-	7,  // 21: widgetd.v1.AuthService.FinishEnroll:output_type -> widgetd.v1.FinishEnrollResponse
-	9,  // 22: widgetd.v1.AuthService.BeginLogin:output_type -> widgetd.v1.BeginLoginResponse
-	11, // 23: widgetd.v1.AuthService.FinishLogin:output_type -> widgetd.v1.FinishLoginResponse
-	13, // 24: widgetd.v1.AuthService.BeginPairing:output_type -> widgetd.v1.BeginPairingResponse
-	15, // 25: widgetd.v1.AuthService.AwaitPairing:output_type -> widgetd.v1.AwaitPairingResponse
-	17, // 26: widgetd.v1.AuthService.CompletePairing:output_type -> widgetd.v1.CompletePairingResponse
-	19, // 27: widgetd.v1.AuthService.GetPairing:output_type -> widgetd.v1.GetPairingResponse
-	21, // 28: widgetd.v1.AuthService.ApprovePairing:output_type -> widgetd.v1.ApprovePairingResponse
-	24, // 29: widgetd.v1.AuthService.ListDevices:output_type -> widgetd.v1.ListDevicesResponse
-	26, // 30: widgetd.v1.AuthService.RevokeDevice:output_type -> widgetd.v1.RevokeDeviceResponse
-	19, // [19:31] is the sub-list for method output_type
-	7,  // [7:19] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	18, // 3: widgetd.v1.CompletePairingResponse.screen_state:type_name -> widgetd.v1.ScreenState
+	33, // 4: widgetd.v1.ScreenState.options:type_name -> widgetd.v1.BoardOptions
+	19, // 5: widgetd.v1.ScreenState.cards:type_name -> widgetd.v1.CardPrefs
+	31, // 6: widgetd.v1.CardPrefs.view:type_name -> widgetd.v1.CardPrefs.ViewEntry
+	18, // 7: widgetd.v1.SaveScreenStateRequest.state:type_name -> widgetd.v1.ScreenState
+	32, // 8: widgetd.v1.GetPairingResponse.expires_at:type_name -> google.protobuf.Timestamp
+	32, // 9: widgetd.v1.Device.paired_at:type_name -> google.protobuf.Timestamp
+	32, // 10: widgetd.v1.Device.last_seen:type_name -> google.protobuf.Timestamp
+	26, // 11: widgetd.v1.ListDevicesResponse.devices:type_name -> widgetd.v1.Device
+	2,  // 12: widgetd.v1.AuthService.GetSession:input_type -> widgetd.v1.GetSessionRequest
+	4,  // 13: widgetd.v1.AuthService.BeginEnroll:input_type -> widgetd.v1.BeginEnrollRequest
+	6,  // 14: widgetd.v1.AuthService.FinishEnroll:input_type -> widgetd.v1.FinishEnrollRequest
+	8,  // 15: widgetd.v1.AuthService.BeginLogin:input_type -> widgetd.v1.BeginLoginRequest
+	10, // 16: widgetd.v1.AuthService.FinishLogin:input_type -> widgetd.v1.FinishLoginRequest
+	12, // 17: widgetd.v1.AuthService.BeginPairing:input_type -> widgetd.v1.BeginPairingRequest
+	14, // 18: widgetd.v1.AuthService.AwaitPairing:input_type -> widgetd.v1.AwaitPairingRequest
+	16, // 19: widgetd.v1.AuthService.CompletePairing:input_type -> widgetd.v1.CompletePairingRequest
+	20, // 20: widgetd.v1.AuthService.SaveScreenState:input_type -> widgetd.v1.SaveScreenStateRequest
+	22, // 21: widgetd.v1.AuthService.GetPairing:input_type -> widgetd.v1.GetPairingRequest
+	24, // 22: widgetd.v1.AuthService.ApprovePairing:input_type -> widgetd.v1.ApprovePairingRequest
+	27, // 23: widgetd.v1.AuthService.ListDevices:input_type -> widgetd.v1.ListDevicesRequest
+	29, // 24: widgetd.v1.AuthService.RevokeDevice:input_type -> widgetd.v1.RevokeDeviceRequest
+	3,  // 25: widgetd.v1.AuthService.GetSession:output_type -> widgetd.v1.GetSessionResponse
+	5,  // 26: widgetd.v1.AuthService.BeginEnroll:output_type -> widgetd.v1.BeginEnrollResponse
+	7,  // 27: widgetd.v1.AuthService.FinishEnroll:output_type -> widgetd.v1.FinishEnrollResponse
+	9,  // 28: widgetd.v1.AuthService.BeginLogin:output_type -> widgetd.v1.BeginLoginResponse
+	11, // 29: widgetd.v1.AuthService.FinishLogin:output_type -> widgetd.v1.FinishLoginResponse
+	13, // 30: widgetd.v1.AuthService.BeginPairing:output_type -> widgetd.v1.BeginPairingResponse
+	15, // 31: widgetd.v1.AuthService.AwaitPairing:output_type -> widgetd.v1.AwaitPairingResponse
+	17, // 32: widgetd.v1.AuthService.CompletePairing:output_type -> widgetd.v1.CompletePairingResponse
+	21, // 33: widgetd.v1.AuthService.SaveScreenState:output_type -> widgetd.v1.SaveScreenStateResponse
+	23, // 34: widgetd.v1.AuthService.GetPairing:output_type -> widgetd.v1.GetPairingResponse
+	25, // 35: widgetd.v1.AuthService.ApprovePairing:output_type -> widgetd.v1.ApprovePairingResponse
+	28, // 36: widgetd.v1.AuthService.ListDevices:output_type -> widgetd.v1.ListDevicesResponse
+	30, // 37: widgetd.v1.AuthService.RevokeDevice:output_type -> widgetd.v1.RevokeDeviceResponse
+	25, // [25:38] is the sub-list for method output_type
+	12, // [12:25] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_widgetd_v1_auth_proto_init() }
@@ -1545,13 +1815,14 @@ func file_widgetd_v1_auth_proto_init() {
 	if File_widgetd_v1_auth_proto != nil {
 		return
 	}
+	file_widgetd_v1_board_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_widgetd_v1_auth_proto_rawDesc), len(file_widgetd_v1_auth_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   25,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
