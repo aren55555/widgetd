@@ -20,6 +20,9 @@ message BoardOptions {
   // How long the stream may be down before the offline badge shows. Unset: 30 s.
   google.protobuf.Duration stale_after = 2 [(buf.validate.field).duration.gte = {seconds: 5}];
   Preferences prefs = 3;
+  // Space below the footer line, in CSS pixels, so it clears a bezel, a
+  // rounded corner or an overlaid system bar. Unset: 16.
+  optional uint32 footer_inset = 4 [(buf.validate.field).uint32.lte = 256];
   // TODO: theming (a Theme message carrying THEME_TOKENS, applied as CSS
   // custom properties on the board), and gap, row_height, padding,
   // hide_add_tile, hide_titles. Until then these come from the hosting page
@@ -92,7 +95,7 @@ Known limit: a WebView may report only the device *language* (e.g. `en-US` on a 
   - The button is hidden while `adminUrl` is empty.
   - In the app, new-window requests open in the system browser.
 - **Content:** the rows come from the same resolved result the board uses for rendering, so the modal can't disagree with it.
-  - **Layout:** Columns, Offline badge after.
+  - **Layout:** Columns, Offline badge after, Footer inset.
   - **Preferences:** Language & format, Time zone, Clock, Temperature, Speed, Weight, Distance. Each shows its value in readable form and its source (`set`, `detected · Canada`, `default`).
   - **About:**
     - Board version: the `client/package.json` version, stamped into `board.js` by a `define` in `client/build.ts`.

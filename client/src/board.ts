@@ -81,7 +81,7 @@ ${WIDGET_ICON_CSS}
 .code { font: 600 22px/28px var(--wd-font-mono, ui-monospace, monospace); letter-spacing: 0.1em; color: var(--wd-ink, #e5e7eb); }
 .offline { position: absolute; right: 8px; bottom: 8px; z-index: 4; padding: 2px 10px; border-radius: 999px; font: 12px/18px var(--wd-font-mono, monospace);
   background: color-mix(in oklab, var(--wd-warn, #f59e0b) 20%, var(--wd-surface, #18181b)); color: var(--wd-warn, #f59e0b); cursor: help; }
-.footer { display: flex; justify-content: flex-end; align-items: center; gap: 2px; padding-top: 8px; }
+.footer { display: flex; justify-content: flex-end; align-items: center; gap: 2px; padding: 8px 0 var(--footer-inset, 16px); }
 .footer .screen-id { margin-right: auto; padding-left: 4px; font: 12px/16px var(--wd-font-mono, ui-monospace, monospace);
   letter-spacing: 0.08em; color: var(--wd-ink-faint, #71717a); }
 .icon { display: inline-flex; align-items: center; justify-content: center; padding: 4px; border: 0; border-radius: 6px; background: none;
@@ -225,6 +225,7 @@ class WidgetBoard extends HTMLElement {
     style.textContent = STYLE;
     this.grid.className = "grid";
     this.footer.className = "footer";
+    this.footer.style.setProperty("--footer-inset", `${this.layout.footerInsetPx}px`);
     this.setUpAllButton.setAttribute("aria-pressed", "false");
     this.screenId.className = "screen-id";
     this.screenId.title = "This screen's id, as the admin page lists it";

@@ -98,6 +98,7 @@ export function layoutRows(l: Layout): Row[] {
   return [
     { label: "Columns", value: String(l.cols), source: sourceText(l.colsSource) },
     { label: "Offline badge after", value: durationText(l.staleAfterMs), source: sourceText(l.staleAfterSource) },
+    { label: "Footer inset", value: `${l.footerInsetPx}px`, source: sourceText(l.footerInsetSource) },
   ];
 }
 

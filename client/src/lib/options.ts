@@ -11,6 +11,7 @@ import { BoardOptionsSchema, type BoardOptions } from "../gen/widgetd/v1/board_p
 
 export const DEFAULT_COLS = 4;
 export const DEFAULT_STALE_AFTER_MS = 30_000;
+export const DEFAULT_FOOTER_INSET_PX = 16;
 
 export interface BoardOptionsRead {
   options: BoardOptions;
@@ -43,13 +44,15 @@ export function decodeBoardOptions(o: string): BoardOptionsRead {
 
 /**
  * board.proto's buf.validate rules, checked by hand: protovalidate (with its
- * CEL runtime) would more than triple board.js for two rules. options.test.ts
+ * CEL runtime) would more than triple board.js for three rules. options.test.ts
  * checks that this agrees with protovalidate, so the two can't drift.
  */
 export function checkRules(o: BoardOptions): string | undefined {
   if (o.cols !== undefined && (o.cols < 1 || o.cols > 12)) return `cols: must be 1 to 12, got ${o.cols}`;
   const sa = o.staleAfter;
   if (sa && sa.seconds < 5n) return "stale_after: must be at least 5s";
+  if (o.footerInset !== undefined && o.footerInset > 256)
+    return `footer_inset: must be at most 256, got ${o.footerInset}`;
   return undefined;
 }
 
@@ -65,6 +68,8 @@ export interface Layout {
   colsSource: LayoutSource;
   staleAfterMs: number;
   staleAfterSource: LayoutSource;
+  footerInsetPx: number;
+  footerInsetSource: LayoutSource;
 }
 
 /** Layout values, by precedence: the URL, then the element's attribute, then the default. */
@@ -76,5 +81,7 @@ export function resolveLayout(opts: BoardOptions, colsAttr: string | null): Layo
   const [staleAfterMs, staleAfterSource]: [number, LayoutSource] = sa
     ? [Number(sa.seconds) * 1000 + Math.floor(sa.nanos / 1e6), "set"]
     : [DEFAULT_STALE_AFTER_MS, "default"];
-  return { cols, colsSource, staleAfterMs, staleAfterSource };
+  const [footerInsetPx, footerInsetSource]: [number, LayoutSource] =
+    opts.footerInset !== undefined ? [opts.footerInset, "set"] : [DEFAULT_FOOTER_INSET_PX, "default"];
+  return { cols, colsSource, staleAfterMs, staleAfterSource, footerInsetPx, footerInsetSource };
 }

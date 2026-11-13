@@ -32,8 +32,11 @@ type BoardOptions struct {
 	// Maximum grid columns. Unset: the element's cols attribute, otherwise 4.
 	Cols *uint32 `protobuf:"varint,1,opt,name=cols,proto3,oneof" json:"cols,omitempty"`
 	// How long the stream may be down before the offline badge shows. Unset: 30 s.
-	StaleAfter    *durationpb.Duration `protobuf:"bytes,2,opt,name=stale_after,json=staleAfter,proto3" json:"stale_after,omitempty"`
-	Prefs         *Preferences         `protobuf:"bytes,3,opt,name=prefs,proto3" json:"prefs,omitempty"`
+	StaleAfter *durationpb.Duration `protobuf:"bytes,2,opt,name=stale_after,json=staleAfter,proto3" json:"stale_after,omitempty"`
+	Prefs      *Preferences         `protobuf:"bytes,3,opt,name=prefs,proto3" json:"prefs,omitempty"`
+	// Space below the footer line, in CSS pixels, so it clears a bezel, a
+	// rounded corner or an overlaid system bar. Unset: 16.
+	FooterInset   *uint32 `protobuf:"varint,4,opt,name=footer_inset,json=footerInset,proto3,oneof" json:"footer_inset,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -89,19 +92,28 @@ func (x *BoardOptions) GetPrefs() *Preferences {
 	return nil
 }
 
+func (x *BoardOptions) GetFooterInset() uint32 {
+	if x != nil && x.FooterInset != nil {
+		return *x.FooterInset
+	}
+	return 0
+}
+
 var File_widgetd_v1_board_proto protoreflect.FileDescriptor
 
 const file_widgetd_v1_board_proto_rawDesc = "" +
 	"\n" +
 	"\x16widgetd/v1/board.proto\x12\n" +
-	"widgetd.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x16widgetd/v1/prefs.proto\"\xb2\x01\n" +
+	"widgetd.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x16widgetd/v1/prefs.proto\"\xf5\x01\n" +
 	"\fBoardOptions\x12\"\n" +
 	"\x04cols\x18\x01 \x01(\rB\t\xbaH\x06*\x04\x18\f(\x01H\x00R\x04cols\x88\x01\x01\x12F\n" +
 	"\vstale_after\x18\x02 \x01(\v2\x19.google.protobuf.DurationB\n" +
 	"\xbaH\a\xaa\x01\x042\x02\b\x05R\n" +
 	"staleAfter\x12-\n" +
-	"\x05prefs\x18\x03 \x01(\v2\x17.widgetd.v1.PreferencesR\x05prefsB\a\n" +
-	"\x05_colsB7Z5github.com/aren55555/widgetd/gen/widgetd/v1;widgetdv1b\x06proto3"
+	"\x05prefs\x18\x03 \x01(\v2\x17.widgetd.v1.PreferencesR\x05prefs\x120\n" +
+	"\ffooter_inset\x18\x04 \x01(\rB\b\xbaH\x05*\x03\x18\x80\x02H\x01R\vfooterInset\x88\x01\x01B\a\n" +
+	"\x05_colsB\x0f\n" +
+	"\r_footer_insetB7Z5github.com/aren55555/widgetd/gen/widgetd/v1;widgetdv1b\x06proto3"
 
 var (
 	file_widgetd_v1_board_proto_rawDescOnce sync.Once

@@ -21,6 +21,9 @@ message BoardOptions {
   // How long the stream may be down before the offline badge shows. Unset: 30 s.
   google.protobuf.Duration stale_after = 2 [(buf.validate.field).duration.gte = {seconds: 5}];
   Preferences prefs = 3;
+  // Space below the footer line, in CSS pixels, so it clears a bezel, a
+  // rounded corner or an overlaid system bar. Unset: 16.
+  optional uint32 footer_inset = 4 [(buf.validate.field).uint32.lte = 256];
   // TODO: theming (a Theme message carrying THEME_TOKENS, applied as CSS
   // custom properties on the board), and gap, row_height, padding,
   // hide_add_tile, hide_titles. Until then these come from the hosting page

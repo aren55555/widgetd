@@ -15,7 +15,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file widgetd/v1/board.proto.
  */
 export const file_widgetd_v1_board: GenFile = /*@__PURE__*/
-  fileDesc("ChZ3aWRnZXRkL3YxL2JvYXJkLnByb3RvEgp3aWRnZXRkLnYxIpkBCgxCb2FyZE9wdGlvbnMSHAoEY29scxgBIAEoDUIJukgGKgQYDCgBSACIAQESOgoLc3RhbGVfYWZ0ZXIYAiABKAsyGS5nb29nbGUucHJvdG9idWYuRHVyYXRpb25CCrpIB6oBBDICCAUSJgoFcHJlZnMYAyABKAsyFy53aWRnZXRkLnYxLlByZWZlcmVuY2VzQgcKBV9jb2xzQjdaNWdpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvZ2VuL3dpZGdldGQvdjE7d2lkZ2V0ZHYxYgZwcm90bzM", [file_buf_validate_validate, file_google_protobuf_duration, file_widgetd_v1_prefs]);
+  fileDesc("ChZ3aWRnZXRkL3YxL2JvYXJkLnByb3RvEgp3aWRnZXRkLnYxIs8BCgxCb2FyZE9wdGlvbnMSHAoEY29scxgBIAEoDUIJukgGKgQYDCgBSACIAQESOgoLc3RhbGVfYWZ0ZXIYAiABKAsyGS5nb29nbGUucHJvdG9idWYuRHVyYXRpb25CCrpIB6oBBDICCAUSJgoFcHJlZnMYAyABKAsyFy53aWRnZXRkLnYxLlByZWZlcmVuY2VzEiMKDGZvb3Rlcl9pbnNldBgEIAEoDUIIukgFKgMYgAJIAYgBAUIHCgVfY29sc0IPCg1fZm9vdGVyX2luc2V0QjdaNWdpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvZ2VuL3dpZGdldGQvdjE7d2lkZ2V0ZHYxYgZwcm90bzM", [file_buf_validate_validate, file_google_protobuf_duration, file_widgetd_v1_prefs]);
 
 /**
  * BoardOptions are a screen's settings, passed to the board page like
@@ -41,14 +41,22 @@ export type BoardOptions = Message<"widgetd.v1.BoardOptions"> & {
   staleAfter?: Duration | undefined;
 
   /**
+   * @generated from field: widgetd.v1.Preferences prefs = 3;
+   */
+  prefs?: Preferences | undefined;
+
+  /**
+   * Space below the footer line, in CSS pixels, so it clears a bezel, a
+   * rounded corner or an overlaid system bar. Unset: 16.
+   *
    * TODO: theming (a Theme message carrying THEME_TOKENS, applied as CSS
    * custom properties on the board), and gap, row_height, padding,
    * hide_add_tile, hide_titles. Until then these come from the hosting page
    * and STYLE in board.ts.
    *
-   * @generated from field: widgetd.v1.Preferences prefs = 3;
+   * @generated from field: optional uint32 footer_inset = 4;
    */
-  prefs?: Preferences | undefined;
+  footerInset?: number | undefined;
 };
 
 /**

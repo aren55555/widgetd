@@ -24,7 +24,7 @@
     }
   },
   {
-    "o": "CAYSAwisAhogCgVlbi1HQhINRXVyb3BlL0xvbmRvbhgBIAIoAzACOAI",
+    "o": "CAYSAwisAhogCgVlbi1HQhINRXVyb3BlL0xvbmRvbhgBIAIoAzACOAIgIA",
     "json": {
       "cols": 6,
       "staleAfter": "300s",
@@ -36,7 +36,8 @@
         "speed": "SPEED_UNIT_MPS",
         "mass": "MASS_UNIT_LB",
         "distance": "DISTANCE_UNIT_MI"
-      }
+      },
+      "footerInset": 32
     }
   }
 ]

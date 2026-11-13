@@ -8,6 +8,7 @@ import { validated } from "@widgetd/sdk/checks";
 import {
   checkRules,
   DEFAULT_COLS,
+  DEFAULT_FOOTER_INSET_PX,
   DEFAULT_STALE_AFTER_MS,
   encodeBoardOptions,
   readBoardOptions,
@@ -50,6 +51,7 @@ describe("readBoardOptions", () => {
     ["cols 0", enc({ cols: 0 })],
     ["cols 13", enc({ cols: 13 })],
     ["stale_after 1s", enc({ staleAfter: "1s" })],
+    ["footer_inset 257", enc({ footerInset: 257 })],
     ["a bad rule next to a good field", enc({ cols: 13, staleAfter: "60s" })],
   ];
   for (const [name, o] of ignored) {
@@ -75,6 +77,7 @@ describe("checkRules", () => {
       {},
       ...[0, 1, 2, 11, 12, 13, 4294967295].map((cols) => ({ cols })),
       ...["-5s", "0s", "4s", "4.999999999s", "5s", "5.000000001s", "3600s"].map((staleAfter) => ({ staleAfter })),
+      ...[0, 16, 256, 257].map((footerInset) => ({ footerInset })),
       { cols: 4, staleAfter: "1s" },
       { prefs: { locale: "anything" } },
     ];
@@ -103,6 +106,18 @@ describe("resolveLayout", () => {
     expect(resolveLayout(opts({}), null)).toMatchObject({
       staleAfterMs: DEFAULT_STALE_AFTER_MS,
       staleAfterSource: "default",
+    });
+  });
+
+  test("footer_inset", () => {
+    expect(resolveLayout(opts({ footerInset: 0 }), null)).toMatchObject({ footerInsetPx: 0, footerInsetSource: "set" });
+    expect(resolveLayout(opts({ footerInset: 40 }), null)).toMatchObject({
+      footerInsetPx: 40,
+      footerInsetSource: "set",
+    });
+    expect(resolveLayout(opts({}), null)).toMatchObject({
+      footerInsetPx: DEFAULT_FOOTER_INSET_PX,
+      footerInsetSource: "default",
     });
   });
 });
