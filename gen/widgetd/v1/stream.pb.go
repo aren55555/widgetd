@@ -875,7 +875,12 @@ type Mounted struct {
 	// The message a card accepts from viewers; empty if it takes none.
 	ActionType string `protobuf:"bytes,8,opt,name=action_type,json=actionType,proto3" json:"action_type,omitempty"`
 	// The widget's own icon, if it declares one.
-	Icon          *Icon `protobuf:"bytes,9,opt,name=icon,proto3" json:"icon,omitempty"`
+	Icon *Icon `protobuf:"bytes,9,opt,name=icon,proto3" json:"icon,omitempty"`
+	// A short, stable id for the card, like a git short hash: the first
+	// seven hex digits of the SHA-256 of its full card id. Screens show it
+	// with a card's set-up code, and the admin page lists it, so an admin
+	// can find the instance behind a card they're looking at.
+	ShortId       string `protobuf:"bytes,10,opt,name=short_id,json=shortId,proto3" json:"short_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -971,6 +976,13 @@ func (x *Mounted) GetIcon() *Icon {
 		return x.Icon
 	}
 	return nil
+}
+
+func (x *Mounted) GetShortId() string {
+	if x != nil {
+		return x.ShortId
+	}
+	return ""
 }
 
 // Layout is a size hint in grid units.
@@ -1252,7 +1264,7 @@ const file_widgetd_v1_stream_proto_rawDesc = "" +
 	"\tWidgetRef\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x16\n" +
-	"\x06digest\x18\x03 \x01(\tR\x06digest\"\xdd\x02\n" +
+	"\x06digest\x18\x03 \x01(\tR\x06digest\"\xf8\x02\n" +
 	"\aMounted\x12-\n" +
 	"\x06widget\x18\x01 \x01(\v2\x15.widgetd.v1.WidgetRefR\x06widget\x12\x1b\n" +
 	"\tframe_url\x18\x02 \x01(\tR\bframeUrl\x12\x1d\n" +
@@ -1265,7 +1277,9 @@ const file_widgetd_v1_stream_proto_rawDesc = "" +
 	"\x05title\x18\a \x01(\tR\x05title\x12\x1f\n" +
 	"\vaction_type\x18\b \x01(\tR\n" +
 	"actionType\x12$\n" +
-	"\x04icon\x18\t \x01(\v2\x10.widgetd.v1.IconR\x04icon\"0\n" +
+	"\x04icon\x18\t \x01(\v2\x10.widgetd.v1.IconR\x04icon\x12\x19\n" +
+	"\bshort_id\x18\n" +
+	" \x01(\tR\ashortId\"0\n" +
 	"\x06Layout\x12\x12\n" +
 	"\x04cols\x18\x01 \x01(\rR\x04cols\x12\x12\n" +
 	"\x04rows\x18\x02 \x01(\rR\x04rows\"\x8e\x01\n" +

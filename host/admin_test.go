@@ -228,6 +228,44 @@ func TestRenameAndDelete(t *testing.T) {
 	}
 }
 
+func TestCardShortIDs(t *testing.T) {
+	h := newHarness(t)
+	wh := h.host()
+	mustMount(t, wh, "main", widget.MountOptions{Title: "Main"})
+	mustMount(t, wh, "side", widget.MountOptions{})
+	f := h.open(h.deviceCookie("d1"))
+	short := map[string]string{}
+	for _, fr := range f.burst() {
+		if m := fr.GetMounted(); m != nil {
+			short[fr.GetCardId()] = m.GetShortId()
+		}
+	}
+	want := map[string]string{"one/main": shortCardID("one/main"), "one/side": shortCardID("one/side")}
+	for id, s := range want {
+		if len(s) != 7 || short[id] != s {
+			t.Fatalf("%s: mounted short id %q, want %q", id, short[id], s)
+		}
+	}
+	if want["one/main"] == want["one/side"] {
+		t.Fatal("two cards share a short id")
+	}
+
+	// The admin list carries the same ids, in board order.
+	res, err := h.adminClient().ListInstances(context.Background(), withCookie(&widgetdv1.ListInstancesRequest{}, h.adminCookie()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, in := range res.Msg.GetInstances() {
+		for _, c := range in.GetCards() {
+			got = append(got, c.GetId()+"="+c.GetShortId()+":"+c.GetTitle())
+		}
+	}
+	if w := []string{"one/main=" + want["one/main"] + ":Main", "one/side=" + want["one/side"] + ":"}; strings.Join(got, ",") != strings.Join(w, ",") {
+		t.Fatalf("listed cards = %v, want %v", got, w)
+	}
+}
+
 // reopen starts a second host on the same state, as after a restart.
 func reopen(t *testing.T, dir string, spec widget.Spec, seeds ...Instance) *Server {
 	t.Helper()

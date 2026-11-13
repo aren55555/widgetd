@@ -39,6 +39,7 @@ import {
 } from "./gen/widgetd/v1/admin_pb.ts";
 import { InstanceStatus_State, type Icon } from "./gen/widgetd/v1/stream_pb.ts";
 import { createConfigForm, type ConfigForm } from "./lib/ConfigForm.tsx";
+import { instanceMatches, normalizeQuery, shortIdMatches } from "./lib/find.ts";
 import { widgetIcon } from "./lib/icon.ts";
 import { sameChoices, type Choices, type Secrets } from "./lib/form.ts";
 import * as ui from "./lib/ui.ts";
@@ -520,23 +521,42 @@ function AdminHome() {
     mutate(await loadHome());
   };
   const passkey = createStatus();
+  // A card's short id, as a screen's set-up code shows it, finds its
+  // instance; ?card=<id> fills it in.
+  const [find, setFind] = createSignal(new URLSearchParams(location.search).get("card") ?? "");
+  const query = () => normalizeQuery(find());
+  const widgetOf = (d: HomeData, inst: InstanceInfo) => d.widgets.find((w) => w.name === inst.widget);
+  const shown = (d: HomeData) =>
+    d.instances.filter((inst) => instanceMatches(inst, instanceTitle(inst, widgetOf(d, inst)), query()));
   return (
     <Show when={data()}>
       {(d) => (
         <Page title="Widgets">
           <For each={d().accounts.filter((a) => !a.label)}>{(a) => <NameAccount a={a} d={d()} reload={reload} />}</For>
+          <Show when={d().instances.length}>
+            <input
+              class={ui.input}
+              type="search"
+              placeholder="Find by card id or name"
+              aria-label="Find a widget by card id or name"
+              autocapitalize="off"
+              autocomplete="off"
+              spellcheck={false}
+              value={find()}
+              onInput={(e) => setFind(e.currentTarget.value)}
+            />
+          </Show>
           <ul class={ui.list}>
             <For
-              each={d().instances}
-              fallback={<li class={`py-3 ${ui.muted}`}>No widgets yet. Add one from a screen.</li>}
+              each={shown(d())}
+              fallback={
+                <li class={`py-3 ${ui.muted}`}>
+                  {d().instances.length ? "No widget matches." : "No widgets yet. Add one from a screen."}
+                </li>
+              }
             >
               {(inst) => (
-                <InstanceItem
-                  inst={inst}
-                  widget={d().widgets.find((w) => w.name === inst.widget)}
-                  d={d()}
-                  reload={reload}
-                />
+                <InstanceItem inst={inst} widget={widgetOf(d(), inst)} d={d()} query={query()} reload={reload} />
               )}
             </For>
           </ul>
@@ -598,14 +618,19 @@ function AdminHome() {
 
 type Fetch = Awaited<ReturnType<typeof admin.getInstanceActivity>>["fetches"][number];
 
+const instanceTitle = (inst: InstanceInfo, widget: WidgetInfo | undefined) =>
+  inst.label || widget?.title || inst.widget;
+
 function InstanceItem(props: {
   inst: InstanceInfo;
   widget: WidgetInfo | undefined;
   d: HomeData;
+  /** The admin's search, normalized: a card whose short id it starts is highlighted. */
+  query: string;
   reload: () => Promise<void>;
 }) {
   const { inst, widget, reload } = props;
-  const title = inst.label || widget?.title || inst.widget;
+  const title = instanceTitle(inst, widget);
   const state = inst.status?.state;
   const st = createStatus();
   const [log, setLog] = createSignal<Fetch[]>();
@@ -623,6 +648,22 @@ function InstanceItem(props: {
         </span>
         <Show when={inst.status?.warning}>
           <p class="text-sm text-amber-600">⚠ {inst.status?.warning}</p>
+        </Show>
+        <Show when={inst.cards.length}>
+          <div class="mt-1 flex flex-wrap gap-1.5">
+            <For each={inst.cards}>
+              {(c) => (
+                <code
+                  class={`rounded px-1.5 py-0.5 font-mono text-xs tracking-wider ${
+                    shortIdMatches(c.shortId, props.query) ? "bg-amber-400/40 font-semibold" : "bg-gray-500/15"
+                  }`}
+                  title={c.title ? `${c.title} (${c.id})` : c.id}
+                >
+                  {c.shortId}
+                </code>
+              )}
+            </For>
+          </div>
         </Show>
       </div>
       <For each={inst.bindings}>

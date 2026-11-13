@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file widgetd/v1/admin.proto.
  */
 export const file_widgetd_v1_admin: GenFile = /*@__PURE__*/
-  fileDesc("ChZ3aWRnZXRkL3YxL2FkbWluLnByb3RvEgp3aWRnZXRkLnYxIugCCgpXaWRnZXRJbmZvEgwKBG5hbWUYASABKAkSDwoHdmVyc2lvbhgCIAEoCRINCgV0aXRsZRgDIAEoCRIXCg9yZXF1ZXN0ZWRfaG9zdHMYBCADKAkSGQoRcmVxdWVzdGVkX21ldGhvZHMYBSADKAkSEwoLbmV0d29ya193aHkYBiABKAkSEQoJZ3JhbnRfc2V0GAcgASgIEhUKDWdyYW50ZWRfaG9zdHMYCCADKAkSGAoQbmV0d29ya19kaXNhYmxlZBgJIAEoCBIUCgxjb25maWd1cmFibGUYCiABKAgSHQoEdXNlcxgOIAMoCzIPLndpZGdldGQudjEuVXNlEh4KBGljb24YDyABKAsyEC53aWRnZXRkLnYxLkljb25KBAgLEAxKBAgMEA1KBAgNEA5SEHNpZ25faW5fcHJvdmlkZXJSEnNpZ25faW5fY2xpZW50X3NldFISc2lnbl9pbl9zZWNyZXRfc2V0IhQKEkxpc3RXaWRnZXRzUmVxdWVzdCI+ChNMaXN0V2lkZ2V0c1Jlc3BvbnNlEicKB3dpZGdldHMYASADKAsyFi53aWRnZXRkLnYxLldpZGdldEluZm8iJAoSQWRkSW5zdGFuY2VSZXF1ZXN0Eg4KBndpZGdldBgBIAEoCSIqChNBZGRJbnN0YW5jZVJlc3BvbnNlEhMKC2luc3RhbmNlX2lkGAEgASgJIjEKGlJlcXVlc3RDb25maWdUaWNrZXRSZXF1ZXN0EhMKC2luc3RhbmNlX2lkGAEgASgJIloKG1JlcXVlc3RDb25maWdUaWNrZXRSZXNwb25zZRILCgN1cmwYASABKAkSLgoKZXhwaXJlc19hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiOwoUR2V0Q29uZmlnRm9ybVJlcXVlc3QSDgoGdGlja2V0GAEgASgJEhMKC2luc3RhbmNlX2lkGAIgASgJIvABChVHZXRDb25maWdGb3JtUmVzcG9uc2USEwoLaW5zdGFuY2VfaWQYASABKAkSJgoGd2lkZ2V0GAIgASgLMhYud2lkZ2V0ZC52MS5XaWRnZXRJbmZvEg0KBWxhYmVsGAMgASgJEhMKC2NvbmZpZ190eXBlGAQgASgJEg4KBnNjaGVtYRgFIAEoDBIOCgZjb25maWcYBiABKAwSKgoGc3RhdHVzGAcgASgLMhoud2lkZ2V0ZC52MS5JbnN0YW5jZVN0YXR1cxIVCg1zZWNyZXRfZmllbGRzGAggAygJEhMKC3NlY3JldHNfc2V0GAkgAygJIm4KEVNhdmVDb25maWdSZXF1ZXN0Eg4KBnRpY2tldBgBIAEoCRITCgtpbnN0YW5jZV9pZBgEIAEoCRINCgVsYWJlbBgCIAEoCRIOCgZjb25maWcYAyABKAwSFQoNY2xlYXJfc2VjcmV0cxgFIAMoCSIwCg5GaWVsZFZpb2xhdGlvbhINCgVmaWVsZBgBIAEoCRIPCgdtZXNzYWdlGAIgASgJIkQKElNhdmVDb25maWdSZXNwb25zZRIuCgp2aW9sYXRpb25zGAEgAygLMhoud2lkZ2V0ZC52MS5GaWVsZFZpb2xhdGlvbiIWChRMaXN0SW5zdGFuY2VzUmVxdWVzdCJEChVMaXN0SW5zdGFuY2VzUmVzcG9uc2USKwoJaW5zdGFuY2VzGAEgAygLMhgud2lkZ2V0ZC52MS5JbnN0YW5jZUluZm8ivAEKDEluc3RhbmNlSW5mbxIKCgJpZBgBIAEoCRIOCgZ3aWRnZXQYAiABKAkSDQoFbGFiZWwYAyABKAkSKgoGc3RhdHVzGAQgASgLMhoud2lkZ2V0ZC52MS5JbnN0YW5jZVN0YXR1cxIuCgpjcmVhdGVkX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIlCghiaW5kaW5ncxgGIAMoCzITLndpZGdldGQudjEuQmluZGluZyIvCgdCaW5kaW5nEhAKCHByb3ZpZGVyGAEgASgJEhIKCmFjY291bnRfaWQYAiABKAkiOwoVUmVuYW1lSW5zdGFuY2VSZXF1ZXN0EhMKC2luc3RhbmNlX2lkGAEgASgJEg0KBWxhYmVsGAIgASgJIhgKFlJlbmFtZUluc3RhbmNlUmVzcG9uc2UiLAoVRGVsZXRlSW5zdGFuY2VSZXF1ZXN0EhMKC2luc3RhbmNlX2lkGAEgASgJIhgKFkRlbGV0ZUluc3RhbmNlUmVzcG9uc2UiXgoWU2V0TmV0d29ya0dyYW50UmVxdWVzdBIOCgZ3aWRnZXQYASABKAkSDQoFaG9zdHMYAiADKAkSEAoIZGlzYWJsZWQYAyABKAgSEwoLdXNlX2RlZmF1bHQYBCABKAgiGQoXU2V0TmV0d29ya0dyYW50UmVzcG9uc2UiMQoaR2V0SW5zdGFuY2VBY3Rpdml0eVJlcXVlc3QSEwoLaW5zdGFuY2VfaWQYASABKAkirgEKBUZldGNoEiYKAmF0GAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIOCgZtZXRob2QYAiABKAkSDAoEaG9zdBgDIAEoCRIMCgRwYXRoGAQgASgJEg4KBnN0YXR1cxgFIAEoBRINCgVieXRlcxgGIAEoAxIOCgZkZW5pZWQYByABKAkSDQoFZXJyb3IYCCABKAkSEwoLZHVyYXRpb25fbXMYCSABKAMiQQobR2V0SW5zdGFuY2VBY3Rpdml0eVJlc3BvbnNlEiIKB2ZldGNoZXMYASADKAsyES53aWRnZXRkLnYxLkZldGNoIk4KF0dldENvbmZpZ0Nob2ljZXNSZXF1ZXN0Eg4KBnRpY2tldBgBIAEoCRIOCgZjb25maWcYAiABKAwSEwoLaW5zdGFuY2VfaWQYAyABKAkiLAoMQ29uZmlnQ2hvaWNlEg0KBXZhbHVlGAEgASgJEg0KBWxhYmVsGAIgASgJIk4KEkNvbmZpZ0ZpZWxkQ2hvaWNlcxINCgVmaWVsZBgBIAEoCRIpCgdjaG9pY2VzGAIgAygLMhgud2lkZ2V0ZC52MS5Db25maWdDaG9pY2UiSgoYR2V0Q29uZmlnQ2hvaWNlc1Jlc3BvbnNlEi4KBmZpZWxkcxgBIAMoCzIeLndpZGdldGQudjEuQ29uZmlnRmllbGRDaG9pY2VzIicKA1VzZRIQCghwcm92aWRlchgBIAEoCRIOCgZzY29wZXMYAiADKAkijQEKDFByb3ZpZGVySW5mbxIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEhIKCmNsaWVudF9zZXQYAyABKAgSEgoKc2VjcmV0X3NldBgEIAEoCBIUCgxyZWRpcmVjdF91cmkYBSABKAkSEwoLY2xpZW50X2hlbHAYBiABKAkSDQoFZXJyb3IYByABKAkirwEKB0FjY291bnQSCgoCaWQYASABKAkSEAoIcHJvdmlkZXIYAiABKAkSDQoFbGFiZWwYAyABKAkSEAoIaWRlbnRpdHkYBCABKAkSEQoJc2lnbmVkX2luGAUgASgIEg8KB2dyYW50ZWQYBiADKAkSDgoGd2FudGVkGAcgAygJEg8KB21lc3NhZ2UYCCABKAkSDQoFZXJyb3IYCSABKAkSEQoJaW5zdGFuY2VzGAogAygJIhUKE0xpc3RBY2NvdW50c1JlcXVlc3QiagoUTGlzdEFjY291bnRzUmVzcG9uc2USKwoJcHJvdmlkZXJzGAEgAygLMhgud2lkZ2V0ZC52MS5Qcm92aWRlckluZm8SJQoIYWNjb3VudHMYAiADKAsyEy53aWRnZXRkLnYxLkFjY291bnQiTwoSQmVnaW5TaWduSW5SZXF1ZXN0EhAKCHByb3ZpZGVyGAEgASgJEhIKCmFjY291bnRfaWQYAiABKAkSEwoLaW5zdGFuY2VfaWQYAyABKAkifQoTQmVnaW5TaWduSW5SZXNwb25zZRILCgN1cmwYASABKAkSEQoJdXNlcl9jb2RlGAIgASgJEi4KCmV4cGlyZXNfYXQYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhYKDnByb3ZpZGVyX3RpdGxlGAQgASgJIiQKDlNpZ25PdXRSZXF1ZXN0EhIKCmFjY291bnRfaWQYASABKAkiEQoPU2lnbk91dFJlc3BvbnNlIjgKE0xhYmVsQWNjb3VudFJlcXVlc3QSEgoKYWNjb3VudF9pZBgBIAEoCRINCgVsYWJlbBgCIAEoCSIWChRMYWJlbEFjY291bnRSZXNwb25zZSIqChREZWxldGVBY2NvdW50UmVxdWVzdBISCgphY2NvdW50X2lkGAEgASgJIhcKFURlbGV0ZUFjY291bnRSZXNwb25zZSJPChJCaW5kQWNjb3VudFJlcXVlc3QSEwoLaW5zdGFuY2VfaWQYASABKAkSEAoIcHJvdmlkZXIYAiABKAkSEgoKYWNjb3VudF9pZBgDIAEoCSIVChNCaW5kQWNjb3VudFJlc3BvbnNlIlYKGFNldFByb3ZpZGVyQ2xpZW50UmVxdWVzdBIQCghwcm92aWRlchgBIAEoCRIRCgljbGllbnRfaWQYAiABKAkSFQoNY2xpZW50X3NlY3JldBgDIAEoCSIbChlTZXRQcm92aWRlckNsaWVudFJlc3BvbnNlMqwMChJXaWRnZXRBZG1pblNlcnZpY2USTgoLTGlzdFdpZGdldHMSHi53aWRnZXRkLnYxLkxpc3RXaWRnZXRzUmVxdWVzdBofLndpZGdldGQudjEuTGlzdFdpZGdldHNSZXNwb25zZRJOCgtBZGRJbnN0YW5jZRIeLndpZGdldGQudjEuQWRkSW5zdGFuY2VSZXF1ZXN0Gh8ud2lkZ2V0ZC52MS5BZGRJbnN0YW5jZVJlc3BvbnNlEmYKE1JlcXVlc3RDb25maWdUaWNrZXQSJi53aWRnZXRkLnYxLlJlcXVlc3RDb25maWdUaWNrZXRSZXF1ZXN0Gicud2lkZ2V0ZC52MS5SZXF1ZXN0Q29uZmlnVGlja2V0UmVzcG9uc2USVAoNR2V0Q29uZmlnRm9ybRIgLndpZGdldGQudjEuR2V0Q29uZmlnRm9ybVJlcXVlc3QaIS53aWRnZXRkLnYxLkdldENvbmZpZ0Zvcm1SZXNwb25zZRJdChBHZXRDb25maWdDaG9pY2VzEiMud2lkZ2V0ZC52MS5HZXRDb25maWdDaG9pY2VzUmVxdWVzdBokLndpZGdldGQudjEuR2V0Q29uZmlnQ2hvaWNlc1Jlc3BvbnNlEksKClNhdmVDb25maWcSHS53aWRnZXRkLnYxLlNhdmVDb25maWdSZXF1ZXN0Gh4ud2lkZ2V0ZC52MS5TYXZlQ29uZmlnUmVzcG9uc2USVAoNTGlzdEluc3RhbmNlcxIgLndpZGdldGQudjEuTGlzdEluc3RhbmNlc1JlcXVlc3QaIS53aWRnZXRkLnYxLkxpc3RJbnN0YW5jZXNSZXNwb25zZRJXCg5SZW5hbWVJbnN0YW5jZRIhLndpZGdldGQudjEuUmVuYW1lSW5zdGFuY2VSZXF1ZXN0GiIud2lkZ2V0ZC52MS5SZW5hbWVJbnN0YW5jZVJlc3BvbnNlElcKDkRlbGV0ZUluc3RhbmNlEiEud2lkZ2V0ZC52MS5EZWxldGVJbnN0YW5jZVJlcXVlc3QaIi53aWRnZXRkLnYxLkRlbGV0ZUluc3RhbmNlUmVzcG9uc2USWgoPU2V0TmV0d29ya0dyYW50EiIud2lkZ2V0ZC52MS5TZXROZXR3b3JrR3JhbnRSZXF1ZXN0GiMud2lkZ2V0ZC52MS5TZXROZXR3b3JrR3JhbnRSZXNwb25zZRJmChNHZXRJbnN0YW5jZUFjdGl2aXR5EiYud2lkZ2V0ZC52MS5HZXRJbnN0YW5jZUFjdGl2aXR5UmVxdWVzdBonLndpZGdldGQudjEuR2V0SW5zdGFuY2VBY3Rpdml0eVJlc3BvbnNlElEKDExpc3RBY2NvdW50cxIfLndpZGdldGQudjEuTGlzdEFjY291bnRzUmVxdWVzdBogLndpZGdldGQudjEuTGlzdEFjY291bnRzUmVzcG9uc2USTgoLQmVnaW5TaWduSW4SHi53aWRnZXRkLnYxLkJlZ2luU2lnbkluUmVxdWVzdBofLndpZGdldGQudjEuQmVnaW5TaWduSW5SZXNwb25zZRJCCgdTaWduT3V0Ehoud2lkZ2V0ZC52MS5TaWduT3V0UmVxdWVzdBobLndpZGdldGQudjEuU2lnbk91dFJlc3BvbnNlElEKDExhYmVsQWNjb3VudBIfLndpZGdldGQudjEuTGFiZWxBY2NvdW50UmVxdWVzdBogLndpZGdldGQudjEuTGFiZWxBY2NvdW50UmVzcG9uc2USVAoNRGVsZXRlQWNjb3VudBIgLndpZGdldGQudjEuRGVsZXRlQWNjb3VudFJlcXVlc3QaIS53aWRnZXRkLnYxLkRlbGV0ZUFjY291bnRSZXNwb25zZRJOCgtCaW5kQWNjb3VudBIeLndpZGdldGQudjEuQmluZEFjY291bnRSZXF1ZXN0Gh8ud2lkZ2V0ZC52MS5CaW5kQWNjb3VudFJlc3BvbnNlEmAKEVNldFByb3ZpZGVyQ2xpZW50EiQud2lkZ2V0ZC52MS5TZXRQcm92aWRlckNsaWVudFJlcXVlc3QaJS53aWRnZXRkLnYxLlNldFByb3ZpZGVyQ2xpZW50UmVzcG9uc2VCN1o1Z2l0aHViLmNvbS9hcmVuNTU1NTUvd2lkZ2V0ZC9nZW4vd2lkZ2V0ZC92MTt3aWRnZXRkdjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_widgetd_v1_stream]);
+  fileDesc("ChZ3aWRnZXRkL3YxL2FkbWluLnByb3RvEgp3aWRnZXRkLnYxIugCCgpXaWRnZXRJbmZvEgwKBG5hbWUYASABKAkSDwoHdmVyc2lvbhgCIAEoCRINCgV0aXRsZRgDIAEoCRIXCg9yZXF1ZXN0ZWRfaG9zdHMYBCADKAkSGQoRcmVxdWVzdGVkX21ldGhvZHMYBSADKAkSEwoLbmV0d29ya193aHkYBiABKAkSEQoJZ3JhbnRfc2V0GAcgASgIEhUKDWdyYW50ZWRfaG9zdHMYCCADKAkSGAoQbmV0d29ya19kaXNhYmxlZBgJIAEoCBIUCgxjb25maWd1cmFibGUYCiABKAgSHQoEdXNlcxgOIAMoCzIPLndpZGdldGQudjEuVXNlEh4KBGljb24YDyABKAsyEC53aWRnZXRkLnYxLkljb25KBAgLEAxKBAgMEA1KBAgNEA5SEHNpZ25faW5fcHJvdmlkZXJSEnNpZ25faW5fY2xpZW50X3NldFISc2lnbl9pbl9zZWNyZXRfc2V0IhQKEkxpc3RXaWRnZXRzUmVxdWVzdCI+ChNMaXN0V2lkZ2V0c1Jlc3BvbnNlEicKB3dpZGdldHMYASADKAsyFi53aWRnZXRkLnYxLldpZGdldEluZm8iJAoSQWRkSW5zdGFuY2VSZXF1ZXN0Eg4KBndpZGdldBgBIAEoCSIqChNBZGRJbnN0YW5jZVJlc3BvbnNlEhMKC2luc3RhbmNlX2lkGAEgASgJIjEKGlJlcXVlc3RDb25maWdUaWNrZXRSZXF1ZXN0EhMKC2luc3RhbmNlX2lkGAEgASgJIloKG1JlcXVlc3RDb25maWdUaWNrZXRSZXNwb25zZRILCgN1cmwYASABKAkSLgoKZXhwaXJlc19hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiOwoUR2V0Q29uZmlnRm9ybVJlcXVlc3QSDgoGdGlja2V0GAEgASgJEhMKC2luc3RhbmNlX2lkGAIgASgJIvABChVHZXRDb25maWdGb3JtUmVzcG9uc2USEwoLaW5zdGFuY2VfaWQYASABKAkSJgoGd2lkZ2V0GAIgASgLMhYud2lkZ2V0ZC52MS5XaWRnZXRJbmZvEg0KBWxhYmVsGAMgASgJEhMKC2NvbmZpZ190eXBlGAQgASgJEg4KBnNjaGVtYRgFIAEoDBIOCgZjb25maWcYBiABKAwSKgoGc3RhdHVzGAcgASgLMhoud2lkZ2V0ZC52MS5JbnN0YW5jZVN0YXR1cxIVCg1zZWNyZXRfZmllbGRzGAggAygJEhMKC3NlY3JldHNfc2V0GAkgAygJIm4KEVNhdmVDb25maWdSZXF1ZXN0Eg4KBnRpY2tldBgBIAEoCRITCgtpbnN0YW5jZV9pZBgEIAEoCRINCgVsYWJlbBgCIAEoCRIOCgZjb25maWcYAyABKAwSFQoNY2xlYXJfc2VjcmV0cxgFIAMoCSIwCg5GaWVsZFZpb2xhdGlvbhINCgVmaWVsZBgBIAEoCRIPCgdtZXNzYWdlGAIgASgJIkQKElNhdmVDb25maWdSZXNwb25zZRIuCgp2aW9sYXRpb25zGAEgAygLMhoud2lkZ2V0ZC52MS5GaWVsZFZpb2xhdGlvbiIWChRMaXN0SW5zdGFuY2VzUmVxdWVzdCJEChVMaXN0SW5zdGFuY2VzUmVzcG9uc2USKwoJaW5zdGFuY2VzGAEgAygLMhgud2lkZ2V0ZC52MS5JbnN0YW5jZUluZm8i4AEKDEluc3RhbmNlSW5mbxIKCgJpZBgBIAEoCRIOCgZ3aWRnZXQYAiABKAkSDQoFbGFiZWwYAyABKAkSKgoGc3RhdHVzGAQgASgLMhoud2lkZ2V0ZC52MS5JbnN0YW5jZVN0YXR1cxIuCgpjcmVhdGVkX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIlCghiaW5kaW5ncxgGIAMoCzITLndpZGdldGQudjEuQmluZGluZxIiCgVjYXJkcxgHIAMoCzITLndpZGdldGQudjEuQ2FyZFJlZiI2CgdDYXJkUmVmEgoKAmlkGAEgASgJEhAKCHNob3J0X2lkGAIgASgJEg0KBXRpdGxlGAMgASgJIi8KB0JpbmRpbmcSEAoIcHJvdmlkZXIYASABKAkSEgoKYWNjb3VudF9pZBgCIAEoCSI7ChVSZW5hbWVJbnN0YW5jZVJlcXVlc3QSEwoLaW5zdGFuY2VfaWQYASABKAkSDQoFbGFiZWwYAiABKAkiGAoWUmVuYW1lSW5zdGFuY2VSZXNwb25zZSIsChVEZWxldGVJbnN0YW5jZVJlcXVlc3QSEwoLaW5zdGFuY2VfaWQYASABKAkiGAoWRGVsZXRlSW5zdGFuY2VSZXNwb25zZSJeChZTZXROZXR3b3JrR3JhbnRSZXF1ZXN0Eg4KBndpZGdldBgBIAEoCRINCgVob3N0cxgCIAMoCRIQCghkaXNhYmxlZBgDIAEoCBITCgt1c2VfZGVmYXVsdBgEIAEoCCIZChdTZXROZXR3b3JrR3JhbnRSZXNwb25zZSIxChpHZXRJbnN0YW5jZUFjdGl2aXR5UmVxdWVzdBITCgtpbnN0YW5jZV9pZBgBIAEoCSKuAQoFRmV0Y2gSJgoCYXQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg4KBm1ldGhvZBgCIAEoCRIMCgRob3N0GAMgASgJEgwKBHBhdGgYBCABKAkSDgoGc3RhdHVzGAUgASgFEg0KBWJ5dGVzGAYgASgDEg4KBmRlbmllZBgHIAEoCRINCgVlcnJvchgIIAEoCRITCgtkdXJhdGlvbl9tcxgJIAEoAyJBChtHZXRJbnN0YW5jZUFjdGl2aXR5UmVzcG9uc2USIgoHZmV0Y2hlcxgBIAMoCzIRLndpZGdldGQudjEuRmV0Y2giTgoXR2V0Q29uZmlnQ2hvaWNlc1JlcXVlc3QSDgoGdGlja2V0GAEgASgJEg4KBmNvbmZpZxgCIAEoDBITCgtpbnN0YW5jZV9pZBgDIAEoCSIsCgxDb25maWdDaG9pY2USDQoFdmFsdWUYASABKAkSDQoFbGFiZWwYAiABKAkiTgoSQ29uZmlnRmllbGRDaG9pY2VzEg0KBWZpZWxkGAEgASgJEikKB2Nob2ljZXMYAiADKAsyGC53aWRnZXRkLnYxLkNvbmZpZ0Nob2ljZSJKChhHZXRDb25maWdDaG9pY2VzUmVzcG9uc2USLgoGZmllbGRzGAEgAygLMh4ud2lkZ2V0ZC52MS5Db25maWdGaWVsZENob2ljZXMiJwoDVXNlEhAKCHByb3ZpZGVyGAEgASgJEg4KBnNjb3BlcxgCIAMoCSKNAQoMUHJvdmlkZXJJbmZvEgwKBG5hbWUYASABKAkSDQoFdGl0bGUYAiABKAkSEgoKY2xpZW50X3NldBgDIAEoCBISCgpzZWNyZXRfc2V0GAQgASgIEhQKDHJlZGlyZWN0X3VyaRgFIAEoCRITCgtjbGllbnRfaGVscBgGIAEoCRINCgVlcnJvchgHIAEoCSKvAQoHQWNjb3VudBIKCgJpZBgBIAEoCRIQCghwcm92aWRlchgCIAEoCRINCgVsYWJlbBgDIAEoCRIQCghpZGVudGl0eRgEIAEoCRIRCglzaWduZWRfaW4YBSABKAgSDwoHZ3JhbnRlZBgGIAMoCRIOCgZ3YW50ZWQYByADKAkSDwoHbWVzc2FnZRgIIAEoCRINCgVlcnJvchgJIAEoCRIRCglpbnN0YW5jZXMYCiADKAkiFQoTTGlzdEFjY291bnRzUmVxdWVzdCJqChRMaXN0QWNjb3VudHNSZXNwb25zZRIrCglwcm92aWRlcnMYASADKAsyGC53aWRnZXRkLnYxLlByb3ZpZGVySW5mbxIlCghhY2NvdW50cxgCIAMoCzITLndpZGdldGQudjEuQWNjb3VudCJPChJCZWdpblNpZ25JblJlcXVlc3QSEAoIcHJvdmlkZXIYASABKAkSEgoKYWNjb3VudF9pZBgCIAEoCRITCgtpbnN0YW5jZV9pZBgDIAEoCSJ9ChNCZWdpblNpZ25JblJlc3BvbnNlEgsKA3VybBgBIAEoCRIRCgl1c2VyX2NvZGUYAiABKAkSLgoKZXhwaXJlc19hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFgoOcHJvdmlkZXJfdGl0bGUYBCABKAkiJAoOU2lnbk91dFJlcXVlc3QSEgoKYWNjb3VudF9pZBgBIAEoCSIRCg9TaWduT3V0UmVzcG9uc2UiOAoTTGFiZWxBY2NvdW50UmVxdWVzdBISCgphY2NvdW50X2lkGAEgASgJEg0KBWxhYmVsGAIgASgJIhYKFExhYmVsQWNjb3VudFJlc3BvbnNlIioKFERlbGV0ZUFjY291bnRSZXF1ZXN0EhIKCmFjY291bnRfaWQYASABKAkiFwoVRGVsZXRlQWNjb3VudFJlc3BvbnNlIk8KEkJpbmRBY2NvdW50UmVxdWVzdBITCgtpbnN0YW5jZV9pZBgBIAEoCRIQCghwcm92aWRlchgCIAEoCRISCgphY2NvdW50X2lkGAMgASgJIhUKE0JpbmRBY2NvdW50UmVzcG9uc2UiVgoYU2V0UHJvdmlkZXJDbGllbnRSZXF1ZXN0EhAKCHByb3ZpZGVyGAEgASgJEhEKCWNsaWVudF9pZBgCIAEoCRIVCg1jbGllbnRfc2VjcmV0GAMgASgJIhsKGVNldFByb3ZpZGVyQ2xpZW50UmVzcG9uc2UyrAwKEldpZGdldEFkbWluU2VydmljZRJOCgtMaXN0V2lkZ2V0cxIeLndpZGdldGQudjEuTGlzdFdpZGdldHNSZXF1ZXN0Gh8ud2lkZ2V0ZC52MS5MaXN0V2lkZ2V0c1Jlc3BvbnNlEk4KC0FkZEluc3RhbmNlEh4ud2lkZ2V0ZC52MS5BZGRJbnN0YW5jZVJlcXVlc3QaHy53aWRnZXRkLnYxLkFkZEluc3RhbmNlUmVzcG9uc2USZgoTUmVxdWVzdENvbmZpZ1RpY2tldBImLndpZGdldGQudjEuUmVxdWVzdENvbmZpZ1RpY2tldFJlcXVlc3QaJy53aWRnZXRkLnYxLlJlcXVlc3RDb25maWdUaWNrZXRSZXNwb25zZRJUCg1HZXRDb25maWdGb3JtEiAud2lkZ2V0ZC52MS5HZXRDb25maWdGb3JtUmVxdWVzdBohLndpZGdldGQudjEuR2V0Q29uZmlnRm9ybVJlc3BvbnNlEl0KEEdldENvbmZpZ0Nob2ljZXMSIy53aWRnZXRkLnYxLkdldENvbmZpZ0Nob2ljZXNSZXF1ZXN0GiQud2lkZ2V0ZC52MS5HZXRDb25maWdDaG9pY2VzUmVzcG9uc2USSwoKU2F2ZUNvbmZpZxIdLndpZGdldGQudjEuU2F2ZUNvbmZpZ1JlcXVlc3QaHi53aWRnZXRkLnYxLlNhdmVDb25maWdSZXNwb25zZRJUCg1MaXN0SW5zdGFuY2VzEiAud2lkZ2V0ZC52MS5MaXN0SW5zdGFuY2VzUmVxdWVzdBohLndpZGdldGQudjEuTGlzdEluc3RhbmNlc1Jlc3BvbnNlElcKDlJlbmFtZUluc3RhbmNlEiEud2lkZ2V0ZC52MS5SZW5hbWVJbnN0YW5jZVJlcXVlc3QaIi53aWRnZXRkLnYxLlJlbmFtZUluc3RhbmNlUmVzcG9uc2USVwoORGVsZXRlSW5zdGFuY2USIS53aWRnZXRkLnYxLkRlbGV0ZUluc3RhbmNlUmVxdWVzdBoiLndpZGdldGQudjEuRGVsZXRlSW5zdGFuY2VSZXNwb25zZRJaCg9TZXROZXR3b3JrR3JhbnQSIi53aWRnZXRkLnYxLlNldE5ldHdvcmtHcmFudFJlcXVlc3QaIy53aWRnZXRkLnYxLlNldE5ldHdvcmtHcmFudFJlc3BvbnNlEmYKE0dldEluc3RhbmNlQWN0aXZpdHkSJi53aWRnZXRkLnYxLkdldEluc3RhbmNlQWN0aXZpdHlSZXF1ZXN0Gicud2lkZ2V0ZC52MS5HZXRJbnN0YW5jZUFjdGl2aXR5UmVzcG9uc2USUQoMTGlzdEFjY291bnRzEh8ud2lkZ2V0ZC52MS5MaXN0QWNjb3VudHNSZXF1ZXN0GiAud2lkZ2V0ZC52MS5MaXN0QWNjb3VudHNSZXNwb25zZRJOCgtCZWdpblNpZ25JbhIeLndpZGdldGQudjEuQmVnaW5TaWduSW5SZXF1ZXN0Gh8ud2lkZ2V0ZC52MS5CZWdpblNpZ25JblJlc3BvbnNlEkIKB1NpZ25PdXQSGi53aWRnZXRkLnYxLlNpZ25PdXRSZXF1ZXN0Ghsud2lkZ2V0ZC52MS5TaWduT3V0UmVzcG9uc2USUQoMTGFiZWxBY2NvdW50Eh8ud2lkZ2V0ZC52MS5MYWJlbEFjY291bnRSZXF1ZXN0GiAud2lkZ2V0ZC52MS5MYWJlbEFjY291bnRSZXNwb25zZRJUCg1EZWxldGVBY2NvdW50EiAud2lkZ2V0ZC52MS5EZWxldGVBY2NvdW50UmVxdWVzdBohLndpZGdldGQudjEuRGVsZXRlQWNjb3VudFJlc3BvbnNlEk4KC0JpbmRBY2NvdW50Eh4ud2lkZ2V0ZC52MS5CaW5kQWNjb3VudFJlcXVlc3QaHy53aWRnZXRkLnYxLkJpbmRBY2NvdW50UmVzcG9uc2USYAoRU2V0UHJvdmlkZXJDbGllbnQSJC53aWRnZXRkLnYxLlNldFByb3ZpZGVyQ2xpZW50UmVxdWVzdBolLndpZGdldGQudjEuU2V0UHJvdmlkZXJDbGllbnRSZXNwb25zZUI3WjVnaXRodWIuY29tL2FyZW41NTU1NS93aWRnZXRkL2dlbi93aWRnZXRkL3YxO3dpZGdldGR2MWIGcHJvdG8z", [file_google_protobuf_timestamp, file_widgetd_v1_stream]);
 
 /**
  * @generated from message widgetd.v1.WidgetInfo
@@ -448,6 +448,13 @@ export type InstanceInfo = Message<"widgetd.v1.InstanceInfo"> & {
    * @generated from field: repeated widgetd.v1.Binding bindings = 6;
    */
   bindings: Binding[];
+
+  /**
+   * The cards the instance has on the board now, in board order.
+   *
+   * @generated from field: repeated widgetd.v1.CardRef cards = 7;
+   */
+  cards: CardRef[];
 };
 
 /**
@@ -456,6 +463,35 @@ export type InstanceInfo = Message<"widgetd.v1.InstanceInfo"> & {
  */
 export const InstanceInfoSchema: GenMessage<InstanceInfo> = /*@__PURE__*/
   messageDesc(file_widgetd_v1_admin, 14);
+
+/**
+ * @generated from message widgetd.v1.CardRef
+ */
+export type CardRef = Message<"widgetd.v1.CardRef"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * As in Mounted.short_id.
+   *
+   * @generated from field: string short_id = 2;
+   */
+  shortId: string;
+
+  /**
+   * @generated from field: string title = 3;
+   */
+  title: string;
+};
+
+/**
+ * Describes the message widgetd.v1.CardRef.
+ * Use `create(CardRefSchema)` to create a new message.
+ */
+export const CardRefSchema: GenMessage<CardRef> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_admin, 15);
 
 /**
  * @generated from message widgetd.v1.Binding
@@ -479,7 +515,7 @@ export type Binding = Message<"widgetd.v1.Binding"> & {
  * Use `create(BindingSchema)` to create a new message.
  */
 export const BindingSchema: GenMessage<Binding> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 15);
+  messageDesc(file_widgetd_v1_admin, 16);
 
 /**
  * @generated from message widgetd.v1.RenameInstanceRequest
@@ -501,7 +537,7 @@ export type RenameInstanceRequest = Message<"widgetd.v1.RenameInstanceRequest"> 
  * Use `create(RenameInstanceRequestSchema)` to create a new message.
  */
 export const RenameInstanceRequestSchema: GenMessage<RenameInstanceRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 16);
+  messageDesc(file_widgetd_v1_admin, 17);
 
 /**
  * @generated from message widgetd.v1.RenameInstanceResponse
@@ -514,7 +550,7 @@ export type RenameInstanceResponse = Message<"widgetd.v1.RenameInstanceResponse"
  * Use `create(RenameInstanceResponseSchema)` to create a new message.
  */
 export const RenameInstanceResponseSchema: GenMessage<RenameInstanceResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 17);
+  messageDesc(file_widgetd_v1_admin, 18);
 
 /**
  * @generated from message widgetd.v1.DeleteInstanceRequest
@@ -531,7 +567,7 @@ export type DeleteInstanceRequest = Message<"widgetd.v1.DeleteInstanceRequest"> 
  * Use `create(DeleteInstanceRequestSchema)` to create a new message.
  */
 export const DeleteInstanceRequestSchema: GenMessage<DeleteInstanceRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 18);
+  messageDesc(file_widgetd_v1_admin, 19);
 
 /**
  * @generated from message widgetd.v1.DeleteInstanceResponse
@@ -544,7 +580,7 @@ export type DeleteInstanceResponse = Message<"widgetd.v1.DeleteInstanceResponse"
  * Use `create(DeleteInstanceResponseSchema)` to create a new message.
  */
 export const DeleteInstanceResponseSchema: GenMessage<DeleteInstanceResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 19);
+  messageDesc(file_widgetd_v1_admin, 20);
 
 /**
  * @generated from message widgetd.v1.SetNetworkGrantRequest
@@ -580,7 +616,7 @@ export type SetNetworkGrantRequest = Message<"widgetd.v1.SetNetworkGrantRequest"
  * Use `create(SetNetworkGrantRequestSchema)` to create a new message.
  */
 export const SetNetworkGrantRequestSchema: GenMessage<SetNetworkGrantRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 20);
+  messageDesc(file_widgetd_v1_admin, 21);
 
 /**
  * @generated from message widgetd.v1.SetNetworkGrantResponse
@@ -593,7 +629,7 @@ export type SetNetworkGrantResponse = Message<"widgetd.v1.SetNetworkGrantRespons
  * Use `create(SetNetworkGrantResponseSchema)` to create a new message.
  */
 export const SetNetworkGrantResponseSchema: GenMessage<SetNetworkGrantResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 21);
+  messageDesc(file_widgetd_v1_admin, 22);
 
 /**
  * @generated from message widgetd.v1.GetInstanceActivityRequest
@@ -610,7 +646,7 @@ export type GetInstanceActivityRequest = Message<"widgetd.v1.GetInstanceActivity
  * Use `create(GetInstanceActivityRequestSchema)` to create a new message.
  */
 export const GetInstanceActivityRequestSchema: GenMessage<GetInstanceActivityRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 22);
+  messageDesc(file_widgetd_v1_admin, 23);
 
 /**
  * @generated from message widgetd.v1.Fetch
@@ -667,7 +703,7 @@ export type Fetch = Message<"widgetd.v1.Fetch"> & {
  * Use `create(FetchSchema)` to create a new message.
  */
 export const FetchSchema: GenMessage<Fetch> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 23);
+  messageDesc(file_widgetd_v1_admin, 24);
 
 /**
  * @generated from message widgetd.v1.GetInstanceActivityResponse
@@ -684,7 +720,7 @@ export type GetInstanceActivityResponse = Message<"widgetd.v1.GetInstanceActivit
  * Use `create(GetInstanceActivityResponseSchema)` to create a new message.
  */
 export const GetInstanceActivityResponseSchema: GenMessage<GetInstanceActivityResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 24);
+  messageDesc(file_widgetd_v1_admin, 25);
 
 /**
  * @generated from message widgetd.v1.GetConfigChoicesRequest
@@ -715,7 +751,7 @@ export type GetConfigChoicesRequest = Message<"widgetd.v1.GetConfigChoicesReques
  * Use `create(GetConfigChoicesRequestSchema)` to create a new message.
  */
 export const GetConfigChoicesRequestSchema: GenMessage<GetConfigChoicesRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 25);
+  messageDesc(file_widgetd_v1_admin, 26);
 
 /**
  * @generated from message widgetd.v1.ConfigChoice
@@ -737,7 +773,7 @@ export type ConfigChoice = Message<"widgetd.v1.ConfigChoice"> & {
  * Use `create(ConfigChoiceSchema)` to create a new message.
  */
 export const ConfigChoiceSchema: GenMessage<ConfigChoice> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 26);
+  messageDesc(file_widgetd_v1_admin, 27);
 
 /**
  * @generated from message widgetd.v1.ConfigFieldChoices
@@ -759,7 +795,7 @@ export type ConfigFieldChoices = Message<"widgetd.v1.ConfigFieldChoices"> & {
  * Use `create(ConfigFieldChoicesSchema)` to create a new message.
  */
 export const ConfigFieldChoicesSchema: GenMessage<ConfigFieldChoices> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 27);
+  messageDesc(file_widgetd_v1_admin, 28);
 
 /**
  * @generated from message widgetd.v1.GetConfigChoicesResponse
@@ -776,7 +812,7 @@ export type GetConfigChoicesResponse = Message<"widgetd.v1.GetConfigChoicesRespo
  * Use `create(GetConfigChoicesResponseSchema)` to create a new message.
  */
 export const GetConfigChoicesResponseSchema: GenMessage<GetConfigChoicesResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 28);
+  messageDesc(file_widgetd_v1_admin, 29);
 
 /**
  * @generated from message widgetd.v1.Use
@@ -800,7 +836,7 @@ export type Use = Message<"widgetd.v1.Use"> & {
  * Use `create(UseSchema)` to create a new message.
  */
 export const UseSchema: GenMessage<Use> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 29);
+  messageDesc(file_widgetd_v1_admin, 30);
 
 /**
  * A provider the display's widgets use: its registered client.
@@ -859,7 +895,7 @@ export type ProviderInfo = Message<"widgetd.v1.ProviderInfo"> & {
  * Use `create(ProviderInfoSchema)` to create a new message.
  */
 export const ProviderInfoSchema: GenMessage<ProviderInfo> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 30);
+  messageDesc(file_widgetd_v1_admin, 31);
 
 /**
  * An account the display has with a provider ("Google: Work"). Instances
@@ -934,7 +970,7 @@ export type Account = Message<"widgetd.v1.Account"> & {
  * Use `create(AccountSchema)` to create a new message.
  */
 export const AccountSchema: GenMessage<Account> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 31);
+  messageDesc(file_widgetd_v1_admin, 32);
 
 /**
  * @generated from message widgetd.v1.ListAccountsRequest
@@ -947,7 +983,7 @@ export type ListAccountsRequest = Message<"widgetd.v1.ListAccountsRequest"> & {
  * Use `create(ListAccountsRequestSchema)` to create a new message.
  */
 export const ListAccountsRequestSchema: GenMessage<ListAccountsRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 32);
+  messageDesc(file_widgetd_v1_admin, 33);
 
 /**
  * @generated from message widgetd.v1.ListAccountsResponse
@@ -969,7 +1005,7 @@ export type ListAccountsResponse = Message<"widgetd.v1.ListAccountsResponse"> & 
  * Use `create(ListAccountsResponseSchema)` to create a new message.
  */
 export const ListAccountsResponseSchema: GenMessage<ListAccountsResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 33);
+  messageDesc(file_widgetd_v1_admin, 34);
 
 /**
  * @generated from message widgetd.v1.BeginSignInRequest
@@ -1002,7 +1038,7 @@ export type BeginSignInRequest = Message<"widgetd.v1.BeginSignInRequest"> & {
  * Use `create(BeginSignInRequestSchema)` to create a new message.
  */
 export const BeginSignInRequestSchema: GenMessage<BeginSignInRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 34);
+  messageDesc(file_widgetd_v1_admin, 35);
 
 /**
  * @generated from message widgetd.v1.BeginSignInResponse
@@ -1037,7 +1073,7 @@ export type BeginSignInResponse = Message<"widgetd.v1.BeginSignInResponse"> & {
  * Use `create(BeginSignInResponseSchema)` to create a new message.
  */
 export const BeginSignInResponseSchema: GenMessage<BeginSignInResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 35);
+  messageDesc(file_widgetd_v1_admin, 36);
 
 /**
  * Revokes its grant; the account stays, named and signed out.
@@ -1056,7 +1092,7 @@ export type SignOutRequest = Message<"widgetd.v1.SignOutRequest"> & {
  * Use `create(SignOutRequestSchema)` to create a new message.
  */
 export const SignOutRequestSchema: GenMessage<SignOutRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 36);
+  messageDesc(file_widgetd_v1_admin, 37);
 
 /**
  * @generated from message widgetd.v1.SignOutResponse
@@ -1069,7 +1105,7 @@ export type SignOutResponse = Message<"widgetd.v1.SignOutResponse"> & {
  * Use `create(SignOutResponseSchema)` to create a new message.
  */
 export const SignOutResponseSchema: GenMessage<SignOutResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 37);
+  messageDesc(file_widgetd_v1_admin, 38);
 
 /**
  * @generated from message widgetd.v1.LabelAccountRequest
@@ -1093,7 +1129,7 @@ export type LabelAccountRequest = Message<"widgetd.v1.LabelAccountRequest"> & {
  * Use `create(LabelAccountRequestSchema)` to create a new message.
  */
 export const LabelAccountRequestSchema: GenMessage<LabelAccountRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 38);
+  messageDesc(file_widgetd_v1_admin, 39);
 
 /**
  * @generated from message widgetd.v1.LabelAccountResponse
@@ -1106,7 +1142,7 @@ export type LabelAccountResponse = Message<"widgetd.v1.LabelAccountResponse"> & 
  * Use `create(LabelAccountResponseSchema)` to create a new message.
  */
 export const LabelAccountResponseSchema: GenMessage<LabelAccountResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 39);
+  messageDesc(file_widgetd_v1_admin, 40);
 
 /**
  * Revokes its grant and forgets it; its instances wait for another.
@@ -1125,7 +1161,7 @@ export type DeleteAccountRequest = Message<"widgetd.v1.DeleteAccountRequest"> & 
  * Use `create(DeleteAccountRequestSchema)` to create a new message.
  */
 export const DeleteAccountRequestSchema: GenMessage<DeleteAccountRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 40);
+  messageDesc(file_widgetd_v1_admin, 41);
 
 /**
  * @generated from message widgetd.v1.DeleteAccountResponse
@@ -1138,7 +1174,7 @@ export type DeleteAccountResponse = Message<"widgetd.v1.DeleteAccountResponse"> 
  * Use `create(DeleteAccountResponseSchema)` to create a new message.
  */
 export const DeleteAccountResponseSchema: GenMessage<DeleteAccountResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 41);
+  messageDesc(file_widgetd_v1_admin, 42);
 
 /**
  * @generated from message widgetd.v1.BindAccountRequest
@@ -1167,7 +1203,7 @@ export type BindAccountRequest = Message<"widgetd.v1.BindAccountRequest"> & {
  * Use `create(BindAccountRequestSchema)` to create a new message.
  */
 export const BindAccountRequestSchema: GenMessage<BindAccountRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 42);
+  messageDesc(file_widgetd_v1_admin, 43);
 
 /**
  * @generated from message widgetd.v1.BindAccountResponse
@@ -1180,7 +1216,7 @@ export type BindAccountResponse = Message<"widgetd.v1.BindAccountResponse"> & {
  * Use `create(BindAccountResponseSchema)` to create a new message.
  */
 export const BindAccountResponseSchema: GenMessage<BindAccountResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 43);
+  messageDesc(file_widgetd_v1_admin, 44);
 
 /**
  * @generated from message widgetd.v1.SetProviderClientRequest
@@ -1211,7 +1247,7 @@ export type SetProviderClientRequest = Message<"widgetd.v1.SetProviderClientRequ
  * Use `create(SetProviderClientRequestSchema)` to create a new message.
  */
 export const SetProviderClientRequestSchema: GenMessage<SetProviderClientRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 44);
+  messageDesc(file_widgetd_v1_admin, 45);
 
 /**
  * @generated from message widgetd.v1.SetProviderClientResponse
@@ -1224,7 +1260,7 @@ export type SetProviderClientResponse = Message<"widgetd.v1.SetProviderClientRes
  * Use `create(SetProviderClientResponseSchema)` to create a new message.
  */
 export const SetProviderClientResponseSchema: GenMessage<SetProviderClientResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_admin, 45);
+  messageDesc(file_widgetd_v1_admin, 46);
 
 /**
  * WidgetAdminService manages what runs. Screens (paired devices) may add a

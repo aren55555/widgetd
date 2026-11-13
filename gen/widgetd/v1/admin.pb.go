@@ -859,7 +859,9 @@ type InstanceInfo struct {
 	Status    *InstanceStatus        `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
 	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// One per provider the widget uses: which account it's bound to.
-	Bindings      []*Binding `protobuf:"bytes,6,rep,name=bindings,proto3" json:"bindings,omitempty"`
+	Bindings []*Binding `protobuf:"bytes,6,rep,name=bindings,proto3" json:"bindings,omitempty"`
+	// The cards the instance has on the board now, in board order.
+	Cards         []*CardRef `protobuf:"bytes,7,rep,name=cards,proto3" json:"cards,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -936,6 +938,74 @@ func (x *InstanceInfo) GetBindings() []*Binding {
 	return nil
 }
 
+func (x *InstanceInfo) GetCards() []*CardRef {
+	if x != nil {
+		return x.Cards
+	}
+	return nil
+}
+
+type CardRef struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// As in Mounted.short_id.
+	ShortId       string `protobuf:"bytes,2,opt,name=short_id,json=shortId,proto3" json:"short_id,omitempty"`
+	Title         string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CardRef) Reset() {
+	*x = CardRef{}
+	mi := &file_widgetd_v1_admin_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CardRef) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CardRef) ProtoMessage() {}
+
+func (x *CardRef) ProtoReflect() protoreflect.Message {
+	mi := &file_widgetd_v1_admin_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CardRef.ProtoReflect.Descriptor instead.
+func (*CardRef) Descriptor() ([]byte, []int) {
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CardRef) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *CardRef) GetShortId() string {
+	if x != nil {
+		return x.ShortId
+	}
+	return ""
+}
+
+func (x *CardRef) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
 type Binding struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Provider      string                 `protobuf:"bytes,1,opt,name=provider,proto3" json:"provider,omitempty"`
@@ -946,7 +1016,7 @@ type Binding struct {
 
 func (x *Binding) Reset() {
 	*x = Binding{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[15]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -958,7 +1028,7 @@ func (x *Binding) String() string {
 func (*Binding) ProtoMessage() {}
 
 func (x *Binding) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[15]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -971,7 +1041,7 @@ func (x *Binding) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Binding.ProtoReflect.Descriptor instead.
 func (*Binding) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{15}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Binding) GetProvider() string {
@@ -998,7 +1068,7 @@ type RenameInstanceRequest struct {
 
 func (x *RenameInstanceRequest) Reset() {
 	*x = RenameInstanceRequest{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[16]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1010,7 +1080,7 @@ func (x *RenameInstanceRequest) String() string {
 func (*RenameInstanceRequest) ProtoMessage() {}
 
 func (x *RenameInstanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[16]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1023,7 +1093,7 @@ func (x *RenameInstanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RenameInstanceRequest.ProtoReflect.Descriptor instead.
 func (*RenameInstanceRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{16}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *RenameInstanceRequest) GetInstanceId() string {
@@ -1048,7 +1118,7 @@ type RenameInstanceResponse struct {
 
 func (x *RenameInstanceResponse) Reset() {
 	*x = RenameInstanceResponse{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[17]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1060,7 +1130,7 @@ func (x *RenameInstanceResponse) String() string {
 func (*RenameInstanceResponse) ProtoMessage() {}
 
 func (x *RenameInstanceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[17]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1073,7 +1143,7 @@ func (x *RenameInstanceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RenameInstanceResponse.ProtoReflect.Descriptor instead.
 func (*RenameInstanceResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{17}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{18}
 }
 
 type DeleteInstanceRequest struct {
@@ -1085,7 +1155,7 @@ type DeleteInstanceRequest struct {
 
 func (x *DeleteInstanceRequest) Reset() {
 	*x = DeleteInstanceRequest{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[18]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1097,7 +1167,7 @@ func (x *DeleteInstanceRequest) String() string {
 func (*DeleteInstanceRequest) ProtoMessage() {}
 
 func (x *DeleteInstanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[18]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1110,7 +1180,7 @@ func (x *DeleteInstanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteInstanceRequest.ProtoReflect.Descriptor instead.
 func (*DeleteInstanceRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{18}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *DeleteInstanceRequest) GetInstanceId() string {
@@ -1128,7 +1198,7 @@ type DeleteInstanceResponse struct {
 
 func (x *DeleteInstanceResponse) Reset() {
 	*x = DeleteInstanceResponse{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[19]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1140,7 +1210,7 @@ func (x *DeleteInstanceResponse) String() string {
 func (*DeleteInstanceResponse) ProtoMessage() {}
 
 func (x *DeleteInstanceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[19]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1153,7 +1223,7 @@ func (x *DeleteInstanceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteInstanceResponse.ProtoReflect.Descriptor instead.
 func (*DeleteInstanceResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{19}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{20}
 }
 
 type SetNetworkGrantRequest struct {
@@ -1170,7 +1240,7 @@ type SetNetworkGrantRequest struct {
 
 func (x *SetNetworkGrantRequest) Reset() {
 	*x = SetNetworkGrantRequest{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[20]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1182,7 +1252,7 @@ func (x *SetNetworkGrantRequest) String() string {
 func (*SetNetworkGrantRequest) ProtoMessage() {}
 
 func (x *SetNetworkGrantRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[20]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1195,7 +1265,7 @@ func (x *SetNetworkGrantRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetNetworkGrantRequest.ProtoReflect.Descriptor instead.
 func (*SetNetworkGrantRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{20}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *SetNetworkGrantRequest) GetWidget() string {
@@ -1234,7 +1304,7 @@ type SetNetworkGrantResponse struct {
 
 func (x *SetNetworkGrantResponse) Reset() {
 	*x = SetNetworkGrantResponse{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[21]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1246,7 +1316,7 @@ func (x *SetNetworkGrantResponse) String() string {
 func (*SetNetworkGrantResponse) ProtoMessage() {}
 
 func (x *SetNetworkGrantResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[21]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1259,7 +1329,7 @@ func (x *SetNetworkGrantResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetNetworkGrantResponse.ProtoReflect.Descriptor instead.
 func (*SetNetworkGrantResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{21}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{22}
 }
 
 type GetInstanceActivityRequest struct {
@@ -1271,7 +1341,7 @@ type GetInstanceActivityRequest struct {
 
 func (x *GetInstanceActivityRequest) Reset() {
 	*x = GetInstanceActivityRequest{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[22]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1283,7 +1353,7 @@ func (x *GetInstanceActivityRequest) String() string {
 func (*GetInstanceActivityRequest) ProtoMessage() {}
 
 func (x *GetInstanceActivityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[22]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1296,7 +1366,7 @@ func (x *GetInstanceActivityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetInstanceActivityRequest.ProtoReflect.Descriptor instead.
 func (*GetInstanceActivityRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{22}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetInstanceActivityRequest) GetInstanceId() string {
@@ -1323,7 +1393,7 @@ type Fetch struct {
 
 func (x *Fetch) Reset() {
 	*x = Fetch{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[23]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1335,7 +1405,7 @@ func (x *Fetch) String() string {
 func (*Fetch) ProtoMessage() {}
 
 func (x *Fetch) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[23]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1348,7 +1418,7 @@ func (x *Fetch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Fetch.ProtoReflect.Descriptor instead.
 func (*Fetch) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{23}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *Fetch) GetAt() *timestamppb.Timestamp {
@@ -1423,7 +1493,7 @@ type GetInstanceActivityResponse struct {
 
 func (x *GetInstanceActivityResponse) Reset() {
 	*x = GetInstanceActivityResponse{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[24]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1435,7 +1505,7 @@ func (x *GetInstanceActivityResponse) String() string {
 func (*GetInstanceActivityResponse) ProtoMessage() {}
 
 func (x *GetInstanceActivityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[24]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1448,7 +1518,7 @@ func (x *GetInstanceActivityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetInstanceActivityResponse.ProtoReflect.Descriptor instead.
 func (*GetInstanceActivityResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{24}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetInstanceActivityResponse) GetFetches() []*Fetch {
@@ -1471,7 +1541,7 @@ type GetConfigChoicesRequest struct {
 
 func (x *GetConfigChoicesRequest) Reset() {
 	*x = GetConfigChoicesRequest{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[25]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1483,7 +1553,7 @@ func (x *GetConfigChoicesRequest) String() string {
 func (*GetConfigChoicesRequest) ProtoMessage() {}
 
 func (x *GetConfigChoicesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[25]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1496,7 +1566,7 @@ func (x *GetConfigChoicesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetConfigChoicesRequest.ProtoReflect.Descriptor instead.
 func (*GetConfigChoicesRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{25}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetConfigChoicesRequest) GetTicket() string {
@@ -1530,7 +1600,7 @@ type ConfigChoice struct {
 
 func (x *ConfigChoice) Reset() {
 	*x = ConfigChoice{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[26]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1542,7 +1612,7 @@ func (x *ConfigChoice) String() string {
 func (*ConfigChoice) ProtoMessage() {}
 
 func (x *ConfigChoice) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[26]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1555,7 +1625,7 @@ func (x *ConfigChoice) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigChoice.ProtoReflect.Descriptor instead.
 func (*ConfigChoice) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{26}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ConfigChoice) GetValue() string {
@@ -1582,7 +1652,7 @@ type ConfigFieldChoices struct {
 
 func (x *ConfigFieldChoices) Reset() {
 	*x = ConfigFieldChoices{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[27]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1594,7 +1664,7 @@ func (x *ConfigFieldChoices) String() string {
 func (*ConfigFieldChoices) ProtoMessage() {}
 
 func (x *ConfigFieldChoices) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[27]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1607,7 +1677,7 @@ func (x *ConfigFieldChoices) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigFieldChoices.ProtoReflect.Descriptor instead.
 func (*ConfigFieldChoices) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{27}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ConfigFieldChoices) GetField() string {
@@ -1633,7 +1703,7 @@ type GetConfigChoicesResponse struct {
 
 func (x *GetConfigChoicesResponse) Reset() {
 	*x = GetConfigChoicesResponse{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[28]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1645,7 +1715,7 @@ func (x *GetConfigChoicesResponse) String() string {
 func (*GetConfigChoicesResponse) ProtoMessage() {}
 
 func (x *GetConfigChoicesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[28]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1658,7 +1728,7 @@ func (x *GetConfigChoicesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetConfigChoicesResponse.ProtoReflect.Descriptor instead.
 func (*GetConfigChoicesResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{28}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *GetConfigChoicesResponse) GetFields() []*ConfigFieldChoices {
@@ -1678,7 +1748,7 @@ type Use struct {
 
 func (x *Use) Reset() {
 	*x = Use{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[29]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1690,7 +1760,7 @@ func (x *Use) String() string {
 func (*Use) ProtoMessage() {}
 
 func (x *Use) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[29]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1703,7 +1773,7 @@ func (x *Use) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Use.ProtoReflect.Descriptor instead.
 func (*Use) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{29}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *Use) GetProvider() string {
@@ -1739,7 +1809,7 @@ type ProviderInfo struct {
 
 func (x *ProviderInfo) Reset() {
 	*x = ProviderInfo{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[30]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1751,7 +1821,7 @@ func (x *ProviderInfo) String() string {
 func (*ProviderInfo) ProtoMessage() {}
 
 func (x *ProviderInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[30]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1764,7 +1834,7 @@ func (x *ProviderInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProviderInfo.ProtoReflect.Descriptor instead.
 func (*ProviderInfo) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{30}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ProviderInfo) GetName() string {
@@ -1842,7 +1912,7 @@ type Account struct {
 
 func (x *Account) Reset() {
 	*x = Account{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[31]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1854,7 +1924,7 @@ func (x *Account) String() string {
 func (*Account) ProtoMessage() {}
 
 func (x *Account) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[31]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1867,7 +1937,7 @@ func (x *Account) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Account.ProtoReflect.Descriptor instead.
 func (*Account) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{31}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *Account) GetId() string {
@@ -1948,7 +2018,7 @@ type ListAccountsRequest struct {
 
 func (x *ListAccountsRequest) Reset() {
 	*x = ListAccountsRequest{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[32]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1960,7 +2030,7 @@ func (x *ListAccountsRequest) String() string {
 func (*ListAccountsRequest) ProtoMessage() {}
 
 func (x *ListAccountsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[32]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1973,7 +2043,7 @@ func (x *ListAccountsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAccountsRequest.ProtoReflect.Descriptor instead.
 func (*ListAccountsRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{32}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{33}
 }
 
 type ListAccountsResponse struct {
@@ -1986,7 +2056,7 @@ type ListAccountsResponse struct {
 
 func (x *ListAccountsResponse) Reset() {
 	*x = ListAccountsResponse{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[33]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1998,7 +2068,7 @@ func (x *ListAccountsResponse) String() string {
 func (*ListAccountsResponse) ProtoMessage() {}
 
 func (x *ListAccountsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[33]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2011,7 +2081,7 @@ func (x *ListAccountsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAccountsResponse.ProtoReflect.Descriptor instead.
 func (*ListAccountsResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{33}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ListAccountsResponse) GetProviders() []*ProviderInfo {
@@ -2043,7 +2113,7 @@ type BeginSignInRequest struct {
 
 func (x *BeginSignInRequest) Reset() {
 	*x = BeginSignInRequest{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[34]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2055,7 +2125,7 @@ func (x *BeginSignInRequest) String() string {
 func (*BeginSignInRequest) ProtoMessage() {}
 
 func (x *BeginSignInRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[34]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2068,7 +2138,7 @@ func (x *BeginSignInRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeginSignInRequest.ProtoReflect.Descriptor instead.
 func (*BeginSignInRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{34}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *BeginSignInRequest) GetProvider() string {
@@ -2106,7 +2176,7 @@ type BeginSignInResponse struct {
 
 func (x *BeginSignInResponse) Reset() {
 	*x = BeginSignInResponse{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[35]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2118,7 +2188,7 @@ func (x *BeginSignInResponse) String() string {
 func (*BeginSignInResponse) ProtoMessage() {}
 
 func (x *BeginSignInResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[35]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2131,7 +2201,7 @@ func (x *BeginSignInResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeginSignInResponse.ProtoReflect.Descriptor instead.
 func (*BeginSignInResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{35}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *BeginSignInResponse) GetUrl() string {
@@ -2172,7 +2242,7 @@ type SignOutRequest struct {
 
 func (x *SignOutRequest) Reset() {
 	*x = SignOutRequest{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[36]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2184,7 +2254,7 @@ func (x *SignOutRequest) String() string {
 func (*SignOutRequest) ProtoMessage() {}
 
 func (x *SignOutRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[36]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2197,7 +2267,7 @@ func (x *SignOutRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignOutRequest.ProtoReflect.Descriptor instead.
 func (*SignOutRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{36}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *SignOutRequest) GetAccountId() string {
@@ -2215,7 +2285,7 @@ type SignOutResponse struct {
 
 func (x *SignOutResponse) Reset() {
 	*x = SignOutResponse{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[37]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2227,7 +2297,7 @@ func (x *SignOutResponse) String() string {
 func (*SignOutResponse) ProtoMessage() {}
 
 func (x *SignOutResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[37]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2240,7 +2310,7 @@ func (x *SignOutResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignOutResponse.ProtoReflect.Descriptor instead.
 func (*SignOutResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{37}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{38}
 }
 
 type LabelAccountRequest struct {
@@ -2253,7 +2323,7 @@ type LabelAccountRequest struct {
 
 func (x *LabelAccountRequest) Reset() {
 	*x = LabelAccountRequest{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[38]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2265,7 +2335,7 @@ func (x *LabelAccountRequest) String() string {
 func (*LabelAccountRequest) ProtoMessage() {}
 
 func (x *LabelAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[38]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2278,7 +2348,7 @@ func (x *LabelAccountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LabelAccountRequest.ProtoReflect.Descriptor instead.
 func (*LabelAccountRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{38}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *LabelAccountRequest) GetAccountId() string {
@@ -2303,7 +2373,7 @@ type LabelAccountResponse struct {
 
 func (x *LabelAccountResponse) Reset() {
 	*x = LabelAccountResponse{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[39]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2315,7 +2385,7 @@ func (x *LabelAccountResponse) String() string {
 func (*LabelAccountResponse) ProtoMessage() {}
 
 func (x *LabelAccountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[39]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2328,7 +2398,7 @@ func (x *LabelAccountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LabelAccountResponse.ProtoReflect.Descriptor instead.
 func (*LabelAccountResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{39}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{40}
 }
 
 // Revokes its grant and forgets it; its instances wait for another.
@@ -2341,7 +2411,7 @@ type DeleteAccountRequest struct {
 
 func (x *DeleteAccountRequest) Reset() {
 	*x = DeleteAccountRequest{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[40]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2353,7 +2423,7 @@ func (x *DeleteAccountRequest) String() string {
 func (*DeleteAccountRequest) ProtoMessage() {}
 
 func (x *DeleteAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[40]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2366,7 +2436,7 @@ func (x *DeleteAccountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteAccountRequest.ProtoReflect.Descriptor instead.
 func (*DeleteAccountRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{40}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *DeleteAccountRequest) GetAccountId() string {
@@ -2384,7 +2454,7 @@ type DeleteAccountResponse struct {
 
 func (x *DeleteAccountResponse) Reset() {
 	*x = DeleteAccountResponse{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[41]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2396,7 +2466,7 @@ func (x *DeleteAccountResponse) String() string {
 func (*DeleteAccountResponse) ProtoMessage() {}
 
 func (x *DeleteAccountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[41]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2409,7 +2479,7 @@ func (x *DeleteAccountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteAccountResponse.ProtoReflect.Descriptor instead.
 func (*DeleteAccountResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{41}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{42}
 }
 
 type BindAccountRequest struct {
@@ -2424,7 +2494,7 @@ type BindAccountRequest struct {
 
 func (x *BindAccountRequest) Reset() {
 	*x = BindAccountRequest{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[42]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2436,7 +2506,7 @@ func (x *BindAccountRequest) String() string {
 func (*BindAccountRequest) ProtoMessage() {}
 
 func (x *BindAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[42]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2449,7 +2519,7 @@ func (x *BindAccountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BindAccountRequest.ProtoReflect.Descriptor instead.
 func (*BindAccountRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{42}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *BindAccountRequest) GetInstanceId() string {
@@ -2481,7 +2551,7 @@ type BindAccountResponse struct {
 
 func (x *BindAccountResponse) Reset() {
 	*x = BindAccountResponse{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[43]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2493,7 +2563,7 @@ func (x *BindAccountResponse) String() string {
 func (*BindAccountResponse) ProtoMessage() {}
 
 func (x *BindAccountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[43]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2506,7 +2576,7 @@ func (x *BindAccountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BindAccountResponse.ProtoReflect.Descriptor instead.
 func (*BindAccountResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{43}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{44}
 }
 
 type SetProviderClientRequest struct {
@@ -2522,7 +2592,7 @@ type SetProviderClientRequest struct {
 
 func (x *SetProviderClientRequest) Reset() {
 	*x = SetProviderClientRequest{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[44]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2534,7 +2604,7 @@ func (x *SetProviderClientRequest) String() string {
 func (*SetProviderClientRequest) ProtoMessage() {}
 
 func (x *SetProviderClientRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[44]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2547,7 +2617,7 @@ func (x *SetProviderClientRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetProviderClientRequest.ProtoReflect.Descriptor instead.
 func (*SetProviderClientRequest) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{44}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *SetProviderClientRequest) GetProvider() string {
@@ -2579,7 +2649,7 @@ type SetProviderClientResponse struct {
 
 func (x *SetProviderClientResponse) Reset() {
 	*x = SetProviderClientResponse{}
-	mi := &file_widgetd_v1_admin_proto_msgTypes[45]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2591,7 +2661,7 @@ func (x *SetProviderClientResponse) String() string {
 func (*SetProviderClientResponse) ProtoMessage() {}
 
 func (x *SetProviderClientResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_widgetd_v1_admin_proto_msgTypes[45]
+	mi := &file_widgetd_v1_admin_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2604,7 +2674,7 @@ func (x *SetProviderClientResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetProviderClientResponse.ProtoReflect.Descriptor instead.
 func (*SetProviderClientResponse) Descriptor() ([]byte, []int) {
-	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{45}
+	return file_widgetd_v1_admin_proto_rawDescGZIP(), []int{46}
 }
 
 var File_widgetd_v1_admin_proto protoreflect.FileDescriptor
@@ -2677,7 +2747,7 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"violations\"\x16\n" +
 	"\x14ListInstancesRequest\"O\n" +
 	"\x15ListInstancesResponse\x126\n" +
-	"\tinstances\x18\x01 \x03(\v2\x18.widgetd.v1.InstanceInfoR\tinstances\"\xec\x01\n" +
+	"\tinstances\x18\x01 \x03(\v2\x18.widgetd.v1.InstanceInfoR\tinstances\"\x97\x02\n" +
 	"\fInstanceInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06widget\x18\x02 \x01(\tR\x06widget\x12\x14\n" +
@@ -2685,7 +2755,12 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\x06status\x18\x04 \x01(\v2\x1a.widgetd.v1.InstanceStatusR\x06status\x129\n" +
 	"\n" +
 	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12/\n" +
-	"\bbindings\x18\x06 \x03(\v2\x13.widgetd.v1.BindingR\bbindings\"D\n" +
+	"\bbindings\x18\x06 \x03(\v2\x13.widgetd.v1.BindingR\bbindings\x12)\n" +
+	"\x05cards\x18\a \x03(\v2\x13.widgetd.v1.CardRefR\x05cards\"J\n" +
+	"\aCardRef\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
+	"\bshort_id\x18\x02 \x01(\tR\ashortId\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\"D\n" +
 	"\aBinding\x12\x1a\n" +
 	"\bprovider\x18\x01 \x01(\tR\bprovider\x12\x1d\n" +
 	"\n" +
@@ -2835,7 +2910,7 @@ func file_widgetd_v1_admin_proto_rawDescGZIP() []byte {
 	return file_widgetd_v1_admin_proto_rawDescData
 }
 
-var file_widgetd_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
+var file_widgetd_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 47)
 var file_widgetd_v1_admin_proto_goTypes = []any{
 	(*WidgetInfo)(nil),                  // 0: widgetd.v1.WidgetInfo
 	(*ListWidgetsRequest)(nil),          // 1: widgetd.v1.ListWidgetsRequest
@@ -2852,101 +2927,103 @@ var file_widgetd_v1_admin_proto_goTypes = []any{
 	(*ListInstancesRequest)(nil),        // 12: widgetd.v1.ListInstancesRequest
 	(*ListInstancesResponse)(nil),       // 13: widgetd.v1.ListInstancesResponse
 	(*InstanceInfo)(nil),                // 14: widgetd.v1.InstanceInfo
-	(*Binding)(nil),                     // 15: widgetd.v1.Binding
-	(*RenameInstanceRequest)(nil),       // 16: widgetd.v1.RenameInstanceRequest
-	(*RenameInstanceResponse)(nil),      // 17: widgetd.v1.RenameInstanceResponse
-	(*DeleteInstanceRequest)(nil),       // 18: widgetd.v1.DeleteInstanceRequest
-	(*DeleteInstanceResponse)(nil),      // 19: widgetd.v1.DeleteInstanceResponse
-	(*SetNetworkGrantRequest)(nil),      // 20: widgetd.v1.SetNetworkGrantRequest
-	(*SetNetworkGrantResponse)(nil),     // 21: widgetd.v1.SetNetworkGrantResponse
-	(*GetInstanceActivityRequest)(nil),  // 22: widgetd.v1.GetInstanceActivityRequest
-	(*Fetch)(nil),                       // 23: widgetd.v1.Fetch
-	(*GetInstanceActivityResponse)(nil), // 24: widgetd.v1.GetInstanceActivityResponse
-	(*GetConfigChoicesRequest)(nil),     // 25: widgetd.v1.GetConfigChoicesRequest
-	(*ConfigChoice)(nil),                // 26: widgetd.v1.ConfigChoice
-	(*ConfigFieldChoices)(nil),          // 27: widgetd.v1.ConfigFieldChoices
-	(*GetConfigChoicesResponse)(nil),    // 28: widgetd.v1.GetConfigChoicesResponse
-	(*Use)(nil),                         // 29: widgetd.v1.Use
-	(*ProviderInfo)(nil),                // 30: widgetd.v1.ProviderInfo
-	(*Account)(nil),                     // 31: widgetd.v1.Account
-	(*ListAccountsRequest)(nil),         // 32: widgetd.v1.ListAccountsRequest
-	(*ListAccountsResponse)(nil),        // 33: widgetd.v1.ListAccountsResponse
-	(*BeginSignInRequest)(nil),          // 34: widgetd.v1.BeginSignInRequest
-	(*BeginSignInResponse)(nil),         // 35: widgetd.v1.BeginSignInResponse
-	(*SignOutRequest)(nil),              // 36: widgetd.v1.SignOutRequest
-	(*SignOutResponse)(nil),             // 37: widgetd.v1.SignOutResponse
-	(*LabelAccountRequest)(nil),         // 38: widgetd.v1.LabelAccountRequest
-	(*LabelAccountResponse)(nil),        // 39: widgetd.v1.LabelAccountResponse
-	(*DeleteAccountRequest)(nil),        // 40: widgetd.v1.DeleteAccountRequest
-	(*DeleteAccountResponse)(nil),       // 41: widgetd.v1.DeleteAccountResponse
-	(*BindAccountRequest)(nil),          // 42: widgetd.v1.BindAccountRequest
-	(*BindAccountResponse)(nil),         // 43: widgetd.v1.BindAccountResponse
-	(*SetProviderClientRequest)(nil),    // 44: widgetd.v1.SetProviderClientRequest
-	(*SetProviderClientResponse)(nil),   // 45: widgetd.v1.SetProviderClientResponse
-	(*Icon)(nil),                        // 46: widgetd.v1.Icon
-	(*timestamppb.Timestamp)(nil),       // 47: google.protobuf.Timestamp
-	(*InstanceStatus)(nil),              // 48: widgetd.v1.InstanceStatus
+	(*CardRef)(nil),                     // 15: widgetd.v1.CardRef
+	(*Binding)(nil),                     // 16: widgetd.v1.Binding
+	(*RenameInstanceRequest)(nil),       // 17: widgetd.v1.RenameInstanceRequest
+	(*RenameInstanceResponse)(nil),      // 18: widgetd.v1.RenameInstanceResponse
+	(*DeleteInstanceRequest)(nil),       // 19: widgetd.v1.DeleteInstanceRequest
+	(*DeleteInstanceResponse)(nil),      // 20: widgetd.v1.DeleteInstanceResponse
+	(*SetNetworkGrantRequest)(nil),      // 21: widgetd.v1.SetNetworkGrantRequest
+	(*SetNetworkGrantResponse)(nil),     // 22: widgetd.v1.SetNetworkGrantResponse
+	(*GetInstanceActivityRequest)(nil),  // 23: widgetd.v1.GetInstanceActivityRequest
+	(*Fetch)(nil),                       // 24: widgetd.v1.Fetch
+	(*GetInstanceActivityResponse)(nil), // 25: widgetd.v1.GetInstanceActivityResponse
+	(*GetConfigChoicesRequest)(nil),     // 26: widgetd.v1.GetConfigChoicesRequest
+	(*ConfigChoice)(nil),                // 27: widgetd.v1.ConfigChoice
+	(*ConfigFieldChoices)(nil),          // 28: widgetd.v1.ConfigFieldChoices
+	(*GetConfigChoicesResponse)(nil),    // 29: widgetd.v1.GetConfigChoicesResponse
+	(*Use)(nil),                         // 30: widgetd.v1.Use
+	(*ProviderInfo)(nil),                // 31: widgetd.v1.ProviderInfo
+	(*Account)(nil),                     // 32: widgetd.v1.Account
+	(*ListAccountsRequest)(nil),         // 33: widgetd.v1.ListAccountsRequest
+	(*ListAccountsResponse)(nil),        // 34: widgetd.v1.ListAccountsResponse
+	(*BeginSignInRequest)(nil),          // 35: widgetd.v1.BeginSignInRequest
+	(*BeginSignInResponse)(nil),         // 36: widgetd.v1.BeginSignInResponse
+	(*SignOutRequest)(nil),              // 37: widgetd.v1.SignOutRequest
+	(*SignOutResponse)(nil),             // 38: widgetd.v1.SignOutResponse
+	(*LabelAccountRequest)(nil),         // 39: widgetd.v1.LabelAccountRequest
+	(*LabelAccountResponse)(nil),        // 40: widgetd.v1.LabelAccountResponse
+	(*DeleteAccountRequest)(nil),        // 41: widgetd.v1.DeleteAccountRequest
+	(*DeleteAccountResponse)(nil),       // 42: widgetd.v1.DeleteAccountResponse
+	(*BindAccountRequest)(nil),          // 43: widgetd.v1.BindAccountRequest
+	(*BindAccountResponse)(nil),         // 44: widgetd.v1.BindAccountResponse
+	(*SetProviderClientRequest)(nil),    // 45: widgetd.v1.SetProviderClientRequest
+	(*SetProviderClientResponse)(nil),   // 46: widgetd.v1.SetProviderClientResponse
+	(*Icon)(nil),                        // 47: widgetd.v1.Icon
+	(*timestamppb.Timestamp)(nil),       // 48: google.protobuf.Timestamp
+	(*InstanceStatus)(nil),              // 49: widgetd.v1.InstanceStatus
 }
 var file_widgetd_v1_admin_proto_depIdxs = []int32{
-	29, // 0: widgetd.v1.WidgetInfo.uses:type_name -> widgetd.v1.Use
-	46, // 1: widgetd.v1.WidgetInfo.icon:type_name -> widgetd.v1.Icon
+	30, // 0: widgetd.v1.WidgetInfo.uses:type_name -> widgetd.v1.Use
+	47, // 1: widgetd.v1.WidgetInfo.icon:type_name -> widgetd.v1.Icon
 	0,  // 2: widgetd.v1.ListWidgetsResponse.widgets:type_name -> widgetd.v1.WidgetInfo
-	47, // 3: widgetd.v1.RequestConfigTicketResponse.expires_at:type_name -> google.protobuf.Timestamp
+	48, // 3: widgetd.v1.RequestConfigTicketResponse.expires_at:type_name -> google.protobuf.Timestamp
 	0,  // 4: widgetd.v1.GetConfigFormResponse.widget:type_name -> widgetd.v1.WidgetInfo
-	48, // 5: widgetd.v1.GetConfigFormResponse.status:type_name -> widgetd.v1.InstanceStatus
+	49, // 5: widgetd.v1.GetConfigFormResponse.status:type_name -> widgetd.v1.InstanceStatus
 	10, // 6: widgetd.v1.SaveConfigResponse.violations:type_name -> widgetd.v1.FieldViolation
 	14, // 7: widgetd.v1.ListInstancesResponse.instances:type_name -> widgetd.v1.InstanceInfo
-	48, // 8: widgetd.v1.InstanceInfo.status:type_name -> widgetd.v1.InstanceStatus
-	47, // 9: widgetd.v1.InstanceInfo.created_at:type_name -> google.protobuf.Timestamp
-	15, // 10: widgetd.v1.InstanceInfo.bindings:type_name -> widgetd.v1.Binding
-	47, // 11: widgetd.v1.Fetch.at:type_name -> google.protobuf.Timestamp
-	23, // 12: widgetd.v1.GetInstanceActivityResponse.fetches:type_name -> widgetd.v1.Fetch
-	26, // 13: widgetd.v1.ConfigFieldChoices.choices:type_name -> widgetd.v1.ConfigChoice
-	27, // 14: widgetd.v1.GetConfigChoicesResponse.fields:type_name -> widgetd.v1.ConfigFieldChoices
-	30, // 15: widgetd.v1.ListAccountsResponse.providers:type_name -> widgetd.v1.ProviderInfo
-	31, // 16: widgetd.v1.ListAccountsResponse.accounts:type_name -> widgetd.v1.Account
-	47, // 17: widgetd.v1.BeginSignInResponse.expires_at:type_name -> google.protobuf.Timestamp
-	1,  // 18: widgetd.v1.WidgetAdminService.ListWidgets:input_type -> widgetd.v1.ListWidgetsRequest
-	3,  // 19: widgetd.v1.WidgetAdminService.AddInstance:input_type -> widgetd.v1.AddInstanceRequest
-	5,  // 20: widgetd.v1.WidgetAdminService.RequestConfigTicket:input_type -> widgetd.v1.RequestConfigTicketRequest
-	7,  // 21: widgetd.v1.WidgetAdminService.GetConfigForm:input_type -> widgetd.v1.GetConfigFormRequest
-	25, // 22: widgetd.v1.WidgetAdminService.GetConfigChoices:input_type -> widgetd.v1.GetConfigChoicesRequest
-	9,  // 23: widgetd.v1.WidgetAdminService.SaveConfig:input_type -> widgetd.v1.SaveConfigRequest
-	12, // 24: widgetd.v1.WidgetAdminService.ListInstances:input_type -> widgetd.v1.ListInstancesRequest
-	16, // 25: widgetd.v1.WidgetAdminService.RenameInstance:input_type -> widgetd.v1.RenameInstanceRequest
-	18, // 26: widgetd.v1.WidgetAdminService.DeleteInstance:input_type -> widgetd.v1.DeleteInstanceRequest
-	20, // 27: widgetd.v1.WidgetAdminService.SetNetworkGrant:input_type -> widgetd.v1.SetNetworkGrantRequest
-	22, // 28: widgetd.v1.WidgetAdminService.GetInstanceActivity:input_type -> widgetd.v1.GetInstanceActivityRequest
-	32, // 29: widgetd.v1.WidgetAdminService.ListAccounts:input_type -> widgetd.v1.ListAccountsRequest
-	34, // 30: widgetd.v1.WidgetAdminService.BeginSignIn:input_type -> widgetd.v1.BeginSignInRequest
-	36, // 31: widgetd.v1.WidgetAdminService.SignOut:input_type -> widgetd.v1.SignOutRequest
-	38, // 32: widgetd.v1.WidgetAdminService.LabelAccount:input_type -> widgetd.v1.LabelAccountRequest
-	40, // 33: widgetd.v1.WidgetAdminService.DeleteAccount:input_type -> widgetd.v1.DeleteAccountRequest
-	42, // 34: widgetd.v1.WidgetAdminService.BindAccount:input_type -> widgetd.v1.BindAccountRequest
-	44, // 35: widgetd.v1.WidgetAdminService.SetProviderClient:input_type -> widgetd.v1.SetProviderClientRequest
-	2,  // 36: widgetd.v1.WidgetAdminService.ListWidgets:output_type -> widgetd.v1.ListWidgetsResponse
-	4,  // 37: widgetd.v1.WidgetAdminService.AddInstance:output_type -> widgetd.v1.AddInstanceResponse
-	6,  // 38: widgetd.v1.WidgetAdminService.RequestConfigTicket:output_type -> widgetd.v1.RequestConfigTicketResponse
-	8,  // 39: widgetd.v1.WidgetAdminService.GetConfigForm:output_type -> widgetd.v1.GetConfigFormResponse
-	28, // 40: widgetd.v1.WidgetAdminService.GetConfigChoices:output_type -> widgetd.v1.GetConfigChoicesResponse
-	11, // 41: widgetd.v1.WidgetAdminService.SaveConfig:output_type -> widgetd.v1.SaveConfigResponse
-	13, // 42: widgetd.v1.WidgetAdminService.ListInstances:output_type -> widgetd.v1.ListInstancesResponse
-	17, // 43: widgetd.v1.WidgetAdminService.RenameInstance:output_type -> widgetd.v1.RenameInstanceResponse
-	19, // 44: widgetd.v1.WidgetAdminService.DeleteInstance:output_type -> widgetd.v1.DeleteInstanceResponse
-	21, // 45: widgetd.v1.WidgetAdminService.SetNetworkGrant:output_type -> widgetd.v1.SetNetworkGrantResponse
-	24, // 46: widgetd.v1.WidgetAdminService.GetInstanceActivity:output_type -> widgetd.v1.GetInstanceActivityResponse
-	33, // 47: widgetd.v1.WidgetAdminService.ListAccounts:output_type -> widgetd.v1.ListAccountsResponse
-	35, // 48: widgetd.v1.WidgetAdminService.BeginSignIn:output_type -> widgetd.v1.BeginSignInResponse
-	37, // 49: widgetd.v1.WidgetAdminService.SignOut:output_type -> widgetd.v1.SignOutResponse
-	39, // 50: widgetd.v1.WidgetAdminService.LabelAccount:output_type -> widgetd.v1.LabelAccountResponse
-	41, // 51: widgetd.v1.WidgetAdminService.DeleteAccount:output_type -> widgetd.v1.DeleteAccountResponse
-	43, // 52: widgetd.v1.WidgetAdminService.BindAccount:output_type -> widgetd.v1.BindAccountResponse
-	45, // 53: widgetd.v1.WidgetAdminService.SetProviderClient:output_type -> widgetd.v1.SetProviderClientResponse
-	36, // [36:54] is the sub-list for method output_type
-	18, // [18:36] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	49, // 8: widgetd.v1.InstanceInfo.status:type_name -> widgetd.v1.InstanceStatus
+	48, // 9: widgetd.v1.InstanceInfo.created_at:type_name -> google.protobuf.Timestamp
+	16, // 10: widgetd.v1.InstanceInfo.bindings:type_name -> widgetd.v1.Binding
+	15, // 11: widgetd.v1.InstanceInfo.cards:type_name -> widgetd.v1.CardRef
+	48, // 12: widgetd.v1.Fetch.at:type_name -> google.protobuf.Timestamp
+	24, // 13: widgetd.v1.GetInstanceActivityResponse.fetches:type_name -> widgetd.v1.Fetch
+	27, // 14: widgetd.v1.ConfigFieldChoices.choices:type_name -> widgetd.v1.ConfigChoice
+	28, // 15: widgetd.v1.GetConfigChoicesResponse.fields:type_name -> widgetd.v1.ConfigFieldChoices
+	31, // 16: widgetd.v1.ListAccountsResponse.providers:type_name -> widgetd.v1.ProviderInfo
+	32, // 17: widgetd.v1.ListAccountsResponse.accounts:type_name -> widgetd.v1.Account
+	48, // 18: widgetd.v1.BeginSignInResponse.expires_at:type_name -> google.protobuf.Timestamp
+	1,  // 19: widgetd.v1.WidgetAdminService.ListWidgets:input_type -> widgetd.v1.ListWidgetsRequest
+	3,  // 20: widgetd.v1.WidgetAdminService.AddInstance:input_type -> widgetd.v1.AddInstanceRequest
+	5,  // 21: widgetd.v1.WidgetAdminService.RequestConfigTicket:input_type -> widgetd.v1.RequestConfigTicketRequest
+	7,  // 22: widgetd.v1.WidgetAdminService.GetConfigForm:input_type -> widgetd.v1.GetConfigFormRequest
+	26, // 23: widgetd.v1.WidgetAdminService.GetConfigChoices:input_type -> widgetd.v1.GetConfigChoicesRequest
+	9,  // 24: widgetd.v1.WidgetAdminService.SaveConfig:input_type -> widgetd.v1.SaveConfigRequest
+	12, // 25: widgetd.v1.WidgetAdminService.ListInstances:input_type -> widgetd.v1.ListInstancesRequest
+	17, // 26: widgetd.v1.WidgetAdminService.RenameInstance:input_type -> widgetd.v1.RenameInstanceRequest
+	19, // 27: widgetd.v1.WidgetAdminService.DeleteInstance:input_type -> widgetd.v1.DeleteInstanceRequest
+	21, // 28: widgetd.v1.WidgetAdminService.SetNetworkGrant:input_type -> widgetd.v1.SetNetworkGrantRequest
+	23, // 29: widgetd.v1.WidgetAdminService.GetInstanceActivity:input_type -> widgetd.v1.GetInstanceActivityRequest
+	33, // 30: widgetd.v1.WidgetAdminService.ListAccounts:input_type -> widgetd.v1.ListAccountsRequest
+	35, // 31: widgetd.v1.WidgetAdminService.BeginSignIn:input_type -> widgetd.v1.BeginSignInRequest
+	37, // 32: widgetd.v1.WidgetAdminService.SignOut:input_type -> widgetd.v1.SignOutRequest
+	39, // 33: widgetd.v1.WidgetAdminService.LabelAccount:input_type -> widgetd.v1.LabelAccountRequest
+	41, // 34: widgetd.v1.WidgetAdminService.DeleteAccount:input_type -> widgetd.v1.DeleteAccountRequest
+	43, // 35: widgetd.v1.WidgetAdminService.BindAccount:input_type -> widgetd.v1.BindAccountRequest
+	45, // 36: widgetd.v1.WidgetAdminService.SetProviderClient:input_type -> widgetd.v1.SetProviderClientRequest
+	2,  // 37: widgetd.v1.WidgetAdminService.ListWidgets:output_type -> widgetd.v1.ListWidgetsResponse
+	4,  // 38: widgetd.v1.WidgetAdminService.AddInstance:output_type -> widgetd.v1.AddInstanceResponse
+	6,  // 39: widgetd.v1.WidgetAdminService.RequestConfigTicket:output_type -> widgetd.v1.RequestConfigTicketResponse
+	8,  // 40: widgetd.v1.WidgetAdminService.GetConfigForm:output_type -> widgetd.v1.GetConfigFormResponse
+	29, // 41: widgetd.v1.WidgetAdminService.GetConfigChoices:output_type -> widgetd.v1.GetConfigChoicesResponse
+	11, // 42: widgetd.v1.WidgetAdminService.SaveConfig:output_type -> widgetd.v1.SaveConfigResponse
+	13, // 43: widgetd.v1.WidgetAdminService.ListInstances:output_type -> widgetd.v1.ListInstancesResponse
+	18, // 44: widgetd.v1.WidgetAdminService.RenameInstance:output_type -> widgetd.v1.RenameInstanceResponse
+	20, // 45: widgetd.v1.WidgetAdminService.DeleteInstance:output_type -> widgetd.v1.DeleteInstanceResponse
+	22, // 46: widgetd.v1.WidgetAdminService.SetNetworkGrant:output_type -> widgetd.v1.SetNetworkGrantResponse
+	25, // 47: widgetd.v1.WidgetAdminService.GetInstanceActivity:output_type -> widgetd.v1.GetInstanceActivityResponse
+	34, // 48: widgetd.v1.WidgetAdminService.ListAccounts:output_type -> widgetd.v1.ListAccountsResponse
+	36, // 49: widgetd.v1.WidgetAdminService.BeginSignIn:output_type -> widgetd.v1.BeginSignInResponse
+	38, // 50: widgetd.v1.WidgetAdminService.SignOut:output_type -> widgetd.v1.SignOutResponse
+	40, // 51: widgetd.v1.WidgetAdminService.LabelAccount:output_type -> widgetd.v1.LabelAccountResponse
+	42, // 52: widgetd.v1.WidgetAdminService.DeleteAccount:output_type -> widgetd.v1.DeleteAccountResponse
+	44, // 53: widgetd.v1.WidgetAdminService.BindAccount:output_type -> widgetd.v1.BindAccountResponse
+	46, // 54: widgetd.v1.WidgetAdminService.SetProviderClient:output_type -> widgetd.v1.SetProviderClientResponse
+	37, // [37:55] is the sub-list for method output_type
+	19, // [19:37] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_widgetd_v1_admin_proto_init() }
@@ -2961,7 +3038,7 @@ func file_widgetd_v1_admin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_widgetd_v1_admin_proto_rawDesc), len(file_widgetd_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   46,
+			NumMessages:   47,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

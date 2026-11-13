@@ -171,6 +171,15 @@ message InstanceInfo {
   google.protobuf.Timestamp created_at = 5;
   // One per provider the widget uses: which account it's bound to.
   repeated Binding bindings = 6;
+  // The cards the instance has on the board now, in board order.
+  repeated CardRef cards = 7;
+}
+
+message CardRef {
+  string id = 1;
+  // As in Mounted.short_id.
+  string short_id = 2;
+  string title = 3;
 }
 
 message Binding {

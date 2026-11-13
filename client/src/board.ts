@@ -122,6 +122,8 @@ dialog dd small { display: block; font-size: 11px; color: var(--wd-ink-faint, #7
   width: max(64px, min(100cqw - 40px, 100cqh - 72px)); height: max(64px, min(100cqw - 40px, 100cqh - 72px)); }
 .overlay .info { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
 .overlay .code { font-size: clamp(16px, 10cqmin, 32px); line-height: 1.15; white-space: nowrap; }
+.overlay .sid { padding: 0 6px; border-radius: 4px; background: var(--wd-raised, #27272a); color: var(--wd-ink, #e5e7eb);
+  font: 600 clamp(12px, 7cqmin, 18px)/1.3 var(--wd-font-mono, ui-monospace, monospace); letter-spacing: 0.08em; }
 @container (min-aspect-ratio: 2 / 1) {
   .overlay .fit { flex-direction: row; gap: 12px; }
   .overlay .qr { width: calc(100cqh - 16px); height: calc(100cqh - 16px); }
@@ -626,22 +628,29 @@ class WidgetBoard extends HTMLElement {
   /**
    * Cover `within` with a QR code that opens this instance's settings on a
    * phone. The code is good for one use and ten minutes; the phone still
-   * needs an admin passkey to save anything.
+   * needs an admin passkey to save anything. A card's overlay also shows
+   * its short id, which the admin page lists, to find the card there.
    */
   private async showSetUp(tiles: HTMLElement[], instanceId: string) {
     // One code for the instance, shown on each of its cards.
-    const os = tiles.map((t) => this.codeOverlay(t, "setup"));
+    const os = tiles.map((t) => ({ o: this.codeOverlay(t, "setup"), shortId: this.cardAt(t)?.mounted.shortId }));
     try {
       const admin = createClient(WidgetAdminService, this.transport());
       const t = await admin.requestConfigTicket({ instanceId });
       const expires = t.expiresAt ? Number(t.expiresAt.seconds) * 1000 : Date.now() + 600_000;
-      for (const o of os) {
-        o.show(t.url, ["Scan with your phone to set this up."]);
+      for (const { o, shortId } of os) {
+        o.show(t.url, ["Scan with your phone to set this up."], undefined, shortId);
         o.expireAt(expires);
       }
     } catch (e) {
-      for (const o of os) o.fail(`Couldn't get a code: ${e instanceof Error ? e.message : String(e)}`);
+      for (const { o } of os) o.fail(`Couldn't get a code: ${e instanceof Error ? e.message : String(e)}`);
     }
+  }
+
+  /** The card whose tile is el, if el is a card's (not an instance's placeholder). */
+  private cardAt(el: HTMLElement): CardHost | undefined {
+    for (const c of this.cards.values()) if (c.el === el) return c;
+    return undefined;
   }
 
   /**
@@ -720,7 +729,7 @@ class WidgetBoard extends HTMLElement {
     overlay.append(close, fit);
     within.append(overlay);
     return {
-      show(url: string, lines: string[], code?: string) {
+      show(url: string, lines: string[], code?: string, shortId?: string) {
         const qr = document.createElement("div");
         qr.className = "qr";
         qr.innerHTML = renderSVG(url, { border: 1 });
@@ -736,6 +745,13 @@ class WidgetBoard extends HTMLElement {
           c.className = "code";
           c.textContent = code;
           info.append(c);
+        }
+        if (shortId) {
+          const s = document.createElement("div");
+          s.className = "sid";
+          s.title = "This card's id, as the admin page lists it";
+          s.textContent = shortId;
+          info.append(s);
         }
         fit.replaceChildren(qr, info);
       },

@@ -153,6 +153,11 @@ message Mounted {
   string action_type = 8;
   // The widget's own icon, if it declares one.
   Icon icon = 9;
+  // A short, stable id for the card, like a git short hash: the first
+  // seven hex digits of the SHA-256 of its full card id. Screens show it
+  // with a card's set-up code, and the admin page lists it, so an admin
+  // can find the instance behind a card they're looking at.
+  string short_id = 10;
 }
 
 // Layout is a size hint in grid units.

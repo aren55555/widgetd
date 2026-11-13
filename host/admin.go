@@ -264,6 +264,7 @@ func (a *adminService) ListInstances(ctx context.Context, req *connect.Request[w
 		info := &widgetdv1.InstanceInfo{
 			Id: in.id, Widget: in.w.spec.Name, Label: label, Status: in.status(), CreatedAt: timestamppb.New(in.created),
 		}
+		info.Cards = a.srv.board.instanceCards(in.id)
 		for _, p := range in.w.usedProviders() {
 			info.Bindings = append(info.Bindings, &widgetdv1.Binding{Provider: p, AccountId: in.binding(p)})
 		}
