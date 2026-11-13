@@ -67,6 +67,8 @@ message GetSessionResponse {
   string public_url = 4;
   // The full URL of the admin page: <public_url><base path>admin.
   string admin_url = 5;
+  // Set for ROLE_DEVICE: the device's short id, as in Device.short_id.
+  string short_id = 6;
 }
 
 message BeginEnrollRequest {
@@ -202,6 +204,11 @@ message Device {
   google.protobuf.Timestamp last_seen = 4;
   // How many screens are signed in as this device.
   int32 screens = 5;
+  // A short, stable id for the device, like a git short hash: the first
+  // seven hex digits of the SHA-256 of its id. A screen shows it in its
+  // footer, so an admin can find the device here. Screens paired as one
+  // device share it.
+  string short_id = 6;
 }
 
 message ListDevicesRequest {}

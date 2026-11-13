@@ -39,7 +39,7 @@ import {
 } from "./gen/widgetd/v1/admin_pb.ts";
 import { InstanceStatus_State, type Icon } from "./gen/widgetd/v1/stream_pb.ts";
 import { createConfigForm, type ConfigForm } from "./lib/ConfigForm.tsx";
-import { instanceMatches, normalizeQuery, shortIdMatches } from "./lib/find.ts";
+import { deviceMatches, instanceMatches, normalizeQuery, shortIdMatches } from "./lib/find.ts";
 import { widgetIcon } from "./lib/icon.ts";
 import { sameChoices, type Choices, type Secrets } from "./lib/form.ts";
 import * as ui from "./lib/ui.ts";
@@ -522,7 +522,8 @@ function AdminHome() {
   };
   const passkey = createStatus();
   // A card's short id, as a screen's set-up code shows it, finds its
-  // instance; ?card=<id> fills it in.
+  // instance, and a screen's, from its footer, finds the screen; ?card=<id>
+  // fills it in.
   const [find, setFind] = createSignal(new URLSearchParams(location.search).get("card") ?? "");
   const query = () => normalizeQuery(find());
   const widgetOf = (d: HomeData, inst: InstanceInfo) => d.widgets.find((w) => w.name === inst.widget);
@@ -533,12 +534,12 @@ function AdminHome() {
       {(d) => (
         <Page title="Widgets">
           <For each={d().accounts.filter((a) => !a.label)}>{(a) => <NameAccount a={a} d={d()} reload={reload} />}</For>
-          <Show when={d().instances.length}>
+          <Show when={d().instances.length || d().devices.length}>
             <input
               class={ui.input}
               type="search"
-              placeholder="Find by card id or name"
-              aria-label="Find a widget by card id or name"
+              placeholder="Find by card or screen id, or name"
+              aria-label="Find a widget or screen by id or name"
               autocapitalize="off"
               autocomplete="off"
               spellcheck={false}
@@ -589,12 +590,16 @@ function AdminHome() {
           <h2 class={H2}>Screens</h2>
           <ul class={ui.list}>
             <For
-              each={d().devices}
+              each={d().devices.filter((dev) => deviceMatches(dev, query()))}
               fallback={
-                <li class={`py-3 ${ui.muted}`}>No screens paired yet. Open a board on a screen and scan its code.</li>
+                <li class={`py-3 ${ui.muted}`}>
+                  {d().devices.length
+                    ? "No screen matches."
+                    : "No screens paired yet. Open a board on a screen and scan its code."}
+                </li>
               }
             >
-              {(dev) => <ScreenItem device={dev} reload={reload} />}
+              {(dev) => <ScreenItem device={dev} query={query()} reload={reload} />}
             </For>
           </ul>
 
@@ -617,6 +622,20 @@ function AdminHome() {
 }
 
 type Fetch = Awaited<ReturnType<typeof admin.getInstanceActivity>>["fetches"][number];
+
+/** A card's or screen's short id, highlighted when the admin's search finds it. */
+function ShortId(props: { id: string; query: string; title: string }) {
+  return (
+    <code
+      class={`rounded px-1.5 py-0.5 font-mono text-xs tracking-wider ${
+        shortIdMatches(props.id, props.query) ? "bg-amber-400/40 font-semibold" : "bg-gray-500/15"
+      }`}
+      title={props.title}
+    >
+      {props.id}
+    </code>
+  );
+}
 
 const instanceTitle = (inst: InstanceInfo, widget: WidgetInfo | undefined) =>
   inst.label || widget?.title || inst.widget;
@@ -652,16 +671,7 @@ function InstanceItem(props: {
         <Show when={inst.cards.length}>
           <div class="mt-1 flex flex-wrap gap-1.5">
             <For each={inst.cards}>
-              {(c) => (
-                <code
-                  class={`rounded px-1.5 py-0.5 font-mono text-xs tracking-wider ${
-                    shortIdMatches(c.shortId, props.query) ? "bg-amber-400/40 font-semibold" : "bg-gray-500/15"
-                  }`}
-                  title={c.title ? `${c.title} (${c.id})` : c.id}
-                >
-                  {c.shortId}
-                </code>
-              )}
+              {(c) => <ShortId id={c.shortId} query={props.query} title={c.title ? `${c.title} (${c.id})` : c.id} />}
             </For>
           </div>
         </Show>
@@ -765,7 +775,7 @@ function NetworkGrant(props: { w: WidgetInfo }) {
   );
 }
 
-function ScreenItem(props: { device: Device; reload: () => Promise<void> }) {
+function ScreenItem(props: { device: Device; query: string; reload: () => Promise<void> }) {
   const d = props.device;
   const st = createStatus();
   return (
@@ -776,6 +786,9 @@ function ScreenItem(props: { device: Device; reload: () => Promise<void> }) {
           <span class={ui.muted}> · {d.screens} screens</span>
         </Show>
         <span class={ui.muted}> last seen {d.lastSeen ? timestampDate(d.lastSeen).toLocaleString() : "never"}</span>
+        <div class="mt-1">
+          <ShortId id={d.shortId} query={props.query} title="The id this screen shows in its footer" />
+        </div>
       </div>
       <button
         class={ui.btn.danger}

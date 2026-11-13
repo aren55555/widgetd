@@ -302,6 +302,7 @@ func (s *authService) GetSession(ctx context.Context, req *connect.Request[widge
 	if c.role == widgetdv1.Role_ROLE_DEVICE {
 		// The name is a nicety; without it the screen shows none.
 		_ = s.a.db.QueryRow(`SELECT name FROM devices WHERE id = ?`, c.subject).Scan(&out.DeviceName)
+		out.ShortId = shortHash(c.subject)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -699,6 +700,7 @@ func (s *authService) ListDevices(ctx context.Context, req *connect.Request[widg
 			return nil, err
 		}
 		d.PairedAt, d.LastSeen = timestamppb.New(time.Unix(paired, 0)), timestamppb.New(time.Unix(seen, 0))
+		d.ShortId = shortHash(d.Id)
 		out.Devices = append(out.Devices, &d)
 	}
 	return connect.NewResponse(out), rows.Err()

@@ -285,10 +285,11 @@ func instanceFrame(id string, st *widgetdv1.InstanceStatus) *widgetdv1.WidgetFra
 	return &widgetdv1.WidgetFrame{InstanceId: id, Body: &widgetdv1.WidgetFrame_Instance{Instance: st}}
 }
 
-// shortCardID is a card's short id (Mounted.short_id): the first seven hex
-// digits of the SHA-256 of its full id.
-func shortCardID(fullID string) string {
-	sum := sha256.Sum256([]byte(fullID))
+// shortHash is the short id screens and the admin page show for a card
+// (Mounted.short_id, of its full id) or a device (Device.short_id): the
+// first seven hex digits of the SHA-256 of id.
+func shortHash(id string) string {
+	sum := sha256.Sum256([]byte(id))
 	return hex.EncodeToString(sum[:])[:7]
 }
 

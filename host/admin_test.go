@@ -240,7 +240,7 @@ func TestCardShortIDs(t *testing.T) {
 			short[fr.GetCardId()] = m.GetShortId()
 		}
 	}
-	want := map[string]string{"one/main": shortCardID("one/main"), "one/side": shortCardID("one/side")}
+	want := map[string]string{"one/main": shortHash("one/main"), "one/side": shortHash("one/side")}
 	for id, s := range want {
 		if len(s) != 7 || short[id] != s {
 			t.Fatalf("%s: mounted short id %q, want %q", id, short[id], s)

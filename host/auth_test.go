@@ -119,6 +119,10 @@ func TestPairingEndToEnd(t *testing.T) {
 	if err != nil || len(list.Msg.GetDevices()) != 1 {
 		t.Fatalf("devices = %v, %v", list, err)
 	}
+	// The screen shows the same short id the admin list has for it.
+	if got, sid := list.Msg.GetDevices()[0].GetShortId(), sess.Msg.GetShortId(); len(sid) != 7 || got != sid || sid != shortHash(list.Msg.GetDevices()[0].GetId()) {
+		t.Fatalf("short ids: listed %q, session %q", got, sid)
+	}
 	f := h.open(device)
 	f.burst()
 	if _, err := c.RevokeDevice(ctx, withCookie(&widgetdv1.RevokeDeviceRequest{Id: list.Msg.GetDevices()[0].GetId()}, admin)); err != nil {

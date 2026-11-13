@@ -170,7 +170,9 @@ type GetSessionResponse struct {
 	// origin the screen itself was loaded from.
 	PublicUrl string `protobuf:"bytes,4,opt,name=public_url,json=publicUrl,proto3" json:"public_url,omitempty"`
 	// The full URL of the admin page: <public_url><base path>admin.
-	AdminUrl      string `protobuf:"bytes,5,opt,name=admin_url,json=adminUrl,proto3" json:"admin_url,omitempty"`
+	AdminUrl string `protobuf:"bytes,5,opt,name=admin_url,json=adminUrl,proto3" json:"admin_url,omitempty"`
+	// Set for ROLE_DEVICE: the device's short id, as in Device.short_id.
+	ShortId       string `protobuf:"bytes,6,opt,name=short_id,json=shortId,proto3" json:"short_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -236,6 +238,13 @@ func (x *GetSessionResponse) GetPublicUrl() string {
 func (x *GetSessionResponse) GetAdminUrl() string {
 	if x != nil {
 		return x.AdminUrl
+	}
+	return ""
+}
+
+func (x *GetSessionResponse) GetShortId() string {
+	if x != nil {
+		return x.ShortId
 	}
 	return ""
 }
@@ -1350,7 +1359,12 @@ type Device struct {
 	PairedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=paired_at,json=pairedAt,proto3" json:"paired_at,omitempty"`
 	LastSeen *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_seen,json=lastSeen,proto3" json:"last_seen,omitempty"`
 	// How many screens are signed in as this device.
-	Screens       int32 `protobuf:"varint,5,opt,name=screens,proto3" json:"screens,omitempty"`
+	Screens int32 `protobuf:"varint,5,opt,name=screens,proto3" json:"screens,omitempty"`
+	// A short, stable id for the device, like a git short hash: the first
+	// seven hex digits of the SHA-256 of its id. A screen shows it in its
+	// footer, so an admin can find the device here. Screens paired as one
+	// device share it.
+	ShortId       string `protobuf:"bytes,6,opt,name=short_id,json=shortId,proto3" json:"short_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1418,6 +1432,13 @@ func (x *Device) GetScreens() int32 {
 		return x.Screens
 	}
 	return 0
+}
+
+func (x *Device) GetShortId() string {
+	if x != nil {
+		return x.ShortId
+	}
+	return ""
 }
 
 type ListDevicesRequest struct {
@@ -1586,7 +1607,7 @@ const file_widgetd_v1_auth_proto_rawDesc = "" +
 	"\n" +
 	"\x15widgetd/v1/auth.proto\x12\n" +
 	"widgetd.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16widgetd/v1/board.proto\"\x13\n" +
-	"\x11GetSessionRequest\"\xc2\x01\n" +
+	"\x11GetSessionRequest\"\xdd\x01\n" +
 	"\x12GetSessionResponse\x12$\n" +
 	"\x04role\x18\x01 \x01(\x0e2\x10.widgetd.v1.RoleR\x04role\x12\x1f\n" +
 	"\vdevice_name\x18\x02 \x01(\tR\n" +
@@ -1594,7 +1615,8 @@ const file_widgetd_v1_auth_proto_rawDesc = "" +
 	"\x10needs_enrollment\x18\x03 \x01(\bR\x0fneedsEnrollment\x12\x1d\n" +
 	"\n" +
 	"public_url\x18\x04 \x01(\tR\tpublicUrl\x12\x1b\n" +
-	"\tadmin_url\x18\x05 \x01(\tR\badminUrl\"5\n" +
+	"\tadmin_url\x18\x05 \x01(\tR\badminUrl\x12\x19\n" +
+	"\bshort_id\x18\x06 \x01(\tR\ashortId\"5\n" +
 	"\x12BeginEnrollRequest\x12\x1f\n" +
 	"\vsetup_token\x18\x01 \x01(\tR\n" +
 	"setupToken\"Y\n" +
@@ -1673,13 +1695,14 @@ const file_widgetd_v1_auth_proto_rawDesc = "" +
 	"\vdevice_name\x18\x02 \x01(\tR\n" +
 	"deviceName\x12,\n" +
 	"\x12continue_device_id\x18\x03 \x01(\tR\x10continueDeviceId\"\x18\n" +
-	"\x16ApprovePairingResponse\"\xb8\x01\n" +
+	"\x16ApprovePairingResponse\"\xd3\x01\n" +
 	"\x06Device\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x127\n" +
 	"\tpaired_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bpairedAt\x127\n" +
 	"\tlast_seen\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\blastSeen\x12\x18\n" +
-	"\ascreens\x18\x05 \x01(\x05R\ascreens\"\x14\n" +
+	"\ascreens\x18\x05 \x01(\x05R\ascreens\x12\x19\n" +
+	"\bshort_id\x18\x06 \x01(\tR\ashortId\"\x14\n" +
 	"\x12ListDevicesRequest\"C\n" +
 	"\x13ListDevicesResponse\x12,\n" +
 	"\adevices\x18\x01 \x03(\v2\x12.widgetd.v1.DeviceR\adevices\"%\n" +
