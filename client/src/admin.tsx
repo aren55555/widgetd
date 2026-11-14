@@ -869,7 +869,9 @@ function BindingPicker(props: {
   const p = () => props.d.providers.find((x) => x.name === props.provider);
   const title = () => p()?.title ?? props.provider;
   const accounts = () => props.d.accounts.filter((a) => a.provider === props.provider && a.label);
-  const NEW = "\u0000new";
+  // Not a NUL-prefixed sentinel: Solid puts this value into its HTML template, and the
+  // HTML parser turns NUL into U+FFFD there, so the change handler would never match it.
+  const NEW = "+new";
   const before = new Set(props.d.accounts.map((a) => a.id));
   return (
     <div class="w-full">
