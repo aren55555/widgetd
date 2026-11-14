@@ -629,9 +629,11 @@ function LucideIcon(props: { icon: IconNode; size?: number }) {
 
 // ---- admin app ----
 
-/** Whether an account wants a sign-in it doesn't have (or more than it was granted). */
-const accountNeedsSignIn = (a: Account) =>
-  a.wanted.length > 0 && (!a.signedIn || a.wanted.some((s) => !a.granted.includes(s)));
+/** Whether an account is signed in for everything the widgets attached to it need. */
+const accountCovers = (a: Account) => a.signedIn && a.wanted.every((s) => a.granted.includes(s));
+
+/** Whether widgets are waiting for an account to be signed in (for more): what a badge counts. */
+const accountNeedsSignIn = (a: Account) => a.wanted.length > 0 && !accountCovers(a);
 
 /** What each tab's badge counts: things there that need the admin. */
 function attention(d: HomeData, tab: Tab): number {
@@ -1026,8 +1028,8 @@ function AccessTab(props: { d: HomeData; reload: () => Promise<void> }) {
       <Show when={props.d.providers.length}>
         <h2 class={H2}>Accounts</h2>
         <p class={ui.muted}>
-          Sign an account in from a widget's page, and choose there which account it uses. Each account is signed in for
-          exactly what the widgets using it need.
+          Add an account here, then attach it to widgets, here or on a widget's page. A new account is signed in only as
+          who it is; attaching a widget asks for just what that widget needs.
         </p>
         <For each={props.d.providers}>
           {(p) => (
@@ -1047,6 +1049,7 @@ function AccessTab(props: { d: HomeData; reload: () => Promise<void> }) {
                   {(a) => <AccountItem a={a} p={p} d={props.d} reload={props.reload} />}
                 </For>
               </ul>
+              <AddAccount p={p} d={props.d} reload={props.reload} />
             </section>
           )}
         </For>
@@ -1060,6 +1063,26 @@ function AccessTab(props: { d: HomeData; reload: () => Promise<void> }) {
         </For>
       </ul>
     </Page>
+  );
+}
+
+/** Signs a new account in with no widget yet, as who it is; the page then asks for its name. */
+function AddAccount(props: { p: ProviderInfo; d: HomeData; reload: () => Promise<void> }) {
+  const st = createStatus();
+  const signIn = createSignIn(st, props.reload);
+  const before = new Set(props.d.accounts.map((a) => a.id));
+  return (
+    <div class="mt-2">
+      <button
+        class={ui.btn.secondary}
+        disabled={st.busy() || !props.p.clientSet}
+        onClick={signIn.start({ provider: props.p.name }, (all) => all.some((a) => !before.has(a.id)))}
+      >
+        + Add a {props.p.title} account
+      </button>
+      <signIn.View />
+      <st.View />
+    </div>
   );
 }
 
@@ -1232,6 +1255,31 @@ function createSignIn(st: ReturnType<typeof createStatus>, reload: () => Promise
   return { start, View };
 }
 
+/**
+ * Attach an account to an instance. If the instance needs scopes the
+ * account wasn't signed in for, sign it in for them now (signIn reloads once
+ * that's done); otherwise just reload.
+ */
+async function attachAccount(
+  instanceId: string,
+  provider: string,
+  accountId: string,
+  signIn: ReturnType<typeof createSignIn>,
+  reload: () => Promise<void>,
+) {
+  await admin.bindAccount({ instanceId, provider, accountId });
+  const { accounts } = await admin.listAccounts({});
+  const me = accounts.find((a) => a.id === accountId);
+  if (me && !accountCovers(me)) {
+    await signIn.start({ provider, accountId }, (all) => {
+      const now = all.find((a) => a.id === accountId);
+      return !!now && accountCovers(now);
+    })();
+    return;
+  }
+  await reload();
+}
+
 /** Which account an instance uses a provider with; or a new one. */
 function BindingPicker(props: {
   inst: InstanceInfo;
@@ -1265,10 +1313,7 @@ function BindingPicker(props: {
               )();
               return;
             }
-            void st.run(async () => {
-              await admin.bindAccount({ instanceId: props.inst.id, provider: props.provider, accountId: v });
-              await props.reload();
-            })();
+            void st.run(() => attachAccount(props.inst.id, props.provider, v, signIn, props.reload))();
           }}
         >
           <option value="" selected={!props.accountId}>
@@ -1359,7 +1404,10 @@ function AccountItem(props: { a: Account; p: ProviderInfo; d: HomeData; reload: 
   const { a, p } = props;
   const st = createStatus();
   const signIn = createSignIn(st, props.reload);
-  const needs = accountNeedsSignIn(a);
+  const needs = !accountCovers(a);
+  // Widgets using this provider that use another account, or none yet.
+  const attachable = () =>
+    props.d.instances.filter((i) => i.bindings.some((b) => b.provider === a.provider && b.accountId !== a.id));
   const users = a.instances
     .map((id) => {
       const inst = props.d.instances.find((i) => i.id === id);
@@ -1379,7 +1427,36 @@ function AccountItem(props: { a: Account; p: ProviderInfo; d: HomeData; reload: 
             : (a.message || "signed out").toLowerCase()}
         </span>
       </div>
-      <p class={ui.muted}>Used by: {users || "nothing"}</p>
+      <p class={ui.muted}>Used by: {users || "nothing yet"}</p>
+      <Show when={attachable().length}>
+        <label class={`${ui.label} w-full`}>
+          Attach to a widget
+          <select
+            class={ui.select}
+            disabled={st.busy() || !p.clientSet}
+            onChange={(ev) => {
+              const id = ev.currentTarget.value;
+              if (id) void st.run(() => attachAccount(id, a.provider, a.id, signIn, props.reload))();
+            }}
+          >
+            <option value="" selected>
+              Choose a widget…
+            </option>
+            <For each={attachable()}>
+              {(i) => {
+                const b = i.bindings.find((x) => x.provider === a.provider);
+                const other = props.d.accounts.find((x) => x.id === b?.accountId);
+                return (
+                  <option value={i.id}>
+                    {instanceTitle(i, widgetOf(props.d, i))}
+                    {other ? ` (now ${other.label})` : ""}
+                  </option>
+                );
+              }}
+            </For>
+          </select>
+        </label>
+      </Show>
       <Show when={a.wanted.length || a.granted.length}>
         <p class="font-mono text-xs/snug break-all">
           <Show when={a.granted.length}>
@@ -1399,7 +1476,7 @@ function AccountItem(props: { a: Account; p: ProviderInfo; d: HomeData; reload: 
             disabled={st.busy() || !p.clientSet}
             onClick={signIn.start({ provider: a.provider, accountId: a.id }, (all) => {
               const me = all.find((x) => x.id === a.id);
-              return !!me?.signedIn && me.wanted.every((s) => me.granted.includes(s));
+              return !!me && accountCovers(me);
             })}
           >
             Sign in{a.identity ? ` as ${a.identity}` : ""}

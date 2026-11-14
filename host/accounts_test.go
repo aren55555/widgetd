@@ -293,7 +293,7 @@ func (h *accountHarness) newAccount(instance, person, label string) string {
 	resp, body := h.browse(start.Msg, person)
 	loc, _ := url.Parse(resp.Header.Get("Location"))
 	id := loc.Query().Get("name")
-	if resp.StatusCode != http.StatusSeeOther || !strings.HasSuffix(loc.Path, "/admin") || id == "" {
+	if resp.StatusCode != http.StatusSeeOther || !strings.HasSuffix(loc.Path, "/admin/access") || id == "" {
 		h.t.Fatalf("a new account's callback should send the phone to name it: %d %s %s", resp.StatusCode, loc, body)
 	}
 	if label != "" {
@@ -325,6 +325,9 @@ func (h *accountHarness) signInAgain(acct, person, cookie string) (int, string) 
 		h.t.Fatal(err)
 	}
 	resp, body := h.browse(start.Msg, person)
+	if resp.StatusCode == http.StatusSeeOther && strings.HasSuffix(resp.Header.Get("Location"), "/admin/access") {
+		return http.StatusOK, body // from the admin page: done, and back to it
+	}
 	return resp.StatusCode, body
 }
 
@@ -667,5 +670,46 @@ func TestClientMigratesFromWidgetToProvider(t *testing.T) {
 	defer srv.Close(context.Background())
 	if c, ok, _ := srv.loadClient("github"); !ok || c.id != "Ov23old" || c.secret != "old-secret" {
 		t.Fatalf("migrated client = %+v, %v", c, ok)
+	}
+}
+
+// An account can be added from the admin page with no widget: signed in as
+// who it is and nothing more, and kept so. Attaching a widget asks for that
+// widget's scopes; once none use them, they're given up again.
+func TestAccountWithoutWidgets(t *testing.T) {
+	h := newAccountHarness(t)
+	h.waitState("ia", NS)
+	id := h.newAccount("", "me@home", "Personal")
+	h.srv.reconcile("idp")
+	if a := h.acct(id); a.Token == nil || !slices.Equal(a.Token.Requested, []string{"openid"}) || a.Subject != "me@home" {
+		t.Fatalf("Personal = %+v: want kept signed in, as me@home, for identity only", a.Token)
+	}
+	if h.state("ia") != NS {
+		t.Fatal("an account no widget is attached to mustn't satisfy one")
+	}
+
+	// Attaching ia: it waits for the account to cover a, then runs.
+	h.bind("ia", id)
+	if st := h.srv.instances["ia"].status(); st.GetState() != NS || st.GetAccount() != id {
+		t.Fatalf("ia = %v: want waiting for Personal to cover it", st)
+	}
+	if code, body := h.signInAgain(id, "me@home", h.adminCookie()); code != 200 {
+		t.Fatalf("signing Personal in for ia: %d %s", code, body)
+	}
+	h.waitState("ia", RUN)
+	if a := h.acct(id); !slices.Equal(a.Token.Granted, []string{"a", "openid"}) {
+		t.Fatalf("granted %v, want [a openid]", a.Token.Granted)
+	}
+
+	// Signed in as identity again, it stays with no widget at all.
+	if err := h.srv.deleteInstance("ia"); err != nil {
+		t.Fatal(err)
+	}
+	if code, body := h.signInAgain(id, "me@home", h.adminCookie()); code != 200 {
+		t.Fatalf("signing Personal in again: %d %s", code, body)
+	}
+	h.srv.reconcile("idp")
+	if a := h.acct(id); a.Token == nil || !slices.Equal(a.Token.Requested, []string{"openid"}) {
+		t.Fatalf("Personal = %+v: want signed in for identity only", a.Token)
 	}
 }

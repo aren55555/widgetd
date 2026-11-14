@@ -2105,7 +2105,8 @@ type BeginSignInRequest struct {
 	// the provider says who it is.
 	AccountId string `protobuf:"bytes,2,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
 	// Or: sign in a new account, bound to this instance once it's named.
-	// Admins only.
+	// Admins only. With neither, a new account no widget uses yet, signed in
+	// only as who it is; binding widgets to it later asks for their scopes.
 	InstanceId    string `protobuf:"bytes,3,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

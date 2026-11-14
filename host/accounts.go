@@ -123,11 +123,9 @@ func sortedKeys(set map[string]bool) []string {
 }
 
 // askFor is what a sign-in for want requests: want, plus whatever the
-// provider needs to say who the account is.
+// provider needs to say who the account is. For no want, that's identity
+// alone: an account no widget uses yet is kept signed in as who it is.
 func (p *provider) askFor(want []string) []string {
-	if len(want) == 0 {
-		return nil
-	}
 	set := map[string]bool{}
 	for _, sc := range want {
 		set[sc] = true
@@ -462,12 +460,10 @@ func (s *Server) reconcileLocked(provider string) {
 		if a.Token == nil {
 			continue
 		}
-		want := s.wantedLocked(a)
-		switch {
-		case len(want) == 0:
-			s.revokeToken(a, "no widget on the board uses it")
-		case !covers(p.askFor(want), a.Token.Requested):
-			// Signed in for something no longer bound to it: shrink now.
+		// An account is kept, signed in, with no widget using it; but never
+		// with more than its widgets (or its identity) need. Signed in for
+		// something no longer bound to it: shrink now.
+		if !covers(p.askFor(s.wantedLocked(a)), a.Token.Requested) {
 			s.revokeToken(a, "the board needs fewer scopes")
 		}
 	}
@@ -621,6 +617,7 @@ type pendingSignIn struct {
 	provider string
 	account  string // signing an existing account in again, or "" for a new one
 	instance string // a new one: the instance to bind it to
+	admin    bool   // started on the admin page, so the browser flow returns there
 	scopes   []string
 	verifier string // browser flow: the PKCE verifier
 	expires  time.Time
@@ -667,9 +664,9 @@ type signInStart struct {
 }
 
 // beginSignIn starts signing in an existing account, for exactly what the
-// instances bound to it want, or a new one, for what the instance it will
-// be bound to wants.
-func (s *Server) beginSignIn(ctx context.Context, provider, accountID, instanceID string) (*signInStart, error) {
+// instances bound to it want, or a new one: for what the instance it will
+// be bound to wants, or, with no instance, as who it is and nothing more.
+func (s *Server) beginSignIn(ctx context.Context, provider, accountID, instanceID string, admin bool) (*signInStart, error) {
 	p, ok := s.providers[provider]
 	if !ok {
 		return nil, fmt.Errorf("no provider %q", provider)
@@ -679,9 +676,9 @@ func (s *Server) beginSignIn(ctx context.Context, provider, accountID, instanceI
 		return nil, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("no %s app is registered yet: add its client ID under Accounts on the admin page", p.Title)
+		return nil, fmt.Errorf("no %s app is registered yet: add its client ID in Settings on the admin page", p.Title)
 	}
-	ps := &pendingSignIn{provider: provider, account: accountID, instance: instanceID}
+	ps := &pendingSignIn{provider: provider, account: accountID, instance: instanceID, admin: admin}
 	s.mu.Lock()
 	if accountID != "" {
 		a, err := s.loadAcct(accountID)
@@ -691,18 +688,17 @@ func (s *Server) beginSignIn(ctx context.Context, provider, accountID, instanceI
 		}
 		ps.instance = ""
 		ps.scopes = p.askFor(s.wantedLocked(a))
-	} else {
+	} else if instanceID != "" {
 		in, ok := s.instances[instanceID]
 		if !ok || !slices.Contains(in.w.usedProviders(), provider) {
 			s.mu.Unlock()
 			return nil, fmt.Errorf("no instance using %s to sign a new account in for", p.Title)
 		}
 		ps.scopes = p.askFor(in.w.scopesFor(provider))
+	} else {
+		ps.scopes = p.askFor(nil)
 	}
 	s.mu.Unlock()
-	if len(ps.scopes) == 0 {
-		return nil, fmt.Errorf("no widget is bound to this %s account", p.Title)
-	}
 	ps.expires = time.Now().Add(signInTTL)
 	switch p.Flow {
 	case flowBrowser:
@@ -799,7 +795,13 @@ func (s *Server) serveOAuth(w http.ResponseWriter, r *http.Request, rest string)
 		if ps.account == "" {
 			// A new account: it can't be used until it's named, which the
 			// admin page (where this sign-in started) asks for now.
-			http.Redirect(w, r, s.base+"admin?name="+url.QueryEscape(id), http.StatusSeeOther)
+			http.Redirect(w, r, s.base+"admin/access?name="+url.QueryEscape(id), http.StatusSeeOther)
+			return
+		}
+		if ps.admin {
+			// Back to the admin page it started on; a screen's QR sign-in
+			// was on a phone, which can close the page instead.
+			http.Redirect(w, r, s.base+"admin/access", http.StatusSeeOther)
 			return
 		}
 		oauthPage(w, http.StatusOK, "Signed in to "+p.Title, "You can close this page. The widgets on your screens will start in a moment.")
@@ -950,7 +952,7 @@ func (s *Server) beginDevice(ctx context.Context, p *provider, c signInClient, p
 	ps.expires, ps.cancel = expires, cancel
 	key := "device:" + ps.account
 	if ps.account == "" {
-		key = "device:new:" + ps.instance
+		key = "device:new:" + ps.provider + ":" + ps.instance
 	}
 	s.signIns.put(key, ps)
 	go s.awaitDevice(pctx, cancel, p, c, dc, ps)
@@ -1214,7 +1216,7 @@ func (a *adminService) BeginSignIn(ctx context.Context, req *connect.Request[wid
 			}
 		}
 	}
-	st, err := s.beginSignIn(ctx, m.GetProvider(), m.GetAccountId(), m.GetInstanceId())
+	st, err := s.beginSignIn(ctx, m.GetProvider(), m.GetAccountId(), m.GetInstanceId(), c.role == widgetdv1.Role_ROLE_ADMIN)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 	}

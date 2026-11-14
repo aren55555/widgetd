@@ -1026,7 +1026,8 @@ export type BeginSignInRequest = Message<"widgetd.v1.BeginSignInRequest"> & {
 
   /**
    * Or: sign in a new account, bound to this instance once it's named.
-   * Admins only.
+   * Admins only. With neither, a new account no widget uses yet, signed in
+   * only as who it is; binding widgets to it later asks for their scopes.
    *
    * @generated from field: string instance_id = 3;
    */
