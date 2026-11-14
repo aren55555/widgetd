@@ -1,3 +1,13 @@
+/* The radar's palette. Hex, because the view derives alphas from them. */
+:root {
+  --radar-scope: #03110a;
+  --radar-ink: #4dff9a;
+  --radar-blip: #d9ffe9;
+  --radar-down: #ff6b5d;
+  /* Where the hover scan crosses the trace. */
+  --radar-bogie: #ff3b3b;
+}
+
 .wrap {
   position: relative;
   height: 100%;
@@ -23,20 +33,22 @@ canvas {
   font-size: 20px;
   font-weight: 600;
   line-height: 26px;
+  color: var(--radar-ink);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--radar-ink) 55%, transparent);
 }
 
 .change {
   font-size: 12px;
   line-height: 16px;
-  color: var(--wd-ink-muted, #a1a1aa);
+  color: color-mix(in srgb, var(--radar-ink) 60%, transparent);
 }
 
 .change[data-dir="up"] {
-  color: var(--wd-up, #4ade80);
+  color: var(--radar-ink);
 }
 
 .change[data-dir="down"] {
-  color: var(--wd-down, #f87171);
+  color: var(--radar-down);
 }
 
 /* Bottom-left, clear of the ring labels, which run up the middle from the top. */
@@ -46,49 +58,60 @@ canvas {
   bottom: 8px;
   font-size: 11px;
   line-height: 16px;
-  color: var(--wd-ink-faint, #71717a);
+  color: color-mix(in srgb, var(--radar-ink) 45%, transparent);
 }
 
-/* Hover: a dot on the line and a tip with that point's price and date. */
-.dot,
+/* Hover: a ray from the centre over the spiral, and a tip listing where it crosses each cycle. */
+canvas.ray,
+.tip {
+  pointer-events: none;
+}
+
 .tip {
   position: absolute;
   left: 0;
   top: 0;
-  pointer-events: none;
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  margin: -5px 0 0 -5px;
-  border-radius: 50%;
-  background: var(--wd-accent, #60a5fa);
-  box-shadow: 0 0 0 2px var(--wd-surface, #18181b);
-}
-
-.dot[data-live="true"] {
-  background: var(--wd-up, #4ade80);
-}
-
-.tip {
   padding: 4px 8px;
-  border: 1px solid var(--wd-edge, #27272a);
+  border: 1px solid color-mix(in srgb, var(--radar-ink) 35%, transparent);
   border-radius: 6px;
-  background: var(--wd-surface, #18181b);
+  background: color-mix(in srgb, var(--radar-scope) 92%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--radar-ink) 15%, transparent);
   white-space: nowrap;
 }
 
-.tip-price {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 18px;
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  line-height: 16px;
+  color: color-mix(in srgb, var(--radar-ink) 60%, transparent);
 }
 
-.tip-when {
-  font-size: 11px;
-  line-height: 14px;
-  color: var(--wd-ink-muted, #a1a1aa);
+/* A bogie marker, matching the red contacts on the scope. */
+.row::before {
+  content: "";
+  align-self: center;
+  width: 5px;
+  height: 5px;
+  margin-right: -6px;
+  border-radius: 50%;
+  background: var(--radar-bogie);
+  box-shadow: 0 0 4px var(--radar-bogie);
+}
+
+.row .when {
+  flex: 1;
+}
+
+.row .val {
+  color: var(--radar-ink);
+}
+
+.row[data-near="true"] {
+  font-weight: 600;
+  color: var(--radar-ink);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--radar-ink) 50%, transparent);
 }
 
 [hidden] {

@@ -43,11 +43,15 @@ export interface Scale {
   hi: number;
 }
 
-/** A log scale from the power of ten at or below `min` to the one at or above `max`. */
+/**
+ * A log scale from `min` itself (so the lowest price sits on the edge of the
+ * hole, with no empty band inside it) to the power of ten at or above `max`
+ * (so the rim is a round number).
+ */
 export function logScale(min: number, max: number): Scale {
-  const lo = Math.floor(Math.log10(Math.max(min, 1e-9)));
+  const lo = Math.log10(Math.max(min, 1e-9));
   let hi = Math.ceil(Math.log10(Math.max(max, 1e-9)));
-  if (hi <= lo) hi = lo + 1;
+  if (hi <= lo) hi = Math.floor(lo) + 1;
   return { lo, hi };
 }
 
@@ -58,17 +62,49 @@ export const radial = (price: number, s: Scale) => (Math.log10(price) - s.lo) / 
 export const HOLE = 0.14;
 
 /** Position of (t, price) in a square of side 2·outer centred on (outer, outer). */
-export function point(t: number, price: number, s: Scale, outer: number): { x: number; y: number; cycle: number } {
+export function point(
+  t: number,
+  price: number,
+  s: Scale,
+  outer: number,
+): { x: number; y: number; cycle: number; frac: number } {
   const c = cycleOf(t);
   const a = c.frac * 2 * Math.PI - Math.PI / 2;
   const r = outer * (HOLE + (1 - HOLE) * radial(price, s));
-  return { x: outer + r * Math.cos(a), y: outer + r * Math.sin(a), cycle: c.index };
+  return { x: outer + r * Math.cos(a), y: outer + r * Math.sin(a), cycle: c.index, frac: c.frac };
+}
+
+/** How far through a turn the direction (dx, dy) from the centre points: 0 straight up, clockwise, in [0, 1). */
+export function fracAt(dx: number, dy: number): number {
+  const f = (Math.atan2(dy, dx) + Math.PI / 2) / (2 * Math.PI);
+  return f - Math.floor(f);
+}
+
+/**
+ * Where a ray at `frac` of a turn crosses the spiral: for each cycle, its point
+ * nearest that angle, if one is within `tol` of a turn (so a cycle with no data
+ * there, like the one in progress, is left out). Newest cycle, so outermost, first.
+ */
+export function crossings<P extends { cycle: number; frac: number }>(
+  points: readonly P[],
+  frac: number,
+  tol: number,
+): P[] {
+  const best = new Map<number, { p: P; d: number }>();
+  for (const p of points) {
+    const raw = Math.abs(p.frac - frac);
+    // Turns wrap: the end of one cycle and the start of the next share the spoke.
+    const d = Math.min(raw, 1 - raw);
+    const b = best.get(p.cycle);
+    if (d <= tol && (!b || d <= b.d)) best.set(p.cycle, { p, d });
+  }
+  return [...best.entries()].sort((a, b) => b[0] - a[0]).map(([, v]) => v.p);
 }
 
 /** Ring labels: every power of ten in the scale. */
 export function rings(s: Scale): number[] {
   const out: number[] = [];
-  for (let e = s.lo; e <= s.hi; e++) out.push(10 ** e);
+  for (let e = Math.ceil(s.lo); e <= s.hi; e++) out.push(10 ** e);
   return out;
 }
 
@@ -91,20 +127,6 @@ export function formatPrice(price: number, currency: number, compact = false): s
 export function formatChange(from: number, to: number): string {
   const pct = ((to - from) / from) * 100;
   return `${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(2)}%`;
-}
-
-/** Index of the point nearest (x, y), or -1 if none is within `max`. */
-export function nearest(points: ReadonlyArray<{ x: number; y: number }>, x: number, y: number, max: number): number {
-  let best = -1;
-  let bestD = max * max;
-  points.forEach((p, i) => {
-    const d = (p.x - x) ** 2 + (p.y - y) ** 2;
-    if (d <= bestD) {
-      best = i;
-      bestD = d;
-    }
-  });
-  return best;
 }
 
 /** "Mar 12, 2021" for a UTC day, or with the local time for a live quote. */

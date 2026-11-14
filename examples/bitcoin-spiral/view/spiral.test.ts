@@ -1,5 +1,16 @@
 import { describe, expect, test } from "bun:test";
-import { cycleOf, formatChange, formatPrice, formatWhen, logScale, nearest, point, radial, rings } from "./spiral.ts";
+import {
+  crossings,
+  cycleOf,
+  formatChange,
+  formatPrice,
+  formatWhen,
+  fracAt,
+  logScale,
+  point,
+  radial,
+  rings,
+} from "./spiral.ts";
 
 const utc = (y: number, m: number, d: number) => Date.UTC(y, m - 1, d);
 
@@ -31,9 +42,15 @@ describe("cycleOf", () => {
 });
 
 describe("scale", () => {
-  test("snaps to powers of ten", () => {
-    expect(logScale(180, 120_000)).toEqual({ lo: 2, hi: 6 });
+  test("starts at the lowest price and ends at a power of ten", () => {
+    const s = logScale(180, 120_000);
+    expect(s.lo).toBeCloseTo(Math.log10(180));
+    expect(s.hi).toBe(6);
+  });
+
+  test("rings are the powers of ten inside the scale", () => {
     expect(rings({ lo: 2, hi: 4 })).toEqual([100, 1000, 10000]);
+    expect(rings(logScale(0.06, 120_000))).toEqual([0.1, 1, 10, 100, 1000, 10000, 100000, 1000000]);
   });
 
   test("never collapses", () => {
@@ -65,35 +82,44 @@ describe("format", () => {
   });
 });
 
-describe("nearest", () => {
+describe("fracAt", () => {
+  test("straight up is 0, and it runs clockwise", () => {
+    expect(fracAt(0, -1)).toBe(0);
+    expect(fracAt(1, 0)).toBeCloseTo(0.25);
+    expect(fracAt(0, 1)).toBeCloseTo(0.5);
+    expect(fracAt(-1, 0)).toBeCloseTo(0.75);
+  });
+
+  test("agrees with point", () => {
+    const p = point(utc(2018, 6, 1), 1000, { lo: 2, hi: 4 }, 100);
+    expect(fracAt(p.x - 100, p.y - 100)).toBeCloseTo(p.frac);
+  });
+});
+
+describe("crossings", () => {
   const pts = [
-    { x: 0, y: 0 },
-    { x: 10, y: 0 },
-    { x: 20, y: 0 },
+    { cycle: 1, frac: 0.3, id: "a" },
+    { cycle: 1, frac: 0.31, id: "b" },
+    { cycle: 2, frac: 0.305, id: "c" },
+    { cycle: 3, frac: 0.1, id: "d" },
   ];
+  const ids = (ps: Array<{ id: string }>) => ps.map((p) => p.id);
 
-  test("picks the closest point", () => {
-    expect(nearest(pts, 12, 1, 8)).toBe(1);
-    expect(nearest(pts, 19, -3, 8)).toBe(2);
+  test("takes each cycle's nearest point, newest first", () => {
+    expect(ids(crossings(pts, 0.309, 0.01))).toEqual(["c", "b"]);
   });
 
-  test("ignores points farther than max", () => {
-    expect(nearest(pts, 10, 30, 8)).toBe(-1);
-    expect(nearest([], 0, 0, 8)).toBe(-1);
+  test("leaves out a cycle with nothing near the angle", () => {
+    expect(ids(crossings(pts, 0.1, 0.01))).toEqual(["d"]);
+    expect(crossings(pts, 0.7, 0.01)).toEqual([]);
   });
 
-  test("prefers the later of two equally near points", () => {
-    expect(
-      nearest(
-        [
-          { x: 0, y: 0 },
-          { x: 0, y: 0 },
-        ],
-        0,
-        0,
-        8,
-      ),
-    ).toBe(1);
+  test("wraps around the halving spoke", () => {
+    const wrap = [
+      { cycle: 1, frac: 0.999, id: "end" },
+      { cycle: 2, frac: 0.001, id: "start" },
+    ];
+    expect(ids(crossings(wrap, 0, 0.01))).toEqual(["start", "end"]);
   });
 });
 
