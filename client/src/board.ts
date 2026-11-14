@@ -111,7 +111,20 @@ dialog dd small { display: block; font-size: 11px; color: var(--wd-ink-faint, #7
 .action { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--wd-edge, #27272a); cursor: pointer;
   background: var(--wd-raised, #27272a); color: var(--wd-ink, #e5e7eb); font: 13px/18px var(--wd-font-mono, ui-monospace, monospace); }
 .link { border: 0; background: none; cursor: pointer; color: var(--wd-ink-faint, #71717a); font: 12px var(--wd-font-mono, monospace); }
-.picker { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+/* The widget list stays inside the add tile, a page of rows at a time: the
+   arrows below it turn the page (a swipe works too, but a scrollbar is hard to
+   use on a touch screen, so there is none). Each choice keeps to one line, cut
+   with an ellipsis. The list is the offsetParent its choices are measured from. */
+.picker { position: relative; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 6px;
+  min-height: 0; max-width: 100%; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.picker::-webkit-scrollbar { display: none; }
+.picker .action { max-width: 100%; box-sizing: border-box; padding: 4px 10px; font-size: 12px; line-height: 16px; }
+.picker .action span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-nav { flex: none; display: flex; align-items: center; justify-content: center; gap: 12px; }
+.picker-nav .icon { padding: 6px; border: 1px solid var(--wd-edge, #27272a); background: var(--wd-raised, #27272a); color: var(--wd-ink, #e5e7eb); }
+.picker-nav .icon svg { width: 18px; height: 18px; }
+.picker-nav .icon:disabled { opacity: 0.35; cursor: default; }
+.picker-nav:not(.paged) .icon { display: none; }
 /* A set-up or sign-in code, filling its tile however the tile is shaped. The
    overlay is the size container; .fit lays out inside it (a container query
    can't restyle the container itself). The QR is sized from the tile's own
@@ -136,7 +149,7 @@ dialog dd small { display: block; font-size: 11px; color: var(--wd-ink-faint, #7
 .overlay .close { position: absolute; right: 6px; top: 4px; z-index: 1; border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--wd-ink-faint, #71717a); }
 `;
 
-// Lucide icons (settings, pencil, qr-code, x), inline: the board has no icon set.
+// Lucide icons (settings, pencil, qr-code, x, chevrons), inline: the board has no icon set.
 const ICONS = {
   settings:
     '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
@@ -145,6 +158,8 @@ const ICONS = {
   "qr-code":
     '<rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  "chevron-up": '<path d="m18 15-6-6-6 6"/>',
+  "chevron-down": '<path d="m6 9 6 6 6-6"/>',
 };
 
 function iconButton(icon: keyof typeof ICONS, label: string, onClick: () => void): HTMLButtonElement {
@@ -155,6 +170,32 @@ function iconButton(icon: keyof typeof ICONS, label: string, onClick: () => void
   b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[icon]}</svg>`;
   b.addEventListener("click", onClick);
   return b;
+}
+
+/** The tops of a wrapped list's rows, from its children (offsets from the list, which is their offsetParent). */
+function rowTops(list: HTMLElement): number[] {
+  const tops = new Set<number>();
+  for (const c of list.children) if (c instanceof HTMLElement) tops.add(c.offsetTop);
+  return [...tops].sort((a, b) => a - b);
+}
+
+/** Scrolls a wrapped list down a page: the first row not wholly shown goes to the top. */
+function pageDown(list: HTMLElement) {
+  const bottom = list.scrollTop + list.clientHeight;
+  let top: number | undefined;
+  for (const c of list.children) {
+    if (c instanceof HTMLElement && c.offsetTop + c.offsetHeight > bottom + 1) {
+      top = top === undefined ? c.offsetTop : Math.min(top, c.offsetTop);
+    }
+  }
+  list.scrollTo({ top: top ?? list.scrollHeight, behavior: "smooth" });
+}
+
+/** Scrolls a wrapped list up a page: as many rows above the top one as fit, ending just above it. */
+function pageUp(list: HTMLElement) {
+  const from = list.scrollTop - list.clientHeight;
+  const top = rowTops(list).find((t) => t >= from && t < list.scrollTop) ?? 0;
+  list.scrollTo({ top, behavior: "smooth" });
 }
 
 const RECONNECT_MIN = 1000;
@@ -804,7 +845,10 @@ class WidgetBoard extends HTMLElement {
         const b = document.createElement("button");
         b.className = "action";
         const svg = widgetIcon(w.icon, 16);
-        b.replaceChildren(...(svg ? [svg] : []), w.title);
+        const label = document.createElement("span");
+        label.textContent = w.title;
+        b.title = w.title;
+        b.replaceChildren(...(svg ? [svg] : []), label);
         b.addEventListener("click", () => void this.addWidget(w.name));
         list.append(b);
       }
@@ -812,7 +856,24 @@ class WidgetBoard extends HTMLElement {
       cancel.className = "link";
       cancel.textContent = "Cancel";
       cancel.addEventListener("click", () => this.resetAddTile());
-      t.replaceChildren(list, cancel);
+      const nav = document.createElement("div");
+      nav.className = "picker-nav";
+      const up = iconButton("chevron-up", "Previous widgets", () => {
+        pageUp(list);
+      });
+      const down = iconButton("chevron-down", "More widgets", () => {
+        pageDown(list);
+      });
+      nav.append(up, cancel, down);
+      const sync = () => {
+        const max = list.scrollHeight - list.clientHeight;
+        nav.classList.toggle("paged", max > 1);
+        up.disabled = list.scrollTop <= 1;
+        down.disabled = list.scrollTop >= max - 1;
+      };
+      list.addEventListener("scroll", sync, { passive: true });
+      new ResizeObserver(sync).observe(list);
+      t.replaceChildren(list, nav);
     } catch (e) {
       t.replaceChildren(`Couldn't list widgets: ${e instanceof Error ? e.message : String(e)}`);
       setTimeout(() => this.resetAddTile(), 4000);
