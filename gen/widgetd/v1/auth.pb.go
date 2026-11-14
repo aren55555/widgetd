@@ -172,7 +172,12 @@ type GetSessionResponse struct {
 	// The full URL of the admin page: <public_url><base path>admin.
 	AdminUrl string `protobuf:"bytes,5,opt,name=admin_url,json=adminUrl,proto3" json:"admin_url,omitempty"`
 	// Set for ROLE_DEVICE: the device's short id, as in Device.short_id.
-	ShortId       string `protobuf:"bytes,6,opt,name=short_id,json=shortId,proto3" json:"short_id,omitempty"`
+	ShortId string `protobuf:"bytes,6,opt,name=short_id,json=shortId,proto3" json:"short_id,omitempty"`
+	// What the server was built from: widgetd's short commit ("06c1338",
+	// "06c1338-dirty" with uncommitted changes) or its module version
+	// ("v0.4.0") when it's a dependency; "dev" when neither is known (go run).
+	// The admin pages are embedded in the server, so it is theirs too.
+	ServerVersion string `protobuf:"bytes,7,opt,name=server_version,json=serverVersion,proto3" json:"server_version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -245,6 +250,13 @@ func (x *GetSessionResponse) GetAdminUrl() string {
 func (x *GetSessionResponse) GetShortId() string {
 	if x != nil {
 		return x.ShortId
+	}
+	return ""
+}
+
+func (x *GetSessionResponse) GetServerVersion() string {
+	if x != nil {
+		return x.ServerVersion
 	}
 	return ""
 }
@@ -1607,7 +1619,7 @@ const file_widgetd_v1_auth_proto_rawDesc = "" +
 	"\n" +
 	"\x15widgetd/v1/auth.proto\x12\n" +
 	"widgetd.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16widgetd/v1/board.proto\"\x13\n" +
-	"\x11GetSessionRequest\"\xdd\x01\n" +
+	"\x11GetSessionRequest\"\x84\x02\n" +
 	"\x12GetSessionResponse\x12$\n" +
 	"\x04role\x18\x01 \x01(\x0e2\x10.widgetd.v1.RoleR\x04role\x12\x1f\n" +
 	"\vdevice_name\x18\x02 \x01(\tR\n" +
@@ -1616,7 +1628,8 @@ const file_widgetd_v1_auth_proto_rawDesc = "" +
 	"\n" +
 	"public_url\x18\x04 \x01(\tR\tpublicUrl\x12\x1b\n" +
 	"\tadmin_url\x18\x05 \x01(\tR\badminUrl\x12\x19\n" +
-	"\bshort_id\x18\x06 \x01(\tR\ashortId\"5\n" +
+	"\bshort_id\x18\x06 \x01(\tR\ashortId\x12%\n" +
+	"\x0eserver_version\x18\a \x01(\tR\rserverVersion\"5\n" +
 	"\x12BeginEnrollRequest\x12\x1f\n" +
 	"\vsetup_token\x18\x01 \x01(\tR\n" +
 	"setupToken\"Y\n" +

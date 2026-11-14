@@ -738,8 +738,25 @@ function AdminApp() {
             >
               {(id) => <InstancePage id={id()} d={d()} reload={reload} />}
             </Show>
+            <Suspense>
+              <BuildFooter />
+            </Suspense>
           </main>
         </div>
+      )}
+    </Show>
+  );
+}
+
+/** The server's build (and so this page's, which it embeds), muted at the foot of every admin page. */
+function BuildFooter() {
+  const [session] = createResource(() => auth.getSession({}));
+  return (
+    <Show when={session()?.serverVersion}>
+      {(v) => (
+        <footer class="mt-auto pt-8 text-center text-xs opacity-50">
+          widgetd <span class="font-mono">{v()}</span>
+        </footer>
       )}
     </Show>
   );

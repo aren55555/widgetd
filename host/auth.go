@@ -295,7 +295,15 @@ type authService struct {
 
 func (s *authService) GetSession(ctx context.Context, req *connect.Request[widgetdv1.GetSessionRequest]) (*connect.Response[widgetdv1.GetSessionResponse], error) {
 	c := s.a.callerOf(req.Header())
-	out := &widgetdv1.GetSessionResponse{Role: c.role, PublicUrl: s.a.publicURL, AdminUrl: s.a.publicURL + s.a.base + "admin"}
+	out := &widgetdv1.GetSessionResponse{
+		Role:      c.role,
+		PublicUrl: s.a.publicURL,
+		AdminUrl:  s.a.publicURL + s.a.base + "admin",
+	}
+	if c.role != widgetdv1.Role_ROLE_UNSPECIFIED {
+		// Only for a signed-in caller: which build runs is no stranger's business.
+		out.ServerVersion = serverVersion()
+	}
 	s.a.mu.Lock()
 	out.NeedsEnrollment = s.a.setupToken != ""
 	s.a.mu.Unlock()

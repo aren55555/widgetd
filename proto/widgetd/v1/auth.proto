@@ -69,6 +69,11 @@ message GetSessionResponse {
   string admin_url = 5;
   // Set for ROLE_DEVICE: the device's short id, as in Device.short_id.
   string short_id = 6;
+  // What the server was built from: widgetd's short commit ("06c1338",
+  // "06c1338-dirty" with uncommitted changes) or its module version
+  // ("v0.4.0") when it's a dependency; "dev" when neither is known (go run).
+  // The admin pages are embedded in the server, so it is theirs too.
+  string server_version = 7;
 }
 
 message BeginEnrollRequest {

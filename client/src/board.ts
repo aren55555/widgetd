@@ -235,6 +235,8 @@ class WidgetBoard extends HTMLElement {
    * @internal Not public API yet.
    */
   adminUrl = "";
+  /** What the server was built from, from the last GetSession; the settings modal shows it. */
+  private serverVersion = "";
   private abort?: AbortController;
   private stopped = true;
   /** Whether this page is a paired screen, which keeps a copy of its settings on the server. */
@@ -335,6 +337,7 @@ class WidgetBoard extends HTMLElement {
         const session = await auth.getSession({});
         this.live();
         this.adminUrl = session.adminUrl;
+        this.serverVersion = session.serverVersion;
         if (session.role === Role.UNSPECIFIED) {
           await this.pair();
           continue;
@@ -395,6 +398,7 @@ class WidgetBoard extends HTMLElement {
     header.append(iconButton("x", "Close", () => this.dialog.close()));
 
     const about: Row[] = [{ label: "Board version", value: __BOARD_VERSION__, source: "" }];
+    if (this.serverVersion) about.push({ label: "Server build", value: this.serverVersion, source: "" });
     const app = appVersion(navigator.userAgent);
     if (app) about.push({ label: "App version", value: app, source: "" });
 
