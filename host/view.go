@@ -91,7 +91,7 @@ var pageTmpl = template.Must(template.New("page").Parse(`<!doctype html>
 <meta name="referrer" content="no-referrer">
 <title>widgetd</title>
 <link rel="stylesheet" href="{{.Base}}admin.css">
-</head><body><main id="app"></main>
+</head><body><div id="app"></div>
 <script type="module" src="{{.Base}}admin.js"></script>
 </body></html>`))
 

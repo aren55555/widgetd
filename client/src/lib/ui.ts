@@ -28,3 +28,6 @@ export const link = "text-blue-600 underline dark:text-blue-400";
 export const code = "my-2 text-center font-mono text-[2rem] leading-tight font-semibold tracking-widest";
 export const list = "border-t border-gray-500/20";
 export const item = "flex flex-col items-start gap-2 border-b border-gray-500/20 py-3";
+
+/** A single-task page (enroll, pair, a QR set-up): one narrow column. */
+export const column = "mx-auto flex max-w-md flex-col gap-4 px-5 py-8";
