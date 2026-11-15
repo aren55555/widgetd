@@ -1,3 +1,5 @@
+/* Doto, from @fontsource/doto@5.3.0; licence: fonts/doto-LICENSE.txt */
+@font-face{font-family:"Doto";font-style:normal;font-weight:900;font-display:block;src:url(fonts/doto-latin-900-normal.woff2) format("woff2")}
 .card {
   position: relative;
   height: 100%;
@@ -140,8 +142,9 @@
   filter: drop-shadow(0 0 2px color-mix(in oklab, var(--seg) 60%, transparent));
 }
 
-/* A final score is marked FINAL, written down the gutter between the scores
-   and the card's right edge (the .game's right padding). */
+/* A final score is marked FINAL, its letters stacked down the gutter between
+   the scores and the card's right edge (the .game's right padding), in a
+   scoreboard's dot-matrix lettering. */
 .final-mark {
   display: none;
   position: absolute;
@@ -152,9 +155,12 @@
   align-items: center;
   justify-content: center;
   writing-mode: vertical-rl;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
+  text-orientation: upright;
+  font-family: "Doto", var(--wd-font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 1px;
   color: var(--wd-ink-muted, #a1a1aa);
   transition: opacity 0.12s;
 }

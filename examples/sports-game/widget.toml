@@ -5,6 +5,13 @@ title   = "Game cards"
 icon    = "trophy"
 config  = "sportsgame.v1.Config"
 
+# FINAL, beside a finished game's score, in the dot-matrix lettering of a
+# scoreboard, bundled from @fontsource/doto (in view/package.json), so
+# nothing is fetched at run time.
+[[fonts]]
+family  = "Doto"
+weights = [900]
+
 # The hosts it may reach: ESPN's public API for schedules and live scores,
 # ESPN's image host for team logos (the view loads those; the server never
 # fetches them), and Kalshi's public market data for who's favoured to win.
