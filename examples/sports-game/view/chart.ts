@@ -3,7 +3,7 @@
 // (longer if it runs over). The 50% line stays at the centre; the scale
 // stretches to the biggest swing so far. Each score is a mark in the scoring
 // team's colour. Hovering shows each line's price at that minute, and near a
-// mark, who scored.
+// mark, who scored; the card shows the score as it stood then.
 
 import { HourCycle, type DisplayPrefs } from "@widgetd/sdk";
 import type { Market } from "./gen/sportsgame/v1/sportsgame_pb.ts";
@@ -50,10 +50,15 @@ export class Chart {
   private pointerX?: number;
   private timeFmt: Intl.DateTimeFormat;
 
-  /** host gets the pointer events and the "hovering" class (it dims the score). */
+  /**
+   * host gets the pointer events and the "hovering" class (it dims the
+   * card). onHover gets the time under the pointer, in Unix ms, or
+   * undefined when there's none.
+   */
   constructor(
     private host: HTMLElement,
     prefs: DisplayPrefs,
+    private onHover: (unixMs: number | undefined) => void = () => undefined,
   ) {
     this.el = div("market");
     this.plot = div("plot");
@@ -161,6 +166,7 @@ export class Chart {
     if (!d || fx < 0 || i < 0 || i >= n) {
       this.host.classList.remove("hovering");
       this.hover.replaceChildren();
+      this.onHover(undefined);
       return;
     }
     this.host.classList.add("hovering");
@@ -203,8 +209,10 @@ export class Chart {
       credit.style.setProperty("--line", near.color);
       parts.push(credit);
     }
+    const t = near ? near.unixMs : start + i * MIN;
+    this.onHover(t);
     const when = div("when");
-    when.textContent = this.timeFmt.format(near ? near.unixMs : start + i * MIN);
+    when.textContent = this.timeFmt.format(t);
     parts.push(when);
     this.hover.replaceChildren(...parts);
     // Centred on the mark where it fits, slid along to stay inside the card

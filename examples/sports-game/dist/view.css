@@ -17,6 +17,9 @@
   box-sizing: border-box;
   font-family: var(--wd-font-mono, ui-monospace, monospace);
   color: var(--wd-ink, #e5e7eb);
+}
+
+.game :is(img, .swatch, .who, .pct, .score, .status) {
   transition: opacity 0.12s;
 }
 
@@ -206,8 +209,14 @@
   pointer-events: none;
 }
 
-.hovering .game {
+.hovering .game :is(img, .swatch, .who, .pct, .score, .status) {
   opacity: 0.35;
+}
+
+/* Hovering where the score is known: it stays bright, as it stood then. */
+.hovering.past .game .score {
+  opacity: 1;
+  color: var(--wd-ink, #e5e7eb);
 }
 
 .hover .rule {

@@ -103,6 +103,10 @@ message Score {
   // Who scored, if ESPN says (it does for hockey).
   Credit scorer = 3;
   repeated Credit assists = 4 [(buf.validate.field).repeated.max_items = 3];
+  // The score just after it, ESPN's where it gives one (it does for hockey,
+  // football and baseball) and else counted, a shootout goal not counting.
+  uint32 away_score = 5 [(buf.validate.field).uint32.lte = 999];
+  uint32 home_score = 6 [(buf.validate.field).uint32.lte = 999];
 }
 
 // Credit is a player's part in a score.

@@ -1,9 +1,9 @@
 import { defineWidget } from "@widgetd/sdk";
 import { icon, Star } from "@widgetd/sdk/icons";
 
-import { StateSchema, State_Phase, type State, type Team } from "./gen/sportsgame/v1/sportsgame_pb.ts";
+import { League, StateSchema, State_Phase, type State, type Team } from "./gen/sportsgame/v1/sportsgame_pb.ts";
 import { Chart } from "./chart.ts";
-import { creditLine, lineColors, startLabel, teamColor, TYPICAL_MS } from "./game.ts";
+import { creditLine, lineColors, scoreAt, startLabel, teamColor, TYPICAL_MS } from "./game.ts";
 
 defineWidget({
   state: StateSchema,
@@ -13,7 +13,11 @@ defineWidget({
     const game = root.querySelector<HTMLElement>(".game")!;
     const teams = root.querySelector<HTMLElement>(".teams")!;
     const status = root.querySelector<HTMLElement>(".status")!;
-    const chart = new Chart(card, prefs);
+    let hoverAt: number | undefined;
+    const chart = new Chart(card, prefs, (t) => {
+      hoverAt = t;
+      paintScores();
+    });
     card.prepend(chart.el);
     // Built once and updated in place: a new <img> on every update would
     // blank the logos for a moment each time (every state, and every minute).
@@ -21,6 +25,17 @@ defineWidget({
     const homeRow = new TeamRow();
     teams.append(awayRow.el, homeRow.el);
     let current: State | undefined;
+
+    // While the pointer is on the chart, each team's score as it stood at
+    // that moment, from the scores the server marks (not basketball's).
+    const paintScores = () => {
+      const s = current;
+      if (!s?.home || !s.away || s.phase === State_Phase.PRE) return;
+      const then = hoverAt !== undefined && TRACKED.has(s.league) ? scoreAt(s.scores, hoverAt) : undefined;
+      card.classList.toggle("past", !!then);
+      awayRow.setScore(then ? String(then.away) : s.away.score);
+      homeRow.setScore(then ? String(then.home) : s.home.score);
+    };
 
     const render = () => {
       const s = current;
@@ -58,6 +73,7 @@ defineWidget({
       });
       awayRow.update(s.away, opts(s.away, colors.away, m?.away));
       homeRow.update(s.home, opts(s.home, colors.home, m?.home));
+      paintScores();
 
       status.dataset.phase = State_Phase[s.phase].toLowerCase();
       status.textContent = pre
@@ -76,6 +92,9 @@ defineWidget({
     };
   },
 });
+
+/** The leagues whose every score the server marks (its scoresRarely). */
+const TRACKED = new Set([League.NFL, League.NHL, League.MLB, League.MLS]);
 
 interface RowOpts {
   mine: boolean;
@@ -121,6 +140,10 @@ class TeamRow {
     this.record.hidden = !o.record;
     this.pct.textContent = o.pct;
     this.score.textContent = o.score;
+  }
+
+  setScore(score: string): void {
+    this.score.textContent = score;
   }
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { creditLine, halfRange, lineColors, spread, startLabel, teamColor } from "./game.ts";
+import { creditLine, halfRange, lineColors, scoreAt, spread, startLabel, teamColor } from "./game.ts";
 
 const tz = "America/Los_Angeles";
 const at = (iso: string) => Date.parse(iso);
@@ -67,4 +67,17 @@ test("creditLine", () => {
   expect(creditLine(c("Stenberg"), [])).toBe("Stenberg"); // a shootout goal: no total
   expect(creditLine(c("A", 1), [c("B"), c("C", 3)])).toBe("A(1G), B, C(3A)"); // a total ESPN didn't give
   expect(creditLine(undefined, [])).toBe("");
+});
+
+test("scoreAt: the score as it stood", () => {
+  const scores = [
+    { unixMs: 100n, awayScore: 1, homeScore: 0 },
+    { unixMs: 200n, awayScore: 1, homeScore: 1 },
+    { unixMs: 300n, awayScore: 1, homeScore: 2 },
+  ];
+  expect(scoreAt(scores, 50)).toEqual({ away: 0, home: 0 });
+  expect(scoreAt(scores, 200)).toEqual({ away: 1, home: 1 });
+  expect(scoreAt(scores, 299)).toEqual({ away: 1, home: 1 });
+  expect(scoreAt(scores, 1000)).toEqual({ away: 1, home: 2 });
+  expect(scoreAt([], 1000)).toEqual({ away: 0, home: 0 });
 });

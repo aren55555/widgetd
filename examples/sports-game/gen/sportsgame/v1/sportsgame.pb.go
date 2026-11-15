@@ -523,8 +523,12 @@ type Score struct {
 	// Which team scored: the home team, or else the away team.
 	Home bool `protobuf:"varint,2,opt,name=home,proto3" json:"home,omitempty"`
 	// Who scored, if ESPN says (it does for hockey).
-	Scorer        *Credit   `protobuf:"bytes,3,opt,name=scorer,proto3" json:"scorer,omitempty"`
-	Assists       []*Credit `protobuf:"bytes,4,rep,name=assists,proto3" json:"assists,omitempty"`
+	Scorer  *Credit   `protobuf:"bytes,3,opt,name=scorer,proto3" json:"scorer,omitempty"`
+	Assists []*Credit `protobuf:"bytes,4,rep,name=assists,proto3" json:"assists,omitempty"`
+	// The score just after it, ESPN's where it gives one (it does for hockey,
+	// football and baseball) and else counted, a shootout goal not counting.
+	AwayScore     uint32 `protobuf:"varint,5,opt,name=away_score,json=awayScore,proto3" json:"away_score,omitempty"`
+	HomeScore     uint32 `protobuf:"varint,6,opt,name=home_score,json=homeScore,proto3" json:"home_score,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -585,6 +589,20 @@ func (x *Score) GetAssists() []*Credit {
 		return x.Assists
 	}
 	return nil
+}
+
+func (x *Score) GetAwayScore() uint32 {
+	if x != nil {
+		return x.AwayScore
+	}
+	return 0
+}
+
+func (x *Score) GetHomeScore() uint32 {
+	if x != nil {
+		return x.HomeScore
+	}
+	return 0
 }
 
 // Credit is a player's part in a score.
@@ -733,12 +751,16 @@ const file_sportsgame_v1_sportsgame_proto_rawDesc = "" +
 	"\tPHASE_PRE\x10\x01\x12\x0e\n" +
 	"\n" +
 	"PHASE_LIVE\x10\x02\x12\x0f\n" +
-	"\vPHASE_FINAL\x10\x03J\x04\b\v\x10\fR\x0escored_unix_ms\"\xa7\x01\n" +
+	"\vPHASE_FINAL\x10\x03J\x04\b\v\x10\fR\x0escored_unix_ms\"\xf9\x01\n" +
 	"\x05Score\x12 \n" +
 	"\aunix_ms\x18\x01 \x01(\x03B\a\xbaH\x04\"\x02 \x00R\x06unixMs\x12\x12\n" +
 	"\x04home\x18\x02 \x01(\bR\x04home\x12-\n" +
 	"\x06scorer\x18\x03 \x01(\v2\x15.sportsgame.v1.CreditR\x06scorer\x129\n" +
-	"\aassists\x18\x04 \x03(\v2\x15.sportsgame.v1.CreditB\b\xbaH\x05\x92\x01\x02\x10\x03R\aassists\"T\n" +
+	"\aassists\x18\x04 \x03(\v2\x15.sportsgame.v1.CreditB\b\xbaH\x05\x92\x01\x02\x10\x03R\aassists\x12'\n" +
+	"\n" +
+	"away_score\x18\x05 \x01(\rB\b\xbaH\x05*\x03\x18\xe7\aR\tawayScore\x12'\n" +
+	"\n" +
+	"home_score\x18\x06 \x01(\rB\b\xbaH\x05*\x03\x18\xe7\aR\thomeScore\"T\n" +
 	"\x06Credit\x12\x1d\n" +
 	"\x04name\x18\x01 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x180R\x04name\x12+\n" +
 	"\fseason_total\x18\x02 \x01(\rB\b\xbaH\x05*\x03\x18\xe7\aR\vseasonTotal\"\x1e\n" +

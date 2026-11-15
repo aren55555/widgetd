@@ -119,3 +119,22 @@ export function creditLine(scorer: CreditLike | undefined, assists: readonly Cre
   const one = (c: CreditLike, unit: "G" | "A") => (c.seasonTotal ? `${c.name}(${c.seasonTotal}${unit})` : c.name);
   return [one(scorer, "G"), ...assists.map((a) => one(a, "A"))].join(", ");
 }
+
+interface ScoreLike {
+  unixMs: bigint | number;
+  awayScore: number;
+  homeScore: number;
+}
+
+/**
+ * The score at t (ms): the one just after the last score at or before t,
+ * or 0–0 before the first. scores are in time order.
+ */
+export function scoreAt(scores: readonly ScoreLike[], t: number): { away: number; home: number } {
+  let at = { away: 0, home: 0 };
+  for (const s of scores) {
+    if (Number(s.unixMs) > t) break;
+    at = { away: s.awayScore, home: s.homeScore };
+  }
+  return at;
+}

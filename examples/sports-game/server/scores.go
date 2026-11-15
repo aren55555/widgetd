@@ -13,7 +13,7 @@ import (
 
 // The scoring plays of ESPN's play-by-play, as marks for the chart: when,
 // which team, and (where ESPN names them, as for hockey) who scored and
-// assisted, with their season totals.
+// assisted, with their season totals, and the score just after each.
 
 // maxScores is State's cap on scores.
 const maxScores = 40
@@ -23,10 +23,16 @@ type teamRef struct {
 }
 
 type play struct {
-	ScoringPlay  bool    `json:"scoringPlay"`
-	Wallclock    string  `json:"wallclock"`
-	Team         teamRef `json:"team"`
-	Text         string  `json:"text"`
+	ScoringPlay bool    `json:"scoringPlay"`
+	Wallclock   string  `json:"wallclock"`
+	Team        teamRef `json:"team"`
+	Text        string  `json:"text"`
+	// The score just after the play. Hockey, football and baseball
+	// give it; soccer's key events don't.
+	AwayScore *uint32 `json:"awayScore"`
+	HomeScore *uint32 `json:"homeScore"`
+	// A soccer shootout's kick, which doesn't add to the score.
+	Shootout     bool `json:"shootout"`
 	Participants []struct {
 		Type    string `json:"type"` // scorer, assister
 		Athlete struct {
@@ -38,10 +44,13 @@ type play struct {
 
 // scores is each scoring play, in order, once each (soccer lists goals in
 // both its plays and key events), at most maxScores. homeID is ESPN's id for
-// the home team.
+// the home team. Each carries the score just after it: ESPN's where the play
+// gives it, and else the score so far plus this one (but not a shootout's).
 func scores(plays []play, homeID string) []*pb.Score {
 	seen := map[int64]bool{}
 	var out []*pb.Score
+	given := map[*pb.Score]bool{}
+	shootout := map[*pb.Score]bool{}
 	for _, p := range plays {
 		if !p.ScoringPlay {
 			continue
@@ -52,6 +61,11 @@ func scores(plays []play, homeID string) []*pb.Score {
 		}
 		seen[t.UnixMilli()] = true
 		s := &pb.Score{UnixMs: t.UnixMilli(), Home: p.Team.ID != "" && p.Team.ID == homeID}
+		if p.AwayScore != nil && p.HomeScore != nil {
+			s.AwayScore, s.HomeScore = min(*p.AwayScore, 999), min(*p.HomeScore, 999)
+			given[s] = true
+		}
+		shootout[s] = p.Shootout
 		for _, who := range p.Participants {
 			c := credit(p.Text, who.Athlete.DisplayName, who.Athlete.ShortName)
 			if c == nil {
@@ -67,6 +81,19 @@ func scores(plays []play, homeID string) []*pb.Score {
 		out = append(out, s)
 	}
 	slices.SortFunc(out, func(a, b *pb.Score) int { return cmp.Compare(a.GetUnixMs(), b.GetUnixMs()) })
+	var away, home uint32
+	for _, s := range out {
+		switch {
+		case given[s]:
+			away, home = s.GetAwayScore(), s.GetHomeScore()
+		case shootout[s]:
+		case s.GetHome():
+			home++
+		default:
+			away++
+		}
+		s.AwayScore, s.HomeScore = away, home
+	}
 	if len(out) > maxScores {
 		out = out[:maxScores]
 	}
