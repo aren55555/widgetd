@@ -353,8 +353,9 @@ func (f *fetcher) Activity() []Activity {
 }
 
 // do performs a widget's request. sign, if set, is how the host signs it
-// for a signed-in widget (an Authorization header, or SnapTrade's query and
-// Signature), applied after the widget's own such headers are stripped.
+// for a signed-in widget (an Authorization header, SnapTrade's query and
+// Signature, or an API key), applied after the widget's own such headers
+// are stripped. What it signs stays on the request's host.
 func (f *fetcher) do(ctx context.Context, req *http.Request, sign signer) (*http.Response, error) {
 	start := time.Now()
 	act := Activity{At: start, Method: req.Method, Host: req.URL.Host, Path: req.URL.Path}
@@ -383,9 +384,18 @@ func (f *fetcher) do(ctx context.Context, req *http.Request, sign signer) (*http
 	for _, h := range hostOwnedHeaders {
 		out.Header.Del(h)
 	}
+	// The headers the signer set, which mustn't follow a redirect to
+	// another host (Go drops only Authorization and cookies by itself).
+	var signedHeaders []string
 	if sign != nil {
+		before := out.Header.Clone()
 		if err := sign(out); err != nil {
 			return fail(fmt.Errorf("signing the request: %w", err))
+		}
+		for k, v := range out.Header {
+			if !slices.Equal(before[k], v) {
+				signedHeaders = append(signedHeaders, k)
+			}
 		}
 	}
 	ctx, cancel := context.WithTimeout(ctx, p.timeout)
@@ -394,6 +404,11 @@ func (f *fetcher) do(ctx context.Context, req *http.Request, sign signer) (*http
 		CheckRedirect: func(next *http.Request, via []*http.Request) error {
 			if len(via) >= maxRedirects {
 				return &PolicyDeniedError{Rule: "too many redirects", URL: next.URL.Redacted()}
+			}
+			if !strings.EqualFold(next.URL.Host, out.URL.Host) {
+				for _, h := range signedHeaders {
+					next.Header.Del(h)
+				}
 			}
 			return f.checkURL(next.Method, next)
 		},

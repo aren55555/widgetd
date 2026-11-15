@@ -274,6 +274,9 @@ message ProviderInfo {
   // "Consumer key"), if not a client ID and client secret.
   string client_id_label = 8;
   string secret_label = 9;
+  // The provider is an API key and nothing else (sign_in.flow "api_key"):
+  // no client ID to ask for, only the key, which is the secret.
+  bool key_only = 10;
 }
 
 // An account the display has with a provider ("Google: Work"). Instances

@@ -1,0 +1,20 @@
+# Finnhub, as a provider package: stock and fund quotes, with an API key.
+# Not OAuth: the "api_key" flow keeps the key as the provider's client
+# secret (set once on the admin page) and puts it in the X-Finnhub-Token
+# header of every request a widget's scopes cover. Widgets use it by
+# declaring [[uses]] provider = "finnhub" with the scopes they need, and
+# never see the key.
+name    = "finnhub"
+title   = "Finnhub"
+version = "1"
+
+[sign_in]
+flow   = "api_key"
+key_in = "header:X-Finnhub-Token"
+revoke = "none"
+secret_label = "API key"
+client_help  = "finnhub.io → Dashboard: copy your API key. The free tier is enough (60 requests a minute, shared by every widget using it)."
+
+[scopes.covers]
+# The latest price and today's change for one symbol.
+quote = ["GET https://finnhub.io/api/v1/quote"]

@@ -230,10 +230,10 @@ func newAccountHarness(t *testing.T, extra ...widget.Spec) *accountHarness {
 	srv.Register(mux)
 	h := &harness{t: t, srv: srv, http: httptest.NewServer(mux)}
 	t.Cleanup(func() { h.http.Close(); srv.Close(context.Background()) })
-	if err := srv.setClient("idp", "client-1", "sec"); err != nil {
+	if err := srv.setClient("idp", "client-1", "sec", false); err != nil {
 		t.Fatal(err)
 	}
-	if err := srv.setClient("dev", "client-2", ""); err != nil {
+	if err := srv.setClient("dev", "client-2", "", false); err != nil {
 		t.Fatal(err)
 	}
 	srv.Start()

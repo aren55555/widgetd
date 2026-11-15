@@ -161,7 +161,7 @@ out), the save is refused with that reason, so it can be retried.
   named `headers`), how to tell who signed in (`[identity]`), and
   `[scopes.covers]`: what each scope unlocks, as URL prefixes optionally
   led by a method. The table is strict: an unlisted scope doesn't exist.
-  Google, GitHub and SnapTrade ship built in (`host/providers/`). Whoever
+  Google, GitHub, SnapTrade and Finnhub ship built in (`host/providers/`). Whoever
   runs the host registers a client with each provider and enters it under
   Accounts on the admin page.
 
@@ -177,3 +177,14 @@ out), the save is refused with that reason, so it can be retried.
   `Signature` instead of `Authorization`, and signing out deletes the user
   (revoke `snaptrade-user`). Its `read` scope covers only `GET`s of a
   user's own data.
+
+  An API that takes a plain key (Finnhub) uses the `api_key` flow. The key
+  is the provider's client secret, entered once on the admin page (there is
+  no client ID), and `key_in` says where it goes: `header:<Name>`
+  (`X-Finnhub-Token`) or `query:<name>`. There is nothing to sign in to, so
+  opening the sign-in link finishes at once and grants the scopes that were
+  asked for. The host reads the key for each request, so a new key takes
+  effect immediately. It revokes with `none` and has no `[identity]`. A 401
+  signs the account out, as for any provider. Whatever the flow, the
+  headers the host signs a request with are dropped if a redirect leaves
+  the request's host.

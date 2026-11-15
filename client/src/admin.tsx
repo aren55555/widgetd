@@ -1545,7 +1545,8 @@ function AccountItem(props: { a: Account; p: ProviderInfo; d: HomeData; reload: 
 
 /**
  * A provider's OAuth client: registered once, by whoever runs this, with the
- * provider, and shared by all its accounts here.
+ * provider, and shared by all its accounts here. For a key-only provider,
+ * its API key instead, shared the same way.
  */
 function ProviderItem(props: { p: ProviderInfo; reload: () => Promise<void> }) {
   const p = props.p;
@@ -1554,13 +1555,15 @@ function ProviderItem(props: { p: ProviderInfo; reload: () => Promise<void> }) {
   const st = createStatus();
   // What the provider calls its client's halves (SnapTrade: "Consumer key").
   const idLabel = p.clientIdLabel || "Client ID";
-  const secretLabel = p.secretLabel || "Client secret";
+  const secretLabel = p.secretLabel || (p.keyOnly ? "API key" : "Client secret");
+  // A key-only provider (Finnhub) has no app to register: just its key.
+  const summary = () =>
+    p.keyOnly
+      ? `${p.title} ${secretLabel.toLowerCase()} ${p.secretSet ? "· stored" : "· not set yet"}`
+      : `${p.title} app ${p.clientSet ? (p.secretSet ? "· registered" : `· ${idLabel.toLowerCase()} only`) : "· not registered yet"}`;
   return (
-    <details class={`${ui.fieldset} w-full`} open={!p.clientSet}>
-      <summary class="cursor-pointer font-semibold">
-        {p.title} app{" "}
-        {p.clientSet ? (p.secretSet ? "· registered" : `· ${idLabel.toLowerCase()} only`) : "· not registered yet"}
-      </summary>
+    <details class={`${ui.fieldset} w-full`} open={p.keyOnly ? !p.secretSet : !p.clientSet}>
+      <summary class="cursor-pointer font-semibold">{summary()}</summary>
       <Show when={p.error}>
         <p class={`text-sm ${ui.error}`}>{p.error}</p>
       </Show>
@@ -1572,14 +1575,16 @@ function ProviderItem(props: { p: ProviderInfo; reload: () => Promise<void> }) {
           Redirect URI to register with {p.title}: <code class="break-all">{p.redirectUri}</code>
         </p>
       </Show>
-      <input
-        class={ui.input}
-        value={id()}
-        onInput={(e) => setId(e.currentTarget.value)}
-        placeholder={p.clientSet ? `${idLabel} registered. Enter a new one to replace it.` : idLabel}
-        autocomplete="off"
-        aria-label={`${p.title} ${idLabel.toLowerCase()}`}
-      />
+      <Show when={!p.keyOnly}>
+        <input
+          class={ui.input}
+          value={id()}
+          onInput={(e) => setId(e.currentTarget.value)}
+          placeholder={p.clientSet ? `${idLabel} registered. Enter a new one to replace it.` : idLabel}
+          autocomplete="off"
+          aria-label={`${p.title} ${idLabel.toLowerCase()}`}
+        />
+      </Show>
       <input
         class={ui.input}
         type="password"
@@ -1600,7 +1605,7 @@ function ProviderItem(props: { p: ProviderInfo; reload: () => Promise<void> }) {
           await props.reload();
         })}
       >
-        Save client
+        {p.keyOnly ? "Save key" : "Save client"}
       </button>
       <st.View />
     </details>

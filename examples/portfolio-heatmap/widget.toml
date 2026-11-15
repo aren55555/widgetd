@@ -1,0 +1,25 @@
+# The widget's manifest. widgetc reads it to wire the widget up.
+name    = "portfolio-heatmap"
+version = "0.1.0"
+title   = "Portfolio heatmap"
+icon    = "layout-grid"
+
+# SnapTrade for the holdings and Finnhub for stock and fund quotes (both
+# signed by the host, see [[uses]]); Coinbase's public market data for crypto.
+[network]
+hosts   = ["api.snaptrade.com", "finnhub.io", "api.exchange.coinbase.com"]
+methods = ["GET"]
+why     = "Your holdings, read-only (SnapTrade), and today's moves for them (Finnhub, Coinbase)"
+
+# The display's brokerage accounts, read-only. The host signs requests to
+# api.snaptrade.com; the widget never sees the SnapTrade user's secret, and
+# never sends a dollar amount, a price or a share count to a screen.
+[[uses]]
+provider = "snaptrade"
+scopes   = ["read"]
+
+# Quotes for stocks and funds: today's change. The host puts the display's
+# Finnhub API key on these requests; the widget never sees it.
+[[uses]]
+provider = "finnhub"
+scopes   = ["quote"]

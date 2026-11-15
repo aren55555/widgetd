@@ -1,0 +1,10 @@
+{
+  "results": [
+    {"instrument": {"kind": "stock", "symbol": "AAPL", "description": "Apple Inc."}, "units": "10", "price": "200.00", "cost_basis": "150.00", "currency": "USD"},
+    {"instrument": {"kind": "etf", "symbol": "VOO", "description": "Vanguard S&P 500 ETF"}, "units": "2.5", "price": "500", "cost_basis": null, "currency": "USD"},
+    {"instrument": {"kind": "crypto", "symbol": "BTC", "description": "Bitcoin"}, "units": "0.01", "price": 100000, "cost_basis": "50000"},
+    {"instrument": {"kind": "option", "symbol": "AAPL  261218C00250000", "description": "AAPL call"}, "units": "1", "price": "3.10", "cost_basis": "2.00"},
+    {"instrument": {"kind": "stock", "symbol": "SPAXX", "description": "Money market"}, "units": "100", "price": "1", "cost_basis": "1", "cash_equivalent": true},
+    {"instrument": {"kind": "stock", "symbol": "TSLA", "description": "Tesla"}, "units": "-3", "price": "250", "cost_basis": "260"}
+  ]
+}

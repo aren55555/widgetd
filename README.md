@@ -32,6 +32,7 @@ Raspberry Pi, or embed it in an existing Go server.
 | `examples/bitcoin-spiral/` | Example widget, as a folder |
 | `examples/sports-game/` | Game cards for a followed team: cards that come and go with each game |
 | `examples/github-notifications/` | Your GitHub notifications: signs in with GitHub (device flow, run by the host) |
+| `examples/portfolio-heatmap/` | Your brokerage holdings as a treemap, read-only through SnapTrade, with Finnhub quotes (an API-key provider): weights and percentages only, never dollars |
 | `examples/clock.widget` | Example widget, as a single file |
 | `docs/abi.md` | The sandbox ABI, for writing a widget in another language |
 

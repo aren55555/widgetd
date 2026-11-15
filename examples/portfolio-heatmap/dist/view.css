@@ -1,0 +1,276 @@
+/* The portfolio heatmap. Neutral colours are the board's theme; the
+   red–grey–green of the tiles is the widget's own (model.ts), the same on
+   every board. */
+.pf {
+  --ink: var(--wd-ink, #f3f5f7);
+  --muted: var(--wd-ink-muted, #8a93a0);
+  --card: var(--wd-surface, #121418);
+  --raised: var(--wd-raised, #2a2f37);
+  --up: var(--wd-up, #3ddc84);
+  --down: var(--wd-down, #ff5a6a);
+  --accent: var(--wd-accent, #60a5fa);
+
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  font-family: var(--wd-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.pf [hidden] {
+  display: none !important;
+}
+.up {
+  color: var(--up);
+}
+.down {
+  color: var(--down);
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
+}
+.title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.move {
+  font-size: 15px;
+  font-weight: 700;
+}
+.move small {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 4px;
+}
+.toggle {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  background: color-mix(in oklab, var(--raised) 50%, transparent);
+  border-radius: 6px;
+  padding: 2px;
+  align-self: center;
+}
+.toggle button {
+  all: unset;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.toggle button.on {
+  background: var(--raised);
+  color: var(--ink);
+}
+.toggle button:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+/* ── The map ────────────────────────────────────────────────────────── */
+.map {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+.tile {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+  transition:
+    background-color 0.9s ease,
+    box-shadow 0.9s ease,
+    left 0.6s ease,
+    top 0.6s ease,
+    width 0.6s ease,
+    height 0.6s ease;
+}
+.sym {
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+}
+.pct {
+  font-weight: 500;
+  line-height: 1.15;
+  opacity: 0.95;
+}
+.map.covered .tile {
+  visibility: hidden;
+}
+.tile.flash {
+  animation: flash 0.9s ease;
+}
+@keyframes flash {
+  30% {
+    filter: brightness(1.45);
+  }
+}
+
+/* ── A tapped tile: grows to fill the map and flips to its back ─────── */
+.flip {
+  position: absolute;
+  z-index: 10;
+  perspective: 1400px;
+  cursor: pointer;
+}
+.flip.moving {
+  transition:
+    left 0.7s cubic-bezier(0.65, 0, 0.35, 1),
+    top 0.7s cubic-bezier(0.65, 0, 0.35, 1),
+    width 0.7s cubic-bezier(0.65, 0, 0.35, 1),
+    height 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.flip-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.flip.flipped .flip-inner {
+  transform: rotateY(180deg);
+}
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  overflow: hidden;
+}
+.face.front {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}
+.face.back {
+  transform: rotateY(180deg);
+  background: var(--card);
+}
+/* The back is laid out at the map's size; the face clips it while it grows. */
+.back-body {
+  position: absolute;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.back-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
+}
+.back-head .sym {
+  font-size: 26px;
+}
+.back-head .name {
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.back-head .x {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+}
+.big {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.big b {
+  font-size: 34px;
+  font-weight: 800;
+}
+.big small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.stats {
+  margin-top: auto;
+  display: flex;
+  gap: 22px;
+  border-top: 1px solid color-mix(in oklab, var(--raised) 70%, transparent);
+  padding-top: 8px;
+}
+.stats div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.stats span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.stats b {
+  font-size: 15px;
+}
+.tiny .back-head .sym {
+  font-size: 18px;
+}
+.tiny .back-head .name {
+  font-size: 11px;
+}
+.tiny .big b {
+  font-size: 20px;
+}
+.tiny .stats {
+  gap: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .flip.moving,
+  .flip-inner {
+    transition: none;
+  }
+  .tile.flash {
+    animation: none;
+  }
+}

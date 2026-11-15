@@ -40,13 +40,19 @@ type ProviderManifest struct {
 		// a QR code to the consent page on a phone), "device" (RFC 8628:
 		// a code to enter on the provider's site) or "snaptrade" (not OAuth:
 		// SnapTrade's API keys, a SnapTrade user per account, and its
-		// Connection Portal on a phone; see snaptrade.go).
+		// Connection Portal on a phone; see snaptrade.go). Or "api_key": no
+		// sign-in at the provider at all. The key is the client's secret, set
+		// once on the admin page, and every request a widget's scopes cover
+		// carries it where KeyIn says.
 		Flow      string `toml:"flow"`
 		AuthURL   string `toml:"auth_url"`
 		DeviceURL string `toml:"device_url"`
 		TokenURL  string `toml:"token_url"`
 		// APIURL is the API the "snaptrade" flow registers users with.
-		APIURL     string            `toml:"api_url"`
+		APIURL string `toml:"api_url"`
+		// KeyIn is where the "api_key" flow puts the key: "header:<Name>"
+		// (X-Finnhub-Token) or "query:<name>" (token).
+		KeyIn      string            `toml:"key_in"`
 		AuthParams map[string]string `toml:"auth_params"`
 		// Revoke is "rfc7009" (POST the token to RevokeURL), "github-grant"
 		// (DELETE RevokeURL, with {client_id} filled in, and the token in a
@@ -100,6 +106,7 @@ const (
 	flowBrowser flow = iota + 1
 	flowDevice
 	flowSnapTrade
+	flowAPIKey
 )
 
 // rule is one entry of what a scope unlocks.
@@ -118,9 +125,15 @@ type provider struct {
 	AuthParams url.Values
 	rules      []rule
 	rejected   *regexp.Regexp
+	// The "api_key" flow: the header or query parameter the key goes in.
+	keyHeader, keyQuery string
 }
 
-var providerNameRE = regexp.MustCompile(`^[a-z][a-z0-9-]{0,31}$`)
+var (
+	providerNameRE = regexp.MustCompile(`^[a-z][a-z0-9-]{0,31}$`)
+	headerNameRE   = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9-]{0,63}$`)
+	queryNameRE    = regexp.MustCompile(`^[A-Za-z0-9_.-]{1,64}$`)
+)
 
 // parseProvider reads and checks a provider manifest.
 func parseProvider(b []byte) (*provider, error) {
@@ -168,10 +181,30 @@ func parseProvider(b []byte) (*provider, error) {
 		if m.SignIn.Revoke != "snaptrade-user" {
 			return nil, errors.New(`sign_in.flow "snaptrade" revokes with "snaptrade-user"`)
 		}
+	case "api_key":
+		p.Flow = flowAPIKey
+		where, name, _ := strings.Cut(m.SignIn.KeyIn, ":")
+		switch {
+		case where == "header" && headerNameRE.MatchString(name) && !slices.ContainsFunc(hostOwnedHeaders, func(h string) bool { return strings.EqualFold(h, name) }):
+			p.keyHeader = http.CanonicalHeaderKey(name)
+		case where == "query" && queryNameRE.MatchString(name):
+			p.keyQuery = name
+		default:
+			return nil, fmt.Errorf(`sign_in.key_in %q: want "header:<Name>" or "query:<name>" (and not a header the host owns)`, m.SignIn.KeyIn)
+		}
+		if m.SignIn.Revoke != "none" {
+			return nil, errors.New(`sign_in.flow "api_key" revokes with "none": a key is the client's, not the account's`)
+		}
+		if m.Identity.URL != "" {
+			return nil, errors.New(`sign_in.flow "api_key" can't have an identity: there's no one signed in`)
+		}
 	default:
-		return nil, fmt.Errorf("sign_in.flow %q: want browser, device or snaptrade", m.SignIn.Flow)
+		return nil, fmt.Errorf("sign_in.flow %q: want browser, device, snaptrade or api_key", m.SignIn.Flow)
 	}
-	if p.Flow != flowSnapTrade {
+	if m.SignIn.KeyIn != "" && p.Flow != flowAPIKey {
+		return nil, errors.New(`sign_in.key_in is for flow "api_key"`)
+	}
+	if p.Flow == flowBrowser || p.Flow == flowDevice {
 		if err := https("token_url", m.SignIn.TokenURL); err != nil {
 			return nil, err
 		}

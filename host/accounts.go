@@ -176,13 +176,16 @@ func (s *Server) loadClient(provider string) (signInClient, bool, error) {
 }
 
 // setClient stores a provider's client; an empty id or secret keeps the
-// stored one, so either can be updated alone.
-func (s *Server) setClient(provider, id, secret string) error {
+// stored one, so either can be updated alone. With keyOnly (an "api_key"
+// provider), there is no client ID, only the secret.
+func (s *Server) setClient(provider, id, secret string, keyOnly bool) error {
 	var sealed []byte
 	if secret != "" {
 		sealed = s.sealer.seal([]byte(secret), "client:"+provider, "secret")
 	}
-	if id == "" {
+	if keyOnly {
+		id = ""
+	} else if id == "" {
 		c, ok, err := s.loadClient(provider)
 		if err != nil {
 			return err
@@ -234,7 +237,7 @@ func (s *Server) migrateClients() error {
 			}
 			secret = string(b)
 		}
-		if err := s.setClient(p, o.id, secret); err != nil {
+		if err := s.setClient(p, o.id, secret, false); err != nil {
 			return err
 		}
 		s.log.Info("accounts: carried a widget's sign-in app over to the display's account", "widget", o.widget, "provider", p)
@@ -726,6 +729,15 @@ func (s *Server) beginSignIn(ctx context.Context, provider, accountID, instanceI
 		ps.snap = &snapPending{}
 		s.signIns.put(state, ps)
 		return &signInStart{url: s.auth.publicURL + s.base + "oauth/go/" + state, expires: ps.expires}, nil
+	case flowAPIKey:
+		// Nothing to sign in to: opening the link (on this page, or a phone
+		// from a screen's QR code) is the go-ahead, and it finishes at once.
+		if c.secret == "" {
+			return nil, fmt.Errorf("%s needs its %s: add it in Settings on the admin page", p.Title, strings.ToLower(firstNonEmpty(p.m.SignIn.SecretLabel, "API key")))
+		}
+		state := randomToken(16)
+		s.signIns.put(state, ps)
+		return &signInStart{url: s.auth.publicURL + s.base + "oauth/go/" + state, expires: ps.expires}, nil
 	}
 	return nil, errors.New("unknown sign-in flow")
 }
@@ -755,6 +767,22 @@ func (s *Server) serveOAuth(w http.ResponseWriter, r *http.Request, rest string)
 		c, _, _ := s.loadClient(ps.provider)
 		if p.Flow == flowSnapTrade {
 			s.snapPortal(w, r, state, ps, p, c)
+			return
+		}
+		if p.Flow == flowAPIKey {
+			taken, ok := s.signIns.take(state)
+			if !ok {
+				oauthPage(w, http.StatusNotFound, "This sign-in link has expired", "Tap Sign in on the screen again for a new one.")
+				return
+			}
+			if c.secret == "" {
+				oauthPage(w, http.StatusConflict, "Not signed in", p.Title+"'s key was removed. Add it in Settings on the admin page.")
+				return
+			}
+			// Granted is what was asked: the key unlocks whatever the
+			// provider's scopes cover, and the host signs no more than that.
+			granted := slices.Sorted(slices.Values(taken.scopes))
+			s.finishSignIn(w, r, taken, &token{Type: "api_key", Requested: taken.scopes, Granted: granted})
 			return
 		}
 		q := url.Values{
@@ -1054,7 +1082,8 @@ func (s *Server) awaitDevice(ctx context.Context, cancel context.CancelFunc, p *
 // ---- signing widgets' requests ----
 
 // signer signs an outgoing request (the host's copy, never the widget's):
-// an Authorization header, or SnapTrade's query parameters and Signature.
+// an Authorization header, SnapTrade's query parameters and Signature, or
+// an "api_key" provider's key.
 type signer func(*http.Request) error
 
 // authorization is how to sign a request from an instance, the provider
@@ -1097,6 +1126,18 @@ func (s *Server) authorization(ctx context.Context, in *instance, method string,
 		}
 		return func(r *http.Request) error { return snapSign(r, c, t) }, p.Name, a.ID, nil
 	}
+	if p.Flow == flowAPIKey {
+		// The key is read for each request, so a new one in Settings takes
+		// effect at once, for every account.
+		c, ok, err := s.loadClient(p.Name)
+		if err != nil {
+			return nil, "", "", err
+		}
+		if !ok || c.secret == "" {
+			return nil, "", "", fmt.Errorf("%s's API key isn't set", p.Title)
+		}
+		return func(r *http.Request) error { return keySign(r, p, c.secret) }, p.Name, a.ID, nil
+	}
 	if !t.Expiry.IsZero() && time.Until(t.Expiry) < time.Minute {
 		if t, err = s.refresh(ctx, p, a); err != nil {
 			return nil, "", "", err
@@ -1108,6 +1149,22 @@ func (s *Server) authorization(ctx context.Context, in *instance, method string,
 	}
 	auth := typ + " " + t.Access
 	return func(r *http.Request) error { r.Header.Set("Authorization", auth); return nil }, p.Name, a.ID, nil
+}
+
+// keySign puts an "api_key" provider's key in a widget's request (the
+// host's copy), replacing any the widget put there itself.
+func keySign(r *http.Request, p *provider, key string) error {
+	switch {
+	case p.keyHeader != "":
+		r.Header.Set(p.keyHeader, key)
+	case p.keyQuery != "":
+		q := r.URL.Query()
+		q.Set(p.keyQuery, key)
+		r.URL.RawQuery = q.Encode()
+	default:
+		return errors.New("the provider doesn't say where its key goes")
+	}
+	return nil
 }
 
 // refresh trades an account's refresh token for a new access token.
@@ -1190,6 +1247,7 @@ func (a *adminService) ListAccounts(ctx context.Context, req *connect.Request[wi
 		info := &widgetdv1.ProviderInfo{
 			Name: n, Title: p.Title, ClientHelp: p.m.SignIn.ClientHelp, Error: s.accountError(n),
 			ClientIdLabel: p.m.SignIn.ClientIDLabel, SecretLabel: p.m.SignIn.SecretLabel,
+			KeyOnly: p.Flow == flowAPIKey,
 		}
 		if c, ok, _ := s.loadClient(n); ok {
 			info.ClientSet, info.SecretSet = true, c.secret != ""
@@ -1406,7 +1464,7 @@ func (a *adminService) SetProviderClient(ctx context.Context, req *connect.Reque
 	if len(id) > 200 || len(secret) > 500 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("too long"))
 	}
-	if err := a.srv.setClient(p.Name, id, secret); err != nil {
+	if err := a.srv.setClient(p.Name, id, secret, p.Flow == flowAPIKey); err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if p.Flow == flowSnapTrade {

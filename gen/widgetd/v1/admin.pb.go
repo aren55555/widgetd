@@ -1807,6 +1807,9 @@ type ProviderInfo struct {
 	// "Consumer key"), if not a client ID and client secret.
 	ClientIdLabel string `protobuf:"bytes,8,opt,name=client_id_label,json=clientIdLabel,proto3" json:"client_id_label,omitempty"`
 	SecretLabel   string `protobuf:"bytes,9,opt,name=secret_label,json=secretLabel,proto3" json:"secret_label,omitempty"`
+	// The provider is an API key and nothing else (sign_in.flow "api_key"):
+	// no client ID to ask for, only the key, which is the secret.
+	KeyOnly       bool `protobuf:"varint,10,opt,name=key_only,json=keyOnly,proto3" json:"key_only,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1902,6 +1905,13 @@ func (x *ProviderInfo) GetSecretLabel() string {
 		return x.SecretLabel
 	}
 	return ""
+}
+
+func (x *ProviderInfo) GetKeyOnly() bool {
+	if x != nil {
+		return x.KeyOnly
+	}
+	return false
 }
 
 // An account the display has with a provider ("Google: Work"). Instances
@@ -2831,7 +2841,7 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\x06fields\x18\x01 \x03(\v2\x1e.widgetd.v1.ConfigFieldChoicesR\x06fields\"9\n" +
 	"\x03Use\x12\x1a\n" +
 	"\bprovider\x18\x01 \x01(\tR\bprovider\x12\x16\n" +
-	"\x06scopes\x18\x02 \x03(\tR\x06scopes\"\x9b\x02\n" +
+	"\x06scopes\x18\x02 \x03(\tR\x06scopes\"\xb6\x02\n" +
 	"\fProviderInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1d\n" +
@@ -2844,7 +2854,9 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"clientHelp\x12\x14\n" +
 	"\x05error\x18\a \x01(\tR\x05error\x12&\n" +
 	"\x0fclient_id_label\x18\b \x01(\tR\rclientIdLabel\x12!\n" +
-	"\fsecret_label\x18\t \x01(\tR\vsecretLabel\"\x84\x02\n" +
+	"\fsecret_label\x18\t \x01(\tR\vsecretLabel\x12\x19\n" +
+	"\bkey_only\x18\n" +
+	" \x01(\bR\akeyOnly\"\x84\x02\n" +
 	"\aAccount\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\bprovider\x18\x02 \x01(\tR\bprovider\x12\x14\n" +

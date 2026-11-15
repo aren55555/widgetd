@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package portfolio.v1;
+
+import "buf/validate/validate.proto";
+
+// No dollar amounts, prices or share counts anywhere in this file: a
+// holding is its weight in the portfolio and its percentage moves, so the
+// host's schema check keeps money off every screen.
+
+message Holding {
+  string symbol = 1 [(buf.validate.field).string = {min_len: 1, max_len: 24}];
+  // The instrument's name, as the brokerage gives it.
+  string name = 2 [(buf.validate.field).string.max_len = 120];
+  // Share of the portfolio, in basis points (10000 = all of it).
+  int32 weight_bp = 3 [(buf.validate.field).int32 = {gte: 0, lte: 10000}];
+  // Change today in percent (crypto: the last 24 hours). Unset when no
+  // quote is available.
+  optional double day_pct = 4 [(buf.validate.field).double = {gte: -100, lte: 100000, finite: true}];
+  // Return on the position since it was bought, in percent. Unset when the
+  // brokerage gives no cost basis.
+  optional double total_pct = 5 [(buf.validate.field).double = {gte: -100, lte: 1000000, finite: true}];
+  bool crypto = 6;
+}
+
+message State {
+  // Largest first.
+  repeated Holding holdings = 1 [(buf.validate.field).repeated.max_items = 300];
+  // When the holdings were last read from the brokerage, Unix ms.
+  int64 as_of_unix_ms = 2;
+}
+
+// Per screen: what the tiles are coloured by.
+message Local {
+  Mode mode = 1 [(buf.validate.field).enum.defined_only = true];
+}
+
+enum Mode {
+  MODE_DAY = 0;
+  MODE_TOTAL = 1;
+}
