@@ -135,3 +135,27 @@ export function offlineText(lastLive: number | undefined, now: number, p: Displa
 export function appVersion(userAgent: string): string | undefined {
   return /\bwidgetd-display\/(\S+)/.exec(userAgent)?.[1];
 }
+
+/** A first guess at a name for the screen this browser is: "Chrome on macOS". */
+export function browserName(userAgent: string): string {
+  const browser = (
+    [
+      [/\bEdg\//, "Edge"],
+      [/\bFirefox\//, "Firefox"],
+      [/\b(Chrome|CriOS)\//, "Chrome"],
+      [/\bSafari\//, "Safari"],
+    ] as const
+  ).find(([re]) => re.test(userAgent))?.[1];
+  const os = (
+    [
+      [/\b(iPhone|iPad)\b/, "iOS"],
+      [/\bAndroid\b/, "Android"],
+      [/\bCrOS\b/, "ChromeOS"],
+      [/\bMac OS X\b/, "macOS"],
+      [/\bWindows\b/, "Windows"],
+      [/\bLinux\b/, "Linux"],
+    ] as const
+  ).find(([re]) => re.test(userAgent))?.[1];
+  if (browser && os) return `${browser} on ${os}`;
+  return browser ?? os ?? "This browser";
+}

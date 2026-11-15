@@ -11,7 +11,7 @@ The goal is the **simplest** design:
 - The app never handles admin passkeys. Admins approve screens from their own phone, as they do today.
 
 ## Decisions
-- **Pairing stays 100% web.** `<widget-board>` already does it: QR code + short code → `AwaitPairing` → `CompletePairing` sets the HttpOnly `widgetd_session` cookie, valid 365 days (the pairing loop in `client/src/board.ts`; `CompletePairing` and `deviceTTL` in `host/auth.go`).
+- **Pairing stays 100% web.** `<widget-board>` already does it: QR code + short code → `AwaitPairing` → `CompletePairing` sets the HttpOnly `widgetd_screen` cookie, valid 365 days (the pairing loop in `client/src/board.ts`; `CompletePairing` and `deviceTTL` in `host/auth.go`).
   - The app only needs a persistent WebView cookie store.
   - No server or auth changes.
   - **Continuing a screen** (`39f0196`) is web too. The admin approving the pairing can choose an existing screen instead of a new name. The app's screen then shares that device's identity and starts from its saved settings. This is how a tablet is replaced, or how the app takes over from a browser kiosk. The app needs nothing for it.

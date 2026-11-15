@@ -28,7 +28,8 @@ import (
 )
 
 const (
-	sessionCookie   = "widgetd_session"
+	sessionCookie   = "widgetd_session" // an admin's; before screenCookie, a screen's too
+	screenCookie    = "widgetd_screen"  // a paired screen's, so an admin's browser can be one as well
 	adminSessionTTL = 30 * 24 * time.Hour
 	deviceTTL       = 365 * 24 * time.Hour
 	ceremonyTTL     = 5 * time.Minute
@@ -46,6 +47,11 @@ type caller struct {
 
 func (c caller) canView() bool {
 	return c.role == widgetdv1.Role_ROLE_ADMIN || c.role == widgetdv1.Role_ROLE_DEVICE
+}
+
+// isScreen reports whether the caller is a paired screen.
+func (c caller) isScreen() bool {
+	return c.role == widgetdv1.Role_ROLE_DEVICE
 }
 
 // auth implements AuthService and answers "who is this?" for the others.
@@ -151,27 +157,52 @@ func hashToken(t string) []byte {
 
 // ---- sessions ----
 
+// callerOf is who a request comes from: the admin if the browser is signed
+// in as one, else the paired screen it is, else the zero caller.
 func (a *auth) callerOf(h http.Header) caller {
-	r := http.Request{Header: h}
-	ck, err := r.Cookie(sessionCookie)
-	if err != nil || ck.Value == "" {
-		return caller{}
+	if c, _ := a.session(h, sessionCookie, widgetdv1.Role_ROLE_ADMIN); c.role != widgetdv1.Role_ROLE_UNSPECIFIED {
+		return c
 	}
-	var role int32
-	var subject string
-	err = a.db.QueryRow(`SELECT role, subject FROM sessions WHERE token_hash = ? AND expires_at > ?`,
-		hashToken(ck.Value), time.Now().Unix()).Scan(&role, &subject)
-	if err != nil {
-		return caller{}
-	}
-	if widgetdv1.Role(role) == widgetdv1.Role_ROLE_DEVICE {
-		// Best effort: last_seen is only shown to admins.
-		_, _ = a.db.Exec(`UPDATE devices SET last_seen = ? WHERE id = ?`, time.Now().Unix(), subject)
-	}
-	return caller{role: widgetdv1.Role(role), subject: subject}
+	return a.screenOf(h)
 }
 
-// startSession stores a new session and returns the cookie that carries it.
+// screenOf is the paired screen a request comes from, whether or not the
+// browser is also signed in as an admin; the zero caller if it isn't one.
+// Boards stream, act and save their state only as a screen.
+func (a *auth) screenOf(h http.Header) caller {
+	c, _ := a.session(h, screenCookie, widgetdv1.Role_ROLE_DEVICE)
+	if !c.isScreen() {
+		// Paired before screens had a cookie of their own (see GetSession).
+		c, _ = a.session(h, sessionCookie, widgetdv1.Role_ROLE_DEVICE)
+	}
+	if c.isScreen() {
+		// Best effort: last_seen is only shown to admins.
+		_, _ = a.db.Exec(`UPDATE devices SET last_seen = ? WHERE id = ?`, time.Now().Unix(), c.subject)
+	}
+	return c
+}
+
+// session is the live session of the given role in the named cookie, with
+// the cookie; the zero caller and nil if there is none.
+func (a *auth) session(h http.Header, name string, role widgetdv1.Role) (caller, *http.Cookie) {
+	r := http.Request{Header: h}
+	ck, err := r.Cookie(name)
+	if err != nil || ck.Value == "" {
+		return caller{}, nil
+	}
+	var subject string
+	var expires int64
+	err = a.db.QueryRow(`SELECT subject, expires_at FROM sessions WHERE token_hash = ? AND role = ? AND expires_at > ?`,
+		hashToken(ck.Value), int32(role), time.Now().Unix()).Scan(&subject, &expires)
+	if err != nil {
+		return caller{}, nil
+	}
+	ck.Expires = time.Unix(expires, 0)
+	return caller{role: role, subject: subject}, ck
+}
+
+// startSession stores a new session and returns the cookie that carries it:
+// screenCookie for a device, sessionCookie for an admin.
 func (a *auth) startSession(role widgetdv1.Role, subject string, ttl time.Duration, secure bool) (*http.Cookie, error) {
 	token := randomToken(32)
 	expires := time.Now().Add(ttl)
@@ -182,10 +213,18 @@ func (a *auth) startSession(role widgetdv1.Role, subject string, ttl time.Durati
 	}
 	// Secure whenever the request came over TLS; plain http is only allowed
 	// for localhost development (see PublicURL).
+	return sessionCookieFor(role, token, expires, secure), nil
+}
+
+func sessionCookieFor(role widgetdv1.Role, token string, expires time.Time, secure bool) *http.Cookie {
+	name := sessionCookie
+	if role == widgetdv1.Role_ROLE_DEVICE {
+		name = screenCookie
+	}
 	return &http.Cookie{ //nolint:gosec // G124: Secure is set from the request.
-		Name: sessionCookie, Value: token, Path: "/", Expires: expires,
+		Name: name, Value: token, Path: "/", Expires: expires,
 		HttpOnly: true, Secure: secure, SameSite: http.SameSiteLaxMode,
-	}, nil
+	}
 }
 
 // secureRequest reports whether the request reached us over TLS, directly or
@@ -295,6 +334,10 @@ type authService struct {
 
 func (s *authService) GetSession(ctx context.Context, req *connect.Request[widgetdv1.GetSessionRequest]) (*connect.Response[widgetdv1.GetSessionResponse], error) {
 	c := s.a.callerOf(req.Header())
+	screen := c
+	if !screen.isScreen() {
+		screen = s.a.screenOf(req.Header())
+	}
 	out := &widgetdv1.GetSessionResponse{
 		Role:      c.role,
 		PublicUrl: s.a.publicURL,
@@ -307,12 +350,22 @@ func (s *authService) GetSession(ctx context.Context, req *connect.Request[widge
 	s.a.mu.Lock()
 	out.NeedsEnrollment = s.a.setupToken != ""
 	s.a.mu.Unlock()
-	if c.role == widgetdv1.Role_ROLE_DEVICE {
+	resp := connect.NewResponse(out)
+	if screen.isScreen() {
+		out.Screen = true
 		// The name is a nicety; without it the screen shows none.
-		_ = s.a.db.QueryRow(`SELECT name FROM devices WHERE id = ?`, c.subject).Scan(&out.DeviceName)
-		out.ShortId = shortHash(c.subject)
+		_ = s.a.db.QueryRow(`SELECT name FROM devices WHERE id = ?`, screen.subject).Scan(&out.DeviceName)
+		out.ShortId = shortHash(screen.subject)
+		if _, old := s.a.session(req.Header(), sessionCookie, widgetdv1.Role_ROLE_DEVICE); old != nil {
+			// Paired before screens had a cookie of their own: move the
+			// session over, so signing in as an admin here won't unpair it.
+			secure := secureRequest(req.Header(), false)
+			resp.Header().Add("Set-Cookie", sessionCookieFor(widgetdv1.Role_ROLE_DEVICE, old.Value, old.Expires, secure).String())
+			// An expiry long past deletes the old one.
+			resp.Header().Add("Set-Cookie", sessionCookieFor(widgetdv1.Role_ROLE_ADMIN, "", time.Unix(1, 0), secure).String())
+		}
 	}
-	return connect.NewResponse(out), nil
+	return resp, nil
 }
 
 func (s *authService) BeginEnroll(ctx context.Context, req *connect.Request[widgetdv1.BeginEnrollRequest]) (*connect.Response[widgetdv1.BeginEnrollResponse], error) {
@@ -617,8 +670,8 @@ func (a *auth) screenState(deviceID string) (*widgetdv1.ScreenState, error) {
 }
 
 func (s *authService) SaveScreenState(ctx context.Context, req *connect.Request[widgetdv1.SaveScreenStateRequest]) (*connect.Response[widgetdv1.SaveScreenStateResponse], error) {
-	c := s.a.callerOf(req.Header())
-	if c.role != widgetdv1.Role_ROLE_DEVICE {
+	c := s.a.screenOf(req.Header())
+	if !c.isScreen() {
 		return nil, connect.NewError(connect.CodePermissionDenied, errors.New("only a paired screen has screen state"))
 	}
 	st := req.Msg.GetState()

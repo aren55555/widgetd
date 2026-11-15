@@ -14,7 +14,9 @@ option go_package = "github.com/aren55555/widgetd/gen/widgetd/v1;widgetdv1";
 //     secure context.
 //   - Screens (a dashboard tab, a wall tablet) are paired: they show a QR
 //     code, an admin approves it, and the screen is issued a device token. A
-//     screen can view and interact with cards but change nothing.
+//     screen can view and interact with cards but change nothing. Every
+//     board is a screen, even in a browser signed in as an admin (which can
+//     approve its own pairing): a screen's session has its own cookie.
 //
 // Sessions travel as HttpOnly cookies set by the RPCs that establish them, so
 // no token is ever readable by page script.
@@ -57,8 +59,10 @@ enum Role {
 message GetSessionRequest {}
 
 message GetSessionResponse {
+  // ROLE_ADMIN if the browser is signed in as an admin, else ROLE_DEVICE if
+  // it is a paired screen. A browser can be both; see screen.
   Role role = 1;
-  // Set for ROLE_DEVICE.
+  // Set when screen is.
   string device_name = 2;
   // True until the first passkey is enrolled.
   bool needs_enrollment = 3;
@@ -67,13 +71,16 @@ message GetSessionResponse {
   string public_url = 4;
   // The full URL of the admin page: <public_url><base path>admin.
   string admin_url = 5;
-  // Set for ROLE_DEVICE: the device's short id, as in Device.short_id.
+  // Set when screen is: the device's short id, as in Device.short_id.
   string short_id = 6;
   // What the server was built from: widgetd's short commit ("06c1338",
   // "06c1338-dirty" with uncommitted changes) or its module version
   // ("v0.4.0") when it's a dependency; "dev" when neither is known (go run).
   // The admin pages are embedded in the server, so it is theirs too.
   string server_version = 7;
+  // True when this browser is a paired screen, whatever role says. Only a
+  // screen streams a board, so a board in an admin's browser pairs first.
+  bool screen = 8;
 }
 
 message BeginEnrollRequest {

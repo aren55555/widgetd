@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { create } from "@bufbuild/protobuf";
 import { HourCycle, PreferencesSchema, resolvePrefs } from "@widgetd/sdk/prefs";
 
-import { appVersion, durationText, offlineText, prefsRows } from "./prefs.ts";
+import { appVersion, browserName, durationText, offlineText, prefsRows } from "./prefs.ts";
 import { CardStore, LIVE_EVERY, type KVBackend } from "./store.ts";
 
 const prefs = (hourCycle: HourCycle) =>
@@ -49,6 +49,21 @@ describe("settings rows", () => {
   test("appVersion", () => {
     expect(appVersion("Mozilla/5.0 (Linux; Android 14) Chrome/130 Mobile widgetd-display/1.2.3")).toBe("1.2.3");
     expect(appVersion("Mozilla/5.0 Chrome/130")).toBeUndefined();
+  });
+
+  test("browserName", () => {
+    const mac =
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36";
+    expect(browserName(mac)).toBe("Chrome on macOS");
+    expect(
+      browserName(
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1",
+      ),
+    ).toBe("Safari on iOS");
+    expect(browserName("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/142.0 Safari/537.36 Edg/142.0")).toBe(
+      "Edge on Windows",
+    );
+    expect(browserName("curl/8")).toBe("This browser");
   });
 });
 

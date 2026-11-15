@@ -259,3 +259,72 @@ func TestContinueScreen(t *testing.T) {
 		t.Fatalf("screen_state rows after unpairing = %d, %v", n, err)
 	}
 }
+
+// An admin's browser is not a screen until it pairs as one; then it is both,
+// each session in its own cookie.
+func TestAdminBrowserIsAScreenToo(t *testing.T) {
+	h := newHarness(t)
+	ctx := context.Background()
+	c := h.authClient()
+	admin := h.adminCookie()
+
+	stream := func(cookie string) error {
+		client := widgetdv1connect.NewWidgetStreamServiceClient(http.DefaultClient, h.http.URL)
+		s, err := client.StreamWidgets(ctx, withCookie(&widgetdv1.StreamWidgetsRequest{}, cookie))
+		if err != nil {
+			return err
+		}
+		defer s.Close()
+		s.Receive()
+		return s.Err()
+	}
+	if err := stream(admin); connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Fatalf("an admin's stream: %v, want unauthenticated", err)
+	}
+	sess, err := c.GetSession(ctx, withCookie(&widgetdv1.GetSessionRequest{}, admin))
+	if err != nil || sess.Msg.GetRole() != widgetdv1.Role_ROLE_ADMIN || sess.Msg.GetScreen() || sess.Msg.GetShortId() != "" {
+		t.Fatalf("admin session = %v, %v", sess.Msg, err)
+	}
+
+	// The admin approves its own browser's pairing, as the board offers to.
+	screen, _ := h.pair(&widgetdv1.ApprovePairingRequest{DeviceName: "Laptop"})
+	if !strings.HasPrefix(screen, screenCookie+"=") {
+		t.Fatalf("screen cookie = %q", screen)
+	}
+	both := admin + "; " + screen
+	sess, err = c.GetSession(ctx, withCookie(&widgetdv1.GetSessionRequest{}, both))
+	if err != nil || sess.Msg.GetRole() != widgetdv1.Role_ROLE_ADMIN || !sess.Msg.GetScreen() ||
+		sess.Msg.GetDeviceName() != "Laptop" || sess.Msg.GetShortId() == "" {
+		t.Fatalf("admin and screen session = %v, %v", sess.Msg, err)
+	}
+	h.open(both).burst()
+	if _, err := c.ListDevices(ctx, withCookie(&widgetdv1.ListDevicesRequest{}, both)); err != nil {
+		t.Fatalf("still an admin: %v", err)
+	}
+}
+
+// A screen paired when its session shared the admin cookie keeps working,
+// and GetSession moves it to the screen cookie.
+func TestScreenCookieMoves(t *testing.T) {
+	h := newHarness(t)
+	ctx := context.Background()
+	moved := h.deviceCookie("d1")
+	legacy := sessionCookie + strings.TrimPrefix(moved, screenCookie)
+
+	h.open(legacy).burst()
+	sess, err := h.authClient().GetSession(ctx, withCookie(&widgetdv1.GetSessionRequest{}, legacy))
+	if err != nil || sess.Msg.GetRole() != widgetdv1.Role_ROLE_DEVICE || !sess.Msg.GetScreen() {
+		t.Fatalf("session = %v, %v", sess.Msg, err)
+	}
+	set := sess.Header().Values("Set-Cookie")
+	if len(set) != 2 || !strings.HasPrefix(set[0], moved+";") || !strings.HasPrefix(set[1], sessionCookie+"=;") {
+		t.Fatalf("Set-Cookie = %q", set)
+	}
+	h.open(moved).burst()
+
+	// Nothing to move for a screen already on its own cookie.
+	sess, err = h.authClient().GetSession(ctx, withCookie(&widgetdv1.GetSessionRequest{}, moved))
+	if err != nil || len(sess.Header().Values("Set-Cookie")) != 0 {
+		t.Fatalf("session = %v, %v", sess.Header(), err)
+	}
+}

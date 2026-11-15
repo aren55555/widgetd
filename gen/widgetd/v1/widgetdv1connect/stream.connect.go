@@ -45,8 +45,8 @@ const (
 type WidgetStreamServiceClient interface {
 	StreamWidgets(context.Context, *connect.Request[v1.StreamWidgetsRequest]) (*connect.ServerStreamForClient[v1.StreamWidgetsResponse], error)
 	// A tap, a choice, a dismissal: something a viewer did on a card, sent
-	// to the widget's server half. Screen or admin. The value must be the
-	// card's declared action type, and pass its rules.
+	// to the widget's server half. Screens only, as for StreamWidgets. The
+	// value must be the card's declared action type, and pass its rules.
 	SendAction(context.Context, *connect.Request[v1.SendActionRequest]) (*connect.Response[v1.SendActionResponse], error)
 }
 
@@ -96,8 +96,8 @@ func (c *widgetStreamServiceClient) SendAction(ctx context.Context, req *connect
 type WidgetStreamServiceHandler interface {
 	StreamWidgets(context.Context, *connect.Request[v1.StreamWidgetsRequest], *connect.ServerStream[v1.StreamWidgetsResponse]) error
 	// A tap, a choice, a dismissal: something a viewer did on a card, sent
-	// to the widget's server half. Screen or admin. The value must be the
-	// card's declared action type, and pass its rules.
+	// to the widget's server half. Screens only, as for StreamWidgets. The
+	// value must be the card's declared action type, and pass its rules.
 	SendAction(context.Context, *connect.Request[v1.SendActionRequest]) (*connect.Response[v1.SendActionResponse], error)
 }
 

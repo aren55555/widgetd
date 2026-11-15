@@ -24,8 +24,8 @@ type streamService struct {
 // marking the end of that initial burst (a client drops any cached card it
 // wasn't told about by then), then live frames and periodic keepalives.
 func (s *streamService) StreamWidgets(ctx context.Context, req *connect.Request[widgetdv1.StreamWidgetsRequest], stream *connect.ServerStream[widgetdv1.StreamWidgetsResponse]) error {
-	who := s.srv.auth.callerOf(req.Header())
-	if !who.canView() {
+	who := s.srv.auth.screenOf(req.Header())
+	if !who.isScreen() {
 		return connect.NewError(connect.CodeUnauthenticated, errors.New("this screen isn't paired"))
 	}
 	ctx, cancel := context.WithCancel(ctx)
@@ -54,7 +54,7 @@ func (s *streamService) StreamWidgets(ctx context.Context, req *connect.Request[
 	for {
 		select {
 		case <-ctx.Done():
-			if s.srv.auth.callerOf(req.Header()).canView() {
+			if s.srv.auth.screenOf(req.Header()).isScreen() {
 				return nil
 			}
 			return connect.NewError(connect.CodeUnauthenticated, errors.New("this screen was unpaired"))
@@ -76,7 +76,7 @@ func (s *streamService) StreamWidgets(ctx context.Context, req *connect.Request[
 // after checking it is the card's declared action type and passes that
 // type's rules. Delivery doesn't wait for the widget.
 func (s *streamService) SendAction(ctx context.Context, req *connect.Request[widgetdv1.SendActionRequest]) (*connect.Response[widgetdv1.SendActionResponse], error) {
-	if !s.srv.auth.callerOf(req.Header()).canView() {
+	if !s.srv.auth.screenOf(req.Header()).isScreen() {
 		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("this screen isn't paired"))
 	}
 	c, ok := s.srv.board.card(req.Msg.GetCardId())

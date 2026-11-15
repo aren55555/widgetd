@@ -16,7 +16,7 @@
 //
 // Theme: set any of THEME_TOKENS as CSS custom properties on the element.
 
-import { Code, ConnectError, createClient } from "@connectrpc/connect";
+import { Code, ConnectError, createClient, type Client } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import { create, toBinary } from "@bufbuild/protobuf";
 import { renderSVG } from "uqr";
@@ -45,7 +45,7 @@ import {
 import type { Cursor } from "@widgetd/sdk/bridge";
 import { browserEnv, PreferencesSchema, resolvePrefs, toMessage, type ResolvedPrefs } from "@widgetd/sdk/prefs";
 import { encodeBoardOptions, readBoardOptions, resolveLayout, type Layout } from "./lib/options.ts";
-import { appVersion, layoutRows, offlineText, prefsRows, type Row } from "./lib/prefs.ts";
+import { appVersion, browserName, layoutRows, offlineText, prefsRows, type Row } from "./lib/prefs.ts";
 import { WIDGET_ICON_CSS, widgetIcon } from "./lib/icon.ts";
 import type { Icon } from "./gen/widgetd/v1/stream_pb.ts";
 
@@ -78,6 +78,10 @@ ${WIDGET_ICON_CSS}
   font: 14px/20px var(--wd-font-mono, ui-monospace, monospace); }
 .qr { width: 200px; height: 200px; padding: 10px; background: #fff; border-radius: 8px; }
 .qr svg { width: 100%; height: 100%; display: block; }
+.here { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.here input { width: 16em; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--wd-edge, #27272a);
+  background: var(--wd-surface, #18181b); color: var(--wd-ink, #e5e7eb); font: 13px/18px var(--wd-font-mono, ui-monospace, monospace); }
+.here-error { color: var(--wd-down, #ef4444); }
 .code { font: 600 22px/28px var(--wd-font-mono, ui-monospace, monospace); letter-spacing: 0.1em; color: var(--wd-ink, #e5e7eb); }
 .offline { position: absolute; right: 8px; bottom: 8px; z-index: 4; padding: 2px 10px; border-radius: 999px; font: 12px/18px var(--wd-font-mono, monospace);
   background: color-mix(in oklab, var(--wd-warn, #f59e0b) 20%, var(--wd-surface, #18181b)); color: var(--wd-warn, #f59e0b); cursor: help; }
@@ -334,11 +338,12 @@ class WidgetBoard extends HTMLElement {
         this.live();
         this.adminUrl = session.adminUrl;
         this.serverVersion = session.serverVersion;
-        if (session.role === Role.UNSPECIFIED) {
-          await this.pair();
+        // Every board is a screen, even in a browser signed in as an admin.
+        if (!session.screen) {
+          await this.pair(session.role === Role.ADMIN);
           continue;
         }
-        this.isScreen = session.role === Role.DEVICE;
+        this.isScreen = true;
         this.screenId.textContent = session.shortId;
         this.saveScreenSoon();
         await this.stream();
@@ -408,8 +413,11 @@ class WidgetBoard extends HTMLElement {
     if (!this.dialog.open) this.dialog.showModal();
   }
 
-  /** Show a QR code until an admin approves this screen, then collect the session. */
-  private async pair() {
+  /**
+   * Show a QR code until an admin approves this screen, then collect the
+   * session. In a browser signed in as an admin, offer to approve it here.
+   */
+  private async pair(admin: boolean) {
     const auth = createClient(AuthService, this.transport());
     const p = await auth.beginPairing({});
     const qr = document.createElement("div");
@@ -418,12 +426,27 @@ class WidgetBoard extends HTMLElement {
     const code = document.createElement("div");
     code.className = "code";
     code.textContent = p.code;
-    this.notice(
-      "This screen isn't paired yet.",
-      qr,
-      "Scan with a phone signed in as an admin, and check it shows:",
-      code,
-    );
+    if (admin) {
+      const more = document.createElement("button");
+      more.className = "link";
+      more.textContent = "Continue an existing screen instead";
+      more.addEventListener("click", () => void window.open(p.approveUrl, "_blank", "noopener"));
+      this.notice(
+        "This browser isn't a screen yet. Boards only show on paired screens.",
+        this.approveHere(auth, p.pairingId),
+        more,
+        "Or scan with a phone signed in as an admin, and check it shows:",
+        qr,
+        code,
+      );
+    } else {
+      this.notice(
+        "This screen isn't paired yet.",
+        qr,
+        "Scan with a phone signed in as an admin, and check it shows:",
+        code,
+      );
+    }
 
     this.abort = new AbortController();
     for await (const r of auth.awaitPairing(
@@ -437,6 +460,35 @@ class WidgetBoard extends HTMLElement {
       }
       if (r.state === PairingState.EXPIRED) return; // loop starts a fresh pairing
     }
+  }
+
+  /** A name and a button that pairs this browser as a screen, approved by the admin signed in here. */
+  private approveHere(auth: Client<typeof AuthService>, pairingId: string): HTMLElement {
+    const form = document.createElement("form");
+    form.className = "here";
+    const name = document.createElement("input");
+    name.value = browserName(navigator.userAgent);
+    name.maxLength = 64;
+    name.required = true;
+    name.setAttribute("aria-label", "Screen name");
+    const go = document.createElement("button");
+    go.className = "action";
+    go.textContent = "Use this browser as a screen";
+    const error = document.createElement("div");
+    error.className = "here-error";
+    error.setAttribute("role", "alert");
+    form.append(name, go, error);
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      go.disabled = true;
+      error.textContent = "";
+      // Approved, the pairing's stream answers and pair() collects the session.
+      auth.approvePairing({ pairingId, deviceName: name.value.trim() }).catch((err: unknown) => {
+        go.disabled = false;
+        error.textContent = err instanceof ConnectError ? err.rawMessage : String(err);
+      });
+    });
+    return form;
   }
 
   // ---- screen state ----

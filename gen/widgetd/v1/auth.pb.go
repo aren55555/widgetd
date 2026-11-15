@@ -161,8 +161,10 @@ func (*GetSessionRequest) Descriptor() ([]byte, []int) {
 
 type GetSessionResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Role  Role                   `protobuf:"varint,1,opt,name=role,proto3,enum=widgetd.v1.Role" json:"role,omitempty"`
-	// Set for ROLE_DEVICE.
+	// ROLE_ADMIN if the browser is signed in as an admin, else ROLE_DEVICE if
+	// it is a paired screen. A browser can be both; see screen.
+	Role Role `protobuf:"varint,1,opt,name=role,proto3,enum=widgetd.v1.Role" json:"role,omitempty"`
+	// Set when screen is.
 	DeviceName string `protobuf:"bytes,2,opt,name=device_name,json=deviceName,proto3" json:"device_name,omitempty"`
 	// True until the first passkey is enrolled.
 	NeedsEnrollment bool `protobuf:"varint,3,opt,name=needs_enrollment,json=needsEnrollment,proto3" json:"needs_enrollment,omitempty"`
@@ -171,13 +173,16 @@ type GetSessionResponse struct {
 	PublicUrl string `protobuf:"bytes,4,opt,name=public_url,json=publicUrl,proto3" json:"public_url,omitempty"`
 	// The full URL of the admin page: <public_url><base path>admin.
 	AdminUrl string `protobuf:"bytes,5,opt,name=admin_url,json=adminUrl,proto3" json:"admin_url,omitempty"`
-	// Set for ROLE_DEVICE: the device's short id, as in Device.short_id.
+	// Set when screen is: the device's short id, as in Device.short_id.
 	ShortId string `protobuf:"bytes,6,opt,name=short_id,json=shortId,proto3" json:"short_id,omitempty"`
 	// What the server was built from: widgetd's short commit ("06c1338",
 	// "06c1338-dirty" with uncommitted changes) or its module version
 	// ("v0.4.0") when it's a dependency; "dev" when neither is known (go run).
 	// The admin pages are embedded in the server, so it is theirs too.
 	ServerVersion string `protobuf:"bytes,7,opt,name=server_version,json=serverVersion,proto3" json:"server_version,omitempty"`
+	// True when this browser is a paired screen, whatever role says. Only a
+	// screen streams a board, so a board in an admin's browser pairs first.
+	Screen        bool `protobuf:"varint,8,opt,name=screen,proto3" json:"screen,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -259,6 +264,13 @@ func (x *GetSessionResponse) GetServerVersion() string {
 		return x.ServerVersion
 	}
 	return ""
+}
+
+func (x *GetSessionResponse) GetScreen() bool {
+	if x != nil {
+		return x.Screen
+	}
+	return false
 }
 
 type BeginEnrollRequest struct {
@@ -1619,7 +1631,7 @@ const file_widgetd_v1_auth_proto_rawDesc = "" +
 	"\n" +
 	"\x15widgetd/v1/auth.proto\x12\n" +
 	"widgetd.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16widgetd/v1/board.proto\"\x13\n" +
-	"\x11GetSessionRequest\"\x84\x02\n" +
+	"\x11GetSessionRequest\"\x9c\x02\n" +
 	"\x12GetSessionResponse\x12$\n" +
 	"\x04role\x18\x01 \x01(\x0e2\x10.widgetd.v1.RoleR\x04role\x12\x1f\n" +
 	"\vdevice_name\x18\x02 \x01(\tR\n" +
@@ -1629,7 +1641,8 @@ const file_widgetd_v1_auth_proto_rawDesc = "" +
 	"public_url\x18\x04 \x01(\tR\tpublicUrl\x12\x1b\n" +
 	"\tadmin_url\x18\x05 \x01(\tR\badminUrl\x12\x19\n" +
 	"\bshort_id\x18\x06 \x01(\tR\ashortId\x12%\n" +
-	"\x0eserver_version\x18\a \x01(\tR\rserverVersion\"5\n" +
+	"\x0eserver_version\x18\a \x01(\tR\rserverVersion\x12\x16\n" +
+	"\x06screen\x18\b \x01(\bR\x06screen\"5\n" +
 	"\x12BeginEnrollRequest\x12\x1f\n" +
 	"\vsetup_token\x18\x01 \x01(\tR\n" +
 	"setupToken\"Y\n" +

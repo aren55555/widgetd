@@ -632,8 +632,8 @@ export const WidgetStreamService: GenService<{
   },
   /**
    * A tap, a choice, a dismissal: something a viewer did on a card, sent
-   * to the widget's server half. Screen or admin. The value must be the
-   * card's declared action type, and pass its rules.
+   * to the widget's server half. Screens only, as for StreamWidgets. The
+   * value must be the card's declared action type, and pass its rules.
    *
    * @generated from rpc widgetd.v1.WidgetStreamService.SendAction
    */
