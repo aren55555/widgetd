@@ -1,18 +1,20 @@
 # The widget's manifest. widgetc reads it to wire the widget up.
 name    = "github-notifications"
-version = "0.1.0"
-title   = "GitHub notifications"
+version = "0.2.0"
+title   = "GitHub activity"
 icon    = "git-pull-request"
 config  = "ghnotif.v1.Config"
 
 [network]
 hosts   = ["api.github.com"]
 methods = ["GET"]
-why     = "Your GitHub notifications"
+why     = "Your open pull requests, review requests and issue notifications"
 
-# The display's GitHub account, with the notifications scope. The host
-# signs it in (and keeps its grant to what the board's widgets use) and
-# signs this widget's requests to api.github.com; the token never reaches it.
+# The display's GitHub account. "notifications" reads the issue threads that
+# changed; "repo" lets search find PRs in private repos and read their
+# reviews and checks (GitHub has no read-only form of it, but the host signs
+# only GETs with it). The host signs this widget's requests to
+# api.github.com; the token never reaches it.
 [[uses]]
 provider = "github"
-scopes   = ["notifications"]
+scopes   = ["notifications", "repo"]

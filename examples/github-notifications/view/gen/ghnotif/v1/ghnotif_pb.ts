@@ -2,8 +2,8 @@
 // @generated from file ghnotif/v1/ghnotif.proto (package ghnotif.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import { file_buf_validate_validate } from "../../buf/validate/validate_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -11,15 +11,15 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ghnotif/v1/ghnotif.proto.
  */
 export const file_ghnotif_v1_ghnotif: GenFile = /*@__PURE__*/
-  fileDesc("ChhnaG5vdGlmL3YxL2dobm90aWYucHJvdG8SCmdobm90aWYudjEiHwoGQ29uZmlnEhUKDXBhcnRpY2lwYXRpbmcYASABKAgigAEKBEl0ZW0SFgoEcmVwbxgBIAEoCUIIukgFcgMYjAESFwoFdGl0bGUYAiABKAlCCLpIBXIDGKwCEhUKBGtpbmQYAyABKAlCB7pIBHICGCgSFwoGcmVhc29uGAQgASgJQge6SARyAhgoEhcKD3VwZGF0ZWRfdW5peF9tcxgFIAEoAyJjCgVTdGF0ZRIWCgVsb2dpbhgBIAEoCUIHukgEcgIYQBIXCgZ1bnJlYWQYAiABKAVCB7pIBBoCKAASKQoFaXRlbXMYAyADKAsyEC5naG5vdGlmLnYxLkl0ZW1CCLpIBZIBAhAKQrwBCg5jb20uZ2hub3RpZi52MUIMR2hub3RpZlByb3RvUAFaU2dpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvZXhhbXBsZXMvZ2l0aHViLW5vdGlmaWNhdGlvbnMvZ2VuL2dobm90aWYvdjE7Z2hub3RpZnYxogIDR1hYqgIKR2hub3RpZi5WMcoCCkdobm90aWZcVjHiAhZHaG5vdGlmXFYxXEdQQk1ldGFkYXRh6gILR2hub3RpZjo6VjFiBnByb3RvMw", [file_buf_validate_validate]);
+  fileDesc("ChhnaG5vdGlmL3YxL2dobm90aWYucHJvdG8SCmdobm90aWYudjEiHwoGQ29uZmlnEhUKDXBhcnRpY2lwYXRpbmcYASABKAgiKwoFTG9jYWwSIgoGZmlsdGVyGAEgASgOMhIuZ2hub3RpZi52MS5GaWx0ZXIimQIKC1B1bGxSZXF1ZXN0EhYKBHJlcG8YASABKAlCCLpIBXIDGIwBEhcKBm51bWJlchgCIAEoBUIHukgEGgIgABIXCgV0aXRsZRgDIAEoCUIIukgFcgMYrAISFwoGYXV0aG9yGAQgASgJQge6SARyAhhAEhcKD2NyZWF0ZWRfdW5peF9tcxgFIAEoAxIXCg91cGRhdGVkX3VuaXhfbXMYBiABKAMSDQoFZHJhZnQYByABKAgSIgoGY2hlY2tzGAggASgOMhIuZ2hub3RpZi52MS5DaGVja3MSIgoGcmV2aWV3GAkgASgOMhIuZ2hub3RpZi52MS5SZXZpZXcSEQoJY29uZmxpY3RzGAogASgIEgsKA29yZxgLIAEoCCKQAQoFSXNzdWUSFgoEcmVwbxgBIAEoCUIIukgFcgMYjAESFwoFdGl0bGUYAiABKAlCCLpIBXIDGKwCEhcKBnJlYXNvbhgDIAEoCUIHukgEcgIYKBIXCg91cGRhdGVkX3VuaXhfbXMYBCABKAMSFwoGbnVtYmVyGAUgASgFQge6SAQaAigAEgsKA29yZxgGIAEoCCKZAQoFU3RhdGUSLwoEbWluZRgBIAMoCzIXLmdobm90aWYudjEuUHVsbFJlcXVlc3RCCLpIBZIBAhAeEjIKB3Jldmlld3MYAiADKAsyFy5naG5vdGlmLnYxLlB1bGxSZXF1ZXN0Qgi6SAWSAQIQHhIrCgZpc3N1ZXMYAyADKAsyES5naG5vdGlmLnYxLklzc3VlQgi6SAWSAQIQHipYCgZGaWx0ZXISFgoSRklMVEVSX1VOU1BFQ0lGSUVEEAASDwoLRklMVEVSX01JTkUQARISCg5GSUxURVJfUkVWSUVXUxACEhEKDUZJTFRFUl9JU1NVRVMQAypcCgZDaGVja3MSFgoSQ0hFQ0tTX1VOU1BFQ0lGSUVEEAASEgoOQ0hFQ0tTX1BFTkRJTkcQARISCg5DSEVDS1NfUEFTU0lORxACEhIKDkNIRUNLU19GQUlMSU5HEAMqaQoGUmV2aWV3EhYKElJFVklFV19VTlNQRUNJRklFRBAAEhMKD1JFVklFV19BUFBST1ZFRBABEhwKGFJFVklFV19DSEFOR0VTX1JFUVVFU1RFRBACEhQKEFJFVklFV19DT01NRU5URUQQA0K8AQoOY29tLmdobm90aWYudjFCDEdobm90aWZQcm90b1ABWlNnaXRodWIuY29tL2FyZW41NTU1NS93aWRnZXRkL2V4YW1wbGVzL2dpdGh1Yi1ub3RpZmljYXRpb25zL2dlbi9naG5vdGlmL3YxO2dobm90aWZ2MaICA0dYWKoCCkdobm90aWYuVjHKAgpHaG5vdGlmXFYx4gIWR2hub3RpZlxWMVxHUEJNZXRhZGF0YeoCC0dobm90aWY6OlYxYgZwcm90bzM", [file_buf_validate_validate]);
 
 /**
  * @generated from message ghnotif.v1.Config
  */
 export type Config = Message<"ghnotif.v1.Config"> & {
   /**
-   * Only notifications you're directly involved in (mentioned, assigned,
-   * asked to review), not everything on repos you watch.
+   * Only issue threads you're directly involved in (mentioned, assigned,
+   * author), not everything on repos you watch.
    *
    * @generated from field: bool participating = 1;
    */
@@ -34,9 +34,101 @@ export const ConfigSchema: GenMessage<Config> = /*@__PURE__*/
   messageDesc(file_ghnotif_v1_ghnotif, 0);
 
 /**
- * @generated from message ghnotif.v1.Item
+ * What each screen remembers about its card.
+ *
+ * @generated from message ghnotif.v1.Local
  */
-export type Item = Message<"ghnotif.v1.Item"> & {
+export type Local = Message<"ghnotif.v1.Local"> & {
+  /**
+   * @generated from field: ghnotif.v1.Filter filter = 1;
+   */
+  filter: Filter;
+};
+
+/**
+ * Describes the message ghnotif.v1.Local.
+ * Use `create(LocalSchema)` to create a new message.
+ */
+export const LocalSchema: GenMessage<Local> = /*@__PURE__*/
+  messageDesc(file_ghnotif_v1_ghnotif, 1);
+
+/**
+ * @generated from message ghnotif.v1.PullRequest
+ */
+export type PullRequest = Message<"ghnotif.v1.PullRequest"> & {
+  /**
+   * @generated from field: string repo = 1;
+   */
+  repo: string;
+
+  /**
+   * @generated from field: int32 number = 2;
+   */
+  number: number;
+
+  /**
+   * @generated from field: string title = 3;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string author = 4;
+   */
+  author: string;
+
+  /**
+   * @generated from field: int64 created_unix_ms = 5;
+   */
+  createdUnixMs: bigint;
+
+  /**
+   * @generated from field: int64 updated_unix_ms = 6;
+   */
+  updatedUnixMs: bigint;
+
+  /**
+   * @generated from field: bool draft = 7;
+   */
+  draft: boolean;
+
+  /**
+   * The status fields are set for the account's own PRs only.
+   *
+   * @generated from field: ghnotif.v1.Checks checks = 8;
+   */
+  checks: Checks;
+
+  /**
+   * @generated from field: ghnotif.v1.Review review = 9;
+   */
+  review: Review;
+
+  /**
+   * It no longer merges cleanly into its base.
+   *
+   * @generated from field: bool conflicts = 10;
+   */
+  conflicts: boolean;
+
+  /**
+   * The repo belongs to an organization, not a user.
+   *
+   * @generated from field: bool org = 11;
+   */
+  org: boolean;
+};
+
+/**
+ * Describes the message ghnotif.v1.PullRequest.
+ * Use `create(PullRequestSchema)` to create a new message.
+ */
+export const PullRequestSchema: GenMessage<PullRequest> = /*@__PURE__*/
+  messageDesc(file_ghnotif_v1_ghnotif, 2);
+
+/**
+ * @generated from message ghnotif.v1.Issue
+ */
+export type Issue = Message<"ghnotif.v1.Issue"> & {
   /**
    * @generated from field: string repo = 1;
    */
@@ -48,54 +140,63 @@ export type Item = Message<"ghnotif.v1.Item"> & {
   title: string;
 
   /**
-   * "PullRequest", "Issue", "Release", "Discussion", ...
+   * Why you got it: "mention", "assign", "author", "subscribed", ...
    *
-   * @generated from field: string kind = 3;
-   */
-  kind: string;
-
-  /**
-   * Why you got it: "review_requested", "mention", "subscribed", ...
-   *
-   * @generated from field: string reason = 4;
+   * @generated from field: string reason = 3;
    */
   reason: string;
 
   /**
-   * @generated from field: int64 updated_unix_ms = 5;
+   * @generated from field: int64 updated_unix_ms = 4;
    */
   updatedUnixMs: bigint;
+
+  /**
+   * 0 if GitHub didn't say.
+   *
+   * @generated from field: int32 number = 5;
+   */
+  number: number;
+
+  /**
+   * The repo belongs to an organization, not a user.
+   *
+   * @generated from field: bool org = 6;
+   */
+  org: boolean;
 };
 
 /**
- * Describes the message ghnotif.v1.Item.
- * Use `create(ItemSchema)` to create a new message.
+ * Describes the message ghnotif.v1.Issue.
+ * Use `create(IssueSchema)` to create a new message.
  */
-export const ItemSchema: GenMessage<Item> = /*@__PURE__*/
-  messageDesc(file_ghnotif_v1_ghnotif, 1);
+export const IssueSchema: GenMessage<Issue> = /*@__PURE__*/
+  messageDesc(file_ghnotif_v1_ghnotif, 3);
 
 /**
  * @generated from message ghnotif.v1.State
  */
 export type State = Message<"ghnotif.v1.State"> & {
   /**
-   * The signed-in account's login.
+   * Most recently updated first.
    *
-   * @generated from field: string login = 1;
+   * @generated from field: repeated ghnotif.v1.PullRequest mine = 1;
    */
-  login: string;
+  mine: PullRequest[];
 
   /**
-   * @generated from field: int32 unread = 2;
+   * Oldest first.
+   *
+   * @generated from field: repeated ghnotif.v1.PullRequest reviews = 2;
    */
-  unread: number;
+  reviews: PullRequest[];
 
   /**
-   * The most recent, newest first.
+   * Newest first.
    *
-   * @generated from field: repeated ghnotif.v1.Item items = 3;
+   * @generated from field: repeated ghnotif.v1.Issue issues = 3;
    */
-  items: Item[];
+  issues: Issue[];
 };
 
 /**
@@ -103,5 +204,112 @@ export type State = Message<"ghnotif.v1.State"> & {
  * Use `create(StateSchema)` to create a new message.
  */
 export const StateSchema: GenMessage<State> = /*@__PURE__*/
-  messageDesc(file_ghnotif_v1_ghnotif, 2);
+  messageDesc(file_ghnotif_v1_ghnotif, 4);
+
+/**
+ * Which list the card shows: one at a time, picked on the card.
+ *
+ * @generated from enum ghnotif.v1.Filter
+ */
+export enum Filter {
+  /**
+   * The account's own PRs.
+   *
+   * @generated from enum value: FILTER_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Open PRs the account opened, with their status.
+   *
+   * @generated from enum value: FILTER_MINE = 1;
+   */
+  MINE = 1,
+
+  /**
+   * Open PRs waiting on the account's review, oldest first.
+   *
+   * @generated from enum value: FILTER_REVIEWS = 2;
+   */
+  REVIEWS = 2,
+
+  /**
+   * Issue threads that changed since the account last read them.
+   *
+   * @generated from enum value: FILTER_ISSUES = 3;
+   */
+  ISSUES = 3,
+}
+
+/**
+ * Describes the enum ghnotif.v1.Filter.
+ */
+export const FilterSchema: GenEnum<Filter> = /*@__PURE__*/
+  enumDesc(file_ghnotif_v1_ghnotif, 0);
+
+/**
+ * @generated from enum ghnotif.v1.Checks
+ */
+export enum Checks {
+  /**
+   * No checks ran.
+   *
+   * @generated from enum value: CHECKS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: CHECKS_PENDING = 1;
+   */
+  PENDING = 1,
+
+  /**
+   * @generated from enum value: CHECKS_PASSING = 2;
+   */
+  PASSING = 2,
+
+  /**
+   * @generated from enum value: CHECKS_FAILING = 3;
+   */
+  FAILING = 3,
+}
+
+/**
+ * Describes the enum ghnotif.v1.Checks.
+ */
+export const ChecksSchema: GenEnum<Checks> = /*@__PURE__*/
+  enumDesc(file_ghnotif_v1_ghnotif, 1);
+
+/**
+ * @generated from enum ghnotif.v1.Review
+ */
+export enum Review {
+  /**
+   * Nobody has reviewed it yet.
+   *
+   * @generated from enum value: REVIEW_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: REVIEW_APPROVED = 1;
+   */
+  APPROVED = 1,
+
+  /**
+   * @generated from enum value: REVIEW_CHANGES_REQUESTED = 2;
+   */
+  CHANGES_REQUESTED = 2,
+
+  /**
+   * @generated from enum value: REVIEW_COMMENTED = 3;
+   */
+  COMMENTED = 3,
+}
+
+/**
+ * Describes the enum ghnotif.v1.Review.
+ */
+export const ReviewSchema: GenEnum<Review> = /*@__PURE__*/
+  enumDesc(file_ghnotif_v1_ghnotif, 2);
 

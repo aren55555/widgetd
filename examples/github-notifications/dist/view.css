@@ -1,79 +1,215 @@
-.inbox {
+.card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
   height: 100%;
-  padding: 2px 14px 10px;
-  box-sizing: border-box;
-  overflow: hidden;
   font-family: var(--wd-font-mono, ui-monospace, monospace);
   color: var(--wd-ink, #e5e7eb);
 }
 
-.count {
-  font-size: 18px;
-  font-weight: 700;
+/* The filter: one button per list, each with its count. */
+nav {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px 6px;
 }
 
-.count[data-zero="true"] {
-  color: var(--wd-up, #4ade80);
+button {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--wd-ink-faint, #71717a);
+  font: 600 11px/16px var(--wd-font-mono, ui-monospace, monospace);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+button .n {
+  color: var(--wd-ink-muted, #a1a1aa);
+}
+
+button[data-zero="true"] .n {
+  color: var(--wd-ink-faint, #71717a);
+}
+
+button[aria-pressed="true"] {
+  background: var(--wd-raised, #27272a);
+  color: var(--wd-ink, #e5e7eb);
+}
+
+button[aria-pressed="true"] .n {
+  color: var(--wd-ink, #e5e7eb);
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 0 14px 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Fade whichever edge has more rows past it. */
+.scroll[data-above="true"] {
+  mask-image: linear-gradient(to bottom, transparent, #000 14px);
+}
+
+.scroll[data-below="true"] {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
+}
+
+.scroll[data-above="true"][data-below="true"] {
+  mask-image: linear-gradient(to bottom, transparent, #000 14px, #000 calc(100% - 20px), transparent);
 }
 
 ul {
   margin: 0;
   padding: 0;
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  overflow: hidden;
 }
 
 li {
   display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 8px;
+  grid-template-columns: 16px 1fr;
+  column-gap: 10px;
+  row-gap: 2px;
+  padding: 6px 0;
+  border-top: 1px solid var(--wd-edge, #27272a);
+  font-size: 13px;
+  line-height: 17px;
+}
+
+li:first-child {
+  border-top: 0;
+  padding-top: 2px;
+}
+
+li.empty {
+  display: block;
   font-size: 12px;
-  line-height: 16px;
+  color: var(--wd-ink-faint, #71717a);
 }
 
 .kind {
-  grid-row: span 2;
-  align-self: start;
-  padding: 0 6px;
-  border-radius: 4px;
-  background: var(--wd-raised, #27272a);
+  grid-row: span 3;
+  margin-top: 1px;
   color: var(--wd-ink-muted, #a1a1aa);
-  font-size: 10px;
-  line-height: 16px;
 }
 
+.kind.open {
+  color: var(--wd-up, #4ade80);
+}
+
+/* Titles get two lines before they're cut. */
 .title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
-.repo {
-  font-size: 11px;
-  color: var(--wd-ink-faint, #71717a);
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-ul {
-  flex: 1;
-  min-height: 0;
-  position: relative; /* rows' offsetTop is measured from here */
-}
-
-.more {
+.meta {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
   font-size: 11px;
   line-height: 14px;
   color: var(--wd-ink-faint, #71717a);
+  white-space: nowrap;
 }
 
-.more:empty {
-  display: none;
+.repo {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+ * owner/repo#number: one hue for who owns the repo (a user, or an org),
+ * each part a step lighter than the last, and a little less saturated so
+ * the number doesn't glow. OKLCH so the steps look even across hues.
+ */
+.ref {
+  --ref-hue: 230; /* a user's repo: blue */
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.ref[data-owner="org"] {
+  --ref-hue: 300; /* an org's repo: violet */
+}
+
+.owner {
+  color: oklch(0.62 0.1 var(--ref-hue));
+}
+
+.slash {
+  color: var(--wd-ink-faint, #71717a);
+}
+
+.name {
+  color: oklch(0.74 0.08 var(--ref-hue));
+}
+
+.num {
+  flex: none;
+  color: oklch(0.88 0.05 var(--ref-hue));
+  font-weight: 500;
+}
+
+.dot {
+  flex: none;
+}
+
+.dot::before {
+  content: "· ";
+}
+
+.age {
+  flex: none;
+  margin-left: auto;
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 2px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.chip.ok {
+  color: var(--wd-up, #4ade80);
+}
+
+.chip.bad {
+  color: var(--wd-down, #f87171);
+}
+
+.chip.wait {
+  color: var(--wd-warn, #f59e0b);
+}
+
+.chip.dim {
+  color: var(--wd-ink-faint, #71717a);
 }

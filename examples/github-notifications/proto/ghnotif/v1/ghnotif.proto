@@ -5,25 +5,78 @@ package ghnotif.v1;
 import "buf/validate/validate.proto";
 
 message Config {
-  // Only notifications you're directly involved in (mentioned, assigned,
-  // asked to review), not everything on repos you watch.
+  // Only issue threads you're directly involved in (mentioned, assigned,
+  // author), not everything on repos you watch.
   bool participating = 1;
 }
 
-message Item {
+// Which list the card shows: one at a time, picked on the card.
+enum Filter {
+  // The account's own PRs.
+  FILTER_UNSPECIFIED = 0;
+  // Open PRs the account opened, with their status.
+  FILTER_MINE = 1;
+  // Open PRs waiting on the account's review, oldest first.
+  FILTER_REVIEWS = 2;
+  // Issue threads that changed since the account last read them.
+  FILTER_ISSUES = 3;
+}
+
+// What each screen remembers about its card.
+message Local {
+  Filter filter = 1;
+}
+
+enum Checks {
+  // No checks ran.
+  CHECKS_UNSPECIFIED = 0;
+  CHECKS_PENDING = 1;
+  CHECKS_PASSING = 2;
+  CHECKS_FAILING = 3;
+}
+
+enum Review {
+  // Nobody has reviewed it yet.
+  REVIEW_UNSPECIFIED = 0;
+  REVIEW_APPROVED = 1;
+  REVIEW_CHANGES_REQUESTED = 2;
+  REVIEW_COMMENTED = 3;
+}
+
+message PullRequest {
+  string repo = 1 [(buf.validate.field).string.max_len = 140];
+  int32 number = 2 [(buf.validate.field).int32.gt = 0];
+  string title = 3 [(buf.validate.field).string.max_len = 300];
+  string author = 4 [(buf.validate.field).string.max_len = 64];
+  int64 created_unix_ms = 5;
+  int64 updated_unix_ms = 6;
+  bool draft = 7;
+  // The status fields are set for the account's own PRs only.
+  Checks checks = 8;
+  Review review = 9;
+  // It no longer merges cleanly into its base.
+  bool conflicts = 10;
+  // The repo belongs to an organization, not a user.
+  bool org = 11;
+}
+
+message Issue {
   string repo = 1 [(buf.validate.field).string.max_len = 140];
   string title = 2 [(buf.validate.field).string.max_len = 300];
-  // "PullRequest", "Issue", "Release", "Discussion", ...
-  string kind = 3 [(buf.validate.field).string.max_len = 40];
-  // Why you got it: "review_requested", "mention", "subscribed", ...
-  string reason = 4 [(buf.validate.field).string.max_len = 40];
-  int64 updated_unix_ms = 5;
+  // Why you got it: "mention", "assign", "author", "subscribed", ...
+  string reason = 3 [(buf.validate.field).string.max_len = 40];
+  int64 updated_unix_ms = 4;
+  // 0 if GitHub didn't say.
+  int32 number = 5 [(buf.validate.field).int32.gte = 0];
+  // The repo belongs to an organization, not a user.
+  bool org = 6;
 }
 
 message State {
-  // The signed-in account's login.
-  string login = 1 [(buf.validate.field).string.max_len = 64];
-  int32 unread = 2 [(buf.validate.field).int32.gte = 0];
-  // The most recent, newest first.
-  repeated Item items = 3 [(buf.validate.field).repeated.max_items = 10];
+  // Most recently updated first.
+  repeated PullRequest mine = 1 [(buf.validate.field).repeated.max_items = 30];
+  // Oldest first.
+  repeated PullRequest reviews = 2 [(buf.validate.field).repeated.max_items = 30];
+  // Newest first.
+  repeated Issue issues = 3 [(buf.validate.field).repeated.max_items = 30];
 }

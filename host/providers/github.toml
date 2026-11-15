@@ -27,6 +27,9 @@ any_token = ["GET https://api.github.com/user", "GET https://api.github.com/rate
 "read:user"     = ["GET https://api.github.com/user"]
 "user:email"    = ["GET https://api.github.com/user/emails"]
 "read:org"      = ["GET https://api.github.com/orgs/", "GET https://api.github.com/user/orgs"]
+# GitHub's OAuth apps have no read-only scope for private repos: "repo" is
+# read and write. Signed requests stay read-only here, because it covers GETs only.
+"repo"          = ["GET https://api.github.com/search/issues", "GET https://api.github.com/repos/"]
 
 # Who a token belongs to: any token can read it, so no extra scope.
 [identity]

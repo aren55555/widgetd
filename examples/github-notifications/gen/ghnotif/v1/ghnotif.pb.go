@@ -22,10 +22,173 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Which list the card shows: one at a time, picked on the card.
+type Filter int32
+
+const (
+	// The account's own PRs.
+	Filter_FILTER_UNSPECIFIED Filter = 0
+	// Open PRs the account opened, with their status.
+	Filter_FILTER_MINE Filter = 1
+	// Open PRs waiting on the account's review, oldest first.
+	Filter_FILTER_REVIEWS Filter = 2
+	// Issue threads that changed since the account last read them.
+	Filter_FILTER_ISSUES Filter = 3
+)
+
+// Enum value maps for Filter.
+var (
+	Filter_name = map[int32]string{
+		0: "FILTER_UNSPECIFIED",
+		1: "FILTER_MINE",
+		2: "FILTER_REVIEWS",
+		3: "FILTER_ISSUES",
+	}
+	Filter_value = map[string]int32{
+		"FILTER_UNSPECIFIED": 0,
+		"FILTER_MINE":        1,
+		"FILTER_REVIEWS":     2,
+		"FILTER_ISSUES":      3,
+	}
+)
+
+func (x Filter) Enum() *Filter {
+	p := new(Filter)
+	*p = x
+	return p
+}
+
+func (x Filter) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Filter) Descriptor() protoreflect.EnumDescriptor {
+	return file_ghnotif_v1_ghnotif_proto_enumTypes[0].Descriptor()
+}
+
+func (Filter) Type() protoreflect.EnumType {
+	return &file_ghnotif_v1_ghnotif_proto_enumTypes[0]
+}
+
+func (x Filter) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Filter.Descriptor instead.
+func (Filter) EnumDescriptor() ([]byte, []int) {
+	return file_ghnotif_v1_ghnotif_proto_rawDescGZIP(), []int{0}
+}
+
+type Checks int32
+
+const (
+	// No checks ran.
+	Checks_CHECKS_UNSPECIFIED Checks = 0
+	Checks_CHECKS_PENDING     Checks = 1
+	Checks_CHECKS_PASSING     Checks = 2
+	Checks_CHECKS_FAILING     Checks = 3
+)
+
+// Enum value maps for Checks.
+var (
+	Checks_name = map[int32]string{
+		0: "CHECKS_UNSPECIFIED",
+		1: "CHECKS_PENDING",
+		2: "CHECKS_PASSING",
+		3: "CHECKS_FAILING",
+	}
+	Checks_value = map[string]int32{
+		"CHECKS_UNSPECIFIED": 0,
+		"CHECKS_PENDING":     1,
+		"CHECKS_PASSING":     2,
+		"CHECKS_FAILING":     3,
+	}
+)
+
+func (x Checks) Enum() *Checks {
+	p := new(Checks)
+	*p = x
+	return p
+}
+
+func (x Checks) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Checks) Descriptor() protoreflect.EnumDescriptor {
+	return file_ghnotif_v1_ghnotif_proto_enumTypes[1].Descriptor()
+}
+
+func (Checks) Type() protoreflect.EnumType {
+	return &file_ghnotif_v1_ghnotif_proto_enumTypes[1]
+}
+
+func (x Checks) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Checks.Descriptor instead.
+func (Checks) EnumDescriptor() ([]byte, []int) {
+	return file_ghnotif_v1_ghnotif_proto_rawDescGZIP(), []int{1}
+}
+
+type Review int32
+
+const (
+	// Nobody has reviewed it yet.
+	Review_REVIEW_UNSPECIFIED       Review = 0
+	Review_REVIEW_APPROVED          Review = 1
+	Review_REVIEW_CHANGES_REQUESTED Review = 2
+	Review_REVIEW_COMMENTED         Review = 3
+)
+
+// Enum value maps for Review.
+var (
+	Review_name = map[int32]string{
+		0: "REVIEW_UNSPECIFIED",
+		1: "REVIEW_APPROVED",
+		2: "REVIEW_CHANGES_REQUESTED",
+		3: "REVIEW_COMMENTED",
+	}
+	Review_value = map[string]int32{
+		"REVIEW_UNSPECIFIED":       0,
+		"REVIEW_APPROVED":          1,
+		"REVIEW_CHANGES_REQUESTED": 2,
+		"REVIEW_COMMENTED":         3,
+	}
+)
+
+func (x Review) Enum() *Review {
+	p := new(Review)
+	*p = x
+	return p
+}
+
+func (x Review) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Review) Descriptor() protoreflect.EnumDescriptor {
+	return file_ghnotif_v1_ghnotif_proto_enumTypes[2].Descriptor()
+}
+
+func (Review) Type() protoreflect.EnumType {
+	return &file_ghnotif_v1_ghnotif_proto_enumTypes[2]
+}
+
+func (x Review) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Review.Descriptor instead.
+func (Review) EnumDescriptor() ([]byte, []int) {
+	return file_ghnotif_v1_ghnotif_proto_rawDescGZIP(), []int{2}
+}
+
 type Config struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Only notifications you're directly involved in (mentioned, assigned,
-	// asked to review), not everything on repos you watch.
+	// Only issue threads you're directly involved in (mentioned, assigned,
+	// author), not everything on repos you watch.
 	Participating bool `protobuf:"varint,1,opt,name=participating,proto3" json:"participating,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -68,33 +231,28 @@ func (x *Config) GetParticipating() bool {
 	return false
 }
 
-type Item struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Repo  string                 `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
-	Title string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	// "PullRequest", "Issue", "Release", "Discussion", ...
-	Kind string `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
-	// Why you got it: "review_requested", "mention", "subscribed", ...
-	Reason        string `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
-	UpdatedUnixMs int64  `protobuf:"varint,5,opt,name=updated_unix_ms,json=updatedUnixMs,proto3" json:"updated_unix_ms,omitempty"`
+// What each screen remembers about its card.
+type Local struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Filter        Filter                 `protobuf:"varint,1,opt,name=filter,proto3,enum=ghnotif.v1.Filter" json:"filter,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Item) Reset() {
-	*x = Item{}
+func (x *Local) Reset() {
+	*x = Local{}
 	mi := &file_ghnotif_v1_ghnotif_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Item) String() string {
+func (x *Local) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Item) ProtoMessage() {}
+func (*Local) ProtoMessage() {}
 
-func (x *Item) ProtoReflect() protoreflect.Message {
+func (x *Local) ProtoReflect() protoreflect.Message {
 	mi := &file_ghnotif_v1_ghnotif_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -106,60 +264,247 @@ func (x *Item) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Item.ProtoReflect.Descriptor instead.
-func (*Item) Descriptor() ([]byte, []int) {
+// Deprecated: Use Local.ProtoReflect.Descriptor instead.
+func (*Local) Descriptor() ([]byte, []int) {
 	return file_ghnotif_v1_ghnotif_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Item) GetRepo() string {
+func (x *Local) GetFilter() Filter {
+	if x != nil {
+		return x.Filter
+	}
+	return Filter_FILTER_UNSPECIFIED
+}
+
+type PullRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Repo          string                 `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
+	Number        int32                  `protobuf:"varint,2,opt,name=number,proto3" json:"number,omitempty"`
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Author        string                 `protobuf:"bytes,4,opt,name=author,proto3" json:"author,omitempty"`
+	CreatedUnixMs int64                  `protobuf:"varint,5,opt,name=created_unix_ms,json=createdUnixMs,proto3" json:"created_unix_ms,omitempty"`
+	UpdatedUnixMs int64                  `protobuf:"varint,6,opt,name=updated_unix_ms,json=updatedUnixMs,proto3" json:"updated_unix_ms,omitempty"`
+	Draft         bool                   `protobuf:"varint,7,opt,name=draft,proto3" json:"draft,omitempty"`
+	// The status fields are set for the account's own PRs only.
+	Checks Checks `protobuf:"varint,8,opt,name=checks,proto3,enum=ghnotif.v1.Checks" json:"checks,omitempty"`
+	Review Review `protobuf:"varint,9,opt,name=review,proto3,enum=ghnotif.v1.Review" json:"review,omitempty"`
+	// It no longer merges cleanly into its base.
+	Conflicts bool `protobuf:"varint,10,opt,name=conflicts,proto3" json:"conflicts,omitempty"`
+	// The repo belongs to an organization, not a user.
+	Org           bool `protobuf:"varint,11,opt,name=org,proto3" json:"org,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PullRequest) Reset() {
+	*x = PullRequest{}
+	mi := &file_ghnotif_v1_ghnotif_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PullRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PullRequest) ProtoMessage() {}
+
+func (x *PullRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_ghnotif_v1_ghnotif_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PullRequest.ProtoReflect.Descriptor instead.
+func (*PullRequest) Descriptor() ([]byte, []int) {
+	return file_ghnotif_v1_ghnotif_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *PullRequest) GetRepo() string {
 	if x != nil {
 		return x.Repo
 	}
 	return ""
 }
 
-func (x *Item) GetTitle() string {
+func (x *PullRequest) GetNumber() int32 {
+	if x != nil {
+		return x.Number
+	}
+	return 0
+}
+
+func (x *PullRequest) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *Item) GetKind() string {
+func (x *PullRequest) GetAuthor() string {
 	if x != nil {
-		return x.Kind
+		return x.Author
 	}
 	return ""
 }
 
-func (x *Item) GetReason() string {
+func (x *PullRequest) GetCreatedUnixMs() int64 {
 	if x != nil {
-		return x.Reason
+		return x.CreatedUnixMs
 	}
-	return ""
+	return 0
 }
 
-func (x *Item) GetUpdatedUnixMs() int64 {
+func (x *PullRequest) GetUpdatedUnixMs() int64 {
 	if x != nil {
 		return x.UpdatedUnixMs
 	}
 	return 0
 }
 
+func (x *PullRequest) GetDraft() bool {
+	if x != nil {
+		return x.Draft
+	}
+	return false
+}
+
+func (x *PullRequest) GetChecks() Checks {
+	if x != nil {
+		return x.Checks
+	}
+	return Checks_CHECKS_UNSPECIFIED
+}
+
+func (x *PullRequest) GetReview() Review {
+	if x != nil {
+		return x.Review
+	}
+	return Review_REVIEW_UNSPECIFIED
+}
+
+func (x *PullRequest) GetConflicts() bool {
+	if x != nil {
+		return x.Conflicts
+	}
+	return false
+}
+
+func (x *PullRequest) GetOrg() bool {
+	if x != nil {
+		return x.Org
+	}
+	return false
+}
+
+type Issue struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Repo  string                 `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
+	Title string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// Why you got it: "mention", "assign", "author", "subscribed", ...
+	Reason        string `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	UpdatedUnixMs int64  `protobuf:"varint,4,opt,name=updated_unix_ms,json=updatedUnixMs,proto3" json:"updated_unix_ms,omitempty"`
+	// 0 if GitHub didn't say.
+	Number int32 `protobuf:"varint,5,opt,name=number,proto3" json:"number,omitempty"`
+	// The repo belongs to an organization, not a user.
+	Org           bool `protobuf:"varint,6,opt,name=org,proto3" json:"org,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Issue) Reset() {
+	*x = Issue{}
+	mi := &file_ghnotif_v1_ghnotif_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Issue) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Issue) ProtoMessage() {}
+
+func (x *Issue) ProtoReflect() protoreflect.Message {
+	mi := &file_ghnotif_v1_ghnotif_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Issue.ProtoReflect.Descriptor instead.
+func (*Issue) Descriptor() ([]byte, []int) {
+	return file_ghnotif_v1_ghnotif_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Issue) GetRepo() string {
+	if x != nil {
+		return x.Repo
+	}
+	return ""
+}
+
+func (x *Issue) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Issue) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *Issue) GetUpdatedUnixMs() int64 {
+	if x != nil {
+		return x.UpdatedUnixMs
+	}
+	return 0
+}
+
+func (x *Issue) GetNumber() int32 {
+	if x != nil {
+		return x.Number
+	}
+	return 0
+}
+
+func (x *Issue) GetOrg() bool {
+	if x != nil {
+		return x.Org
+	}
+	return false
+}
+
 type State struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The signed-in account's login.
-	Login  string `protobuf:"bytes,1,opt,name=login,proto3" json:"login,omitempty"`
-	Unread int32  `protobuf:"varint,2,opt,name=unread,proto3" json:"unread,omitempty"`
-	// The most recent, newest first.
-	Items         []*Item `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
+	// Most recently updated first.
+	Mine []*PullRequest `protobuf:"bytes,1,rep,name=mine,proto3" json:"mine,omitempty"`
+	// Oldest first.
+	Reviews []*PullRequest `protobuf:"bytes,2,rep,name=reviews,proto3" json:"reviews,omitempty"`
+	// Newest first.
+	Issues        []*Issue `protobuf:"bytes,3,rep,name=issues,proto3" json:"issues,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *State) Reset() {
 	*x = State{}
-	mi := &file_ghnotif_v1_ghnotif_proto_msgTypes[2]
+	mi := &file_ghnotif_v1_ghnotif_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -171,7 +516,7 @@ func (x *State) String() string {
 func (*State) ProtoMessage() {}
 
 func (x *State) ProtoReflect() protoreflect.Message {
-	mi := &file_ghnotif_v1_ghnotif_proto_msgTypes[2]
+	mi := &file_ghnotif_v1_ghnotif_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -184,26 +529,26 @@ func (x *State) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use State.ProtoReflect.Descriptor instead.
 func (*State) Descriptor() ([]byte, []int) {
-	return file_ghnotif_v1_ghnotif_proto_rawDescGZIP(), []int{2}
+	return file_ghnotif_v1_ghnotif_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *State) GetLogin() string {
+func (x *State) GetMine() []*PullRequest {
 	if x != nil {
-		return x.Login
+		return x.Mine
 	}
-	return ""
+	return nil
 }
 
-func (x *State) GetUnread() int32 {
+func (x *State) GetReviews() []*PullRequest {
 	if x != nil {
-		return x.Unread
+		return x.Reviews
 	}
-	return 0
+	return nil
 }
 
-func (x *State) GetItems() []*Item {
+func (x *State) GetIssues() []*Issue {
 	if x != nil {
-		return x.Items
+		return x.Issues
 	}
 	return nil
 }
@@ -215,18 +560,48 @@ const file_ghnotif_v1_ghnotif_proto_rawDesc = "" +
 	"\x18ghnotif/v1/ghnotif.proto\x12\n" +
 	"ghnotif.v1\x1a\x1bbuf/validate/validate.proto\".\n" +
 	"\x06Config\x12$\n" +
-	"\rparticipating\x18\x01 \x01(\bR\rparticipating\"\xaa\x01\n" +
-	"\x04Item\x12\x1c\n" +
+	"\rparticipating\x18\x01 \x01(\bR\rparticipating\"3\n" +
+	"\x05Local\x12*\n" +
+	"\x06filter\x18\x01 \x01(\x0e2\x12.ghnotif.v1.FilterR\x06filter\"\xfb\x02\n" +
+	"\vPullRequest\x12\x1c\n" +
+	"\x04repo\x18\x01 \x01(\tB\b\xbaH\x05r\x03\x18\x8c\x01R\x04repo\x12\x1f\n" +
+	"\x06number\x18\x02 \x01(\x05B\a\xbaH\x04\x1a\x02 \x00R\x06number\x12\x1e\n" +
+	"\x05title\x18\x03 \x01(\tB\b\xbaH\x05r\x03\x18\xac\x02R\x05title\x12\x1f\n" +
+	"\x06author\x18\x04 \x01(\tB\a\xbaH\x04r\x02\x18@R\x06author\x12&\n" +
+	"\x0fcreated_unix_ms\x18\x05 \x01(\x03R\rcreatedUnixMs\x12&\n" +
+	"\x0fupdated_unix_ms\x18\x06 \x01(\x03R\rupdatedUnixMs\x12\x14\n" +
+	"\x05draft\x18\a \x01(\bR\x05draft\x12*\n" +
+	"\x06checks\x18\b \x01(\x0e2\x12.ghnotif.v1.ChecksR\x06checks\x12*\n" +
+	"\x06review\x18\t \x01(\x0e2\x12.ghnotif.v1.ReviewR\x06review\x12\x1c\n" +
+	"\tconflicts\x18\n" +
+	" \x01(\bR\tconflicts\x12\x10\n" +
+	"\x03org\x18\v \x01(\bR\x03org\"\xc1\x01\n" +
+	"\x05Issue\x12\x1c\n" +
 	"\x04repo\x18\x01 \x01(\tB\b\xbaH\x05r\x03\x18\x8c\x01R\x04repo\x12\x1e\n" +
-	"\x05title\x18\x02 \x01(\tB\b\xbaH\x05r\x03\x18\xac\x02R\x05title\x12\x1b\n" +
-	"\x04kind\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x18(R\x04kind\x12\x1f\n" +
-	"\x06reason\x18\x04 \x01(\tB\a\xbaH\x04r\x02\x18(R\x06reason\x12&\n" +
-	"\x0fupdated_unix_ms\x18\x05 \x01(\x03R\rupdatedUnixMs\"y\n" +
-	"\x05State\x12\x1d\n" +
-	"\x05login\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x18@R\x05login\x12\x1f\n" +
-	"\x06unread\x18\x02 \x01(\x05B\a\xbaH\x04\x1a\x02(\x00R\x06unread\x120\n" +
-	"\x05items\x18\x03 \x03(\v2\x10.ghnotif.v1.ItemB\b\xbaH\x05\x92\x01\x02\x10\n" +
-	"R\x05itemsB\xbc\x01\n" +
+	"\x05title\x18\x02 \x01(\tB\b\xbaH\x05r\x03\x18\xac\x02R\x05title\x12\x1f\n" +
+	"\x06reason\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x18(R\x06reason\x12&\n" +
+	"\x0fupdated_unix_ms\x18\x04 \x01(\x03R\rupdatedUnixMs\x12\x1f\n" +
+	"\x06number\x18\x05 \x01(\x05B\a\xbaH\x04\x1a\x02(\x00R\x06number\x12\x10\n" +
+	"\x03org\x18\x06 \x01(\bR\x03org\"\xb0\x01\n" +
+	"\x05State\x125\n" +
+	"\x04mine\x18\x01 \x03(\v2\x17.ghnotif.v1.PullRequestB\b\xbaH\x05\x92\x01\x02\x10\x1eR\x04mine\x12;\n" +
+	"\areviews\x18\x02 \x03(\v2\x17.ghnotif.v1.PullRequestB\b\xbaH\x05\x92\x01\x02\x10\x1eR\areviews\x123\n" +
+	"\x06issues\x18\x03 \x03(\v2\x11.ghnotif.v1.IssueB\b\xbaH\x05\x92\x01\x02\x10\x1eR\x06issues*X\n" +
+	"\x06Filter\x12\x16\n" +
+	"\x12FILTER_UNSPECIFIED\x10\x00\x12\x0f\n" +
+	"\vFILTER_MINE\x10\x01\x12\x12\n" +
+	"\x0eFILTER_REVIEWS\x10\x02\x12\x11\n" +
+	"\rFILTER_ISSUES\x10\x03*\\\n" +
+	"\x06Checks\x12\x16\n" +
+	"\x12CHECKS_UNSPECIFIED\x10\x00\x12\x12\n" +
+	"\x0eCHECKS_PENDING\x10\x01\x12\x12\n" +
+	"\x0eCHECKS_PASSING\x10\x02\x12\x12\n" +
+	"\x0eCHECKS_FAILING\x10\x03*i\n" +
+	"\x06Review\x12\x16\n" +
+	"\x12REVIEW_UNSPECIFIED\x10\x00\x12\x13\n" +
+	"\x0fREVIEW_APPROVED\x10\x01\x12\x1c\n" +
+	"\x18REVIEW_CHANGES_REQUESTED\x10\x02\x12\x14\n" +
+	"\x10REVIEW_COMMENTED\x10\x03B\xbc\x01\n" +
 	"\x0ecom.ghnotif.v1B\fGhnotifProtoP\x01ZSgithub.com/aren55555/widgetd/examples/github-notifications/gen/ghnotif/v1;ghnotifv1\xa2\x02\x03GXX\xaa\x02\n" +
 	"Ghnotif.V1\xca\x02\n" +
 	"Ghnotif\\V1\xe2\x02\x16Ghnotif\\V1\\GPBMetadata\xea\x02\vGhnotif::V1b\x06proto3"
@@ -243,19 +618,30 @@ func file_ghnotif_v1_ghnotif_proto_rawDescGZIP() []byte {
 	return file_ghnotif_v1_ghnotif_proto_rawDescData
 }
 
-var file_ghnotif_v1_ghnotif_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_ghnotif_v1_ghnotif_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_ghnotif_v1_ghnotif_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_ghnotif_v1_ghnotif_proto_goTypes = []any{
-	(*Config)(nil), // 0: ghnotif.v1.Config
-	(*Item)(nil),   // 1: ghnotif.v1.Item
-	(*State)(nil),  // 2: ghnotif.v1.State
+	(Filter)(0),         // 0: ghnotif.v1.Filter
+	(Checks)(0),         // 1: ghnotif.v1.Checks
+	(Review)(0),         // 2: ghnotif.v1.Review
+	(*Config)(nil),      // 3: ghnotif.v1.Config
+	(*Local)(nil),       // 4: ghnotif.v1.Local
+	(*PullRequest)(nil), // 5: ghnotif.v1.PullRequest
+	(*Issue)(nil),       // 6: ghnotif.v1.Issue
+	(*State)(nil),       // 7: ghnotif.v1.State
 }
 var file_ghnotif_v1_ghnotif_proto_depIdxs = []int32{
-	1, // 0: ghnotif.v1.State.items:type_name -> ghnotif.v1.Item
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: ghnotif.v1.Local.filter:type_name -> ghnotif.v1.Filter
+	1, // 1: ghnotif.v1.PullRequest.checks:type_name -> ghnotif.v1.Checks
+	2, // 2: ghnotif.v1.PullRequest.review:type_name -> ghnotif.v1.Review
+	5, // 3: ghnotif.v1.State.mine:type_name -> ghnotif.v1.PullRequest
+	5, // 4: ghnotif.v1.State.reviews:type_name -> ghnotif.v1.PullRequest
+	6, // 5: ghnotif.v1.State.issues:type_name -> ghnotif.v1.Issue
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_ghnotif_v1_ghnotif_proto_init() }
@@ -268,13 +654,14 @@ func file_ghnotif_v1_ghnotif_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ghnotif_v1_ghnotif_proto_rawDesc), len(file_ghnotif_v1_ghnotif_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   3,
+			NumEnums:      3,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_ghnotif_v1_ghnotif_proto_goTypes,
 		DependencyIndexes: file_ghnotif_v1_ghnotif_proto_depIdxs,
+		EnumInfos:         file_ghnotif_v1_ghnotif_proto_enumTypes,
 		MessageInfos:      file_ghnotif_v1_ghnotif_proto_msgTypes,
 	}.Build()
 	File_ghnotif_v1_ghnotif_proto = out.File
