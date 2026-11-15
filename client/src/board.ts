@@ -102,10 +102,6 @@ dialog dd { margin: 0; text-align: right; }
 dialog dd small { display: block; font-size: 11px; color: var(--wd-ink-faint, #71717a); }
 .warn { position: absolute; right: 8px; bottom: 6px; z-index: 2; padding: 1px 6px; border-radius: 999px; font: 11px/16px var(--wd-font-mono, monospace);
   background: color-mix(in oklab, var(--wd-warn, #f59e0b) 20%, transparent); color: var(--wd-warn, #f59e0b); cursor: help; }
-.gear { position: absolute; right: 6px; top: 4px; z-index: 2; padding: 0 4px; border: 0; background: none; cursor: pointer;
-  font-size: 14px; line-height: 20px; color: var(--wd-ink-faint, #71717a); opacity: 0; transition: opacity 0.15s; }
-.card:hover .gear, .card:focus-within .gear { opacity: 1; }
-@media (hover: none) { .gear { opacity: 0.6; } }
 .card.placeholder, .card.add { align-items: center; justify-content: center; gap: 8px; padding: 12px; text-align: center; border-style: dashed; }
 .card.placeholder p { margin: 0; font: 13px/18px var(--wd-font-mono, ui-monospace, monospace); color: var(--wd-ink-muted, #a1a1aa); }
 .action { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--wd-edge, #27272a); cursor: pointer;
@@ -608,14 +604,8 @@ class WidgetBoard extends HTMLElement {
     frame.setAttribute("loading", "eager");
     frame.title = m.title || id;
     frame.src = new URL(m.frameUrl, this.api).href;
-    const gear = document.createElement("button");
-    gear.className = "gear";
-    gear.title = "Settings";
-    gear.setAttribute("aria-label", "Settings");
-    gear.textContent = "\u2699";
-    gear.addEventListener("click", () => void this.showSetUp([el], instanceOf(id)));
     if (m.title) el.append(title);
-    el.append(gear, fault, warn, frame);
+    el.append(fault, warn, frame);
     Object.assign(el.style, gridSpan(m.layout?.cols ?? 1, m.layout?.rows ?? 1, this.maxCols));
 
     const stored = usableStored(this.store.load(id), m.widget?.digest ?? "", m.stateType);

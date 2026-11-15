@@ -136,6 +136,7 @@ export class Chart {
       const path = s.prices.map((p, i) => `${i ? "L" : "M"}${x(i * MIN).toFixed(2)},${y(p).toFixed(2)}`).join("");
       const p = svg("path", { class: "line", d: path });
       p.style.stroke = s.color;
+      p.style.setProperty("--line", s.color);
       this.svg.append(p);
       if (d.live) {
         const i = s.prices.length - 1;
