@@ -149,6 +149,10 @@ dialog dd small { display: block; font-size: 11px; color: var(--wd-ink-faint, #7
 .overlay .delete { position: absolute; right: 2px; top: 2px; z-index: 1; color: var(--wd-down, #ef4444); }
 .overlay .delete:hover, .overlay .delete:focus-visible { color: var(--wd-down, #ef4444);
   background: color-mix(in oklab, var(--wd-down, #ef4444) 15%, transparent); }
+.overlay.pick { cursor: pointer; background: color-mix(in oklab, var(--wd-surface, #18181b) 88%, transparent); }
+.overlay.pick .fit { padding: 8px; }
+.overlay.pick .pick-icon svg { width: clamp(20px, 18cqmin, 40px); height: clamp(20px, 18cqmin, 40px); display: block; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.overlay.pick:hover, .overlay.pick:focus-visible { outline: none; color: var(--wd-ink, #e5e7eb); }
 dialog .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 dialog p { margin: 0; color: var(--wd-ink-muted, #a1a1aa); }
 dialog .error { margin-top: 8px; color: var(--wd-down, #ef4444); }
@@ -156,6 +160,9 @@ dialog .error { margin-top: 8px; color: var(--wd-down, #ef4444); }
 .action:disabled { opacity: 0.6; cursor: default; }
 .overlay .close { position: absolute; right: 6px; top: 4px; z-index: 1; border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--wd-ink-faint, #71717a); }
 `;
+
+/** How long a set-up code stays up before it needs another tap. */
+const SET_UP_CODE_MS = 60_000;
 
 // Lucide icons (settings, pencil, qr-code, x, trash-2, chevrons), inline: the board has no icon set.
 const ICONS = {
@@ -239,6 +246,8 @@ class WidgetBoard extends HTMLElement {
   private addTile = document.createElement("section");
   /** An instance this screen just added: show its set-up code as soon as it appears. */
   private justAdded = "";
+  /** Whether the footer's set-up button is on: every card waits to be tapped for its code. */
+  private picking = false;
   /**
    * The full URL of the admin page, from the last GetSession. Empty until
    * then. The settings modal's Edit button opens it.
@@ -685,6 +694,7 @@ class WidgetBoard extends HTMLElement {
     };
     this.cards.set(id, card);
     this.place(el);
+    if (this.picking) this.pickOverlay(el, instanceOf(id));
   }
 
   // ---- instances, placeholders, set-up codes ----
@@ -750,15 +760,27 @@ class WidgetBoard extends HTMLElement {
   private async showSetUp(tiles: HTMLElement[], instanceId: string) {
     // One code for the instance, shown on each of its cards (or its
     // placeholder), with the instance's short id, the same on all of them.
+    // It goes after a minute; in pick mode a card then waits to be tapped again.
     const shortId = this.instances.get(instanceId)?.status.shortId;
-    const os = tiles.map((t) => this.codeOverlay(t, "setup", () => this.confirmDelete(instanceId)));
+    const os = tiles.map((t) =>
+      this.codeOverlay(
+        t,
+        "setup",
+        () => this.confirmDelete(instanceId),
+        () => {
+          if (this.picking && t.isConnected && !t.classList.contains("placeholder")) {
+            this.pickOverlay(t, instanceId);
+          }
+        },
+      ),
+    );
     try {
       const admin = createClient(WidgetAdminService, this.transport());
       const t = await admin.requestConfigTicket({ instanceId });
       const expires = t.expiresAt ? Number(t.expiresAt.seconds) * 1000 : Date.now() + 600_000;
       for (const o of os) {
         o.show(t.url, ["Scan with your phone to set this up."], undefined, shortId);
-        o.expireAt(expires);
+        o.expireAt(Math.min(expires, Date.now() + SET_UP_CODE_MS));
       }
     } catch (e) {
       for (const o of os) o.fail(`Couldn't get a code: ${e instanceof Error ? e.message : String(e)}`);
@@ -815,32 +837,76 @@ class WidgetBoard extends HTMLElement {
   }
 
   /**
-   * The footer's set-up button: every card's set-up code at once, or, if
-   * they're up, none. Cards of one instance share its code.
+   * The footer's set-up button: pick mode, or, if it's on (or any set-up
+   * code is up), off. In pick mode no code shows until a card is tapped,
+   * and then only that card's, so a phone can't scan the wrong one.
    */
   private toggleSetUpAll() {
-    if (this.grid.querySelector(".overlay.setup")) {
+    if (this.picking || this.grid.querySelector(".overlay.setup")) {
       this.clearSetUp();
       return;
     }
-    const byInstance = new Map<string, HTMLElement[]>();
-    for (const c of this.cards.values()) {
-      const id = instanceOf(c.id);
-      byInstance.set(id, [...(byInstance.get(id) ?? []), c.el]);
-    }
-    for (const [id, tiles] of byInstance) void this.showSetUp(tiles, id);
+    this.picking = true;
+    for (const c of this.cards.values()) this.pickOverlay(c.el, instanceOf(c.id));
     this.syncSetUpButton();
   }
 
-  /** Takes every set-up code down (not sign-ins). */
+  /** Cover a card with a prompt to tap it for its set-up code. */
+  private pickOverlay(tile: HTMLElement, instanceId: string) {
+    tile.querySelector(".overlay")?.remove();
+    const overlay = document.createElement("div");
+    overlay.className = "overlay setup pick";
+    overlay.tabIndex = 0;
+    overlay.setAttribute("role", "button");
+    overlay.setAttribute("aria-label", "Show this widget's set-up code");
+    const fit = document.createElement("div");
+    fit.className = "fit";
+    const icon = document.createElement("div");
+    icon.className = "pick-icon";
+    icon.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS["qr-code"]}</svg>`;
+    const text = document.createElement("div");
+    text.textContent = "Tap to show its set-up code";
+    fit.append(icon, text);
+    const shortId = this.instances.get(instanceId)?.status.shortId;
+    if (shortId) {
+      const s = document.createElement("div");
+      s.className = "sid";
+      s.textContent = shortId;
+      fit.append(s);
+    }
+    overlay.append(fit);
+    const pick = () => this.pickCard(tile, instanceId);
+    overlay.addEventListener("click", pick);
+    overlay.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        pick();
+      }
+    });
+    tile.append(overlay);
+  }
+
+  /** Show one card's set-up code, putting any other card's back to its prompt. */
+  private pickCard(tile: HTMLElement, instanceId: string) {
+    for (const c of this.cards.values()) {
+      if (c.el !== tile && c.el.querySelector(".overlay.setup:not(.pick)")) this.pickOverlay(c.el, instanceOf(c.id));
+    }
+    void this.showSetUp([tile], instanceId);
+  }
+
+  /** Leaves pick mode and takes every set-up code down (not sign-ins). */
   private clearSetUp() {
+    this.picking = false;
     for (const o of this.grid.querySelectorAll(".overlay.setup")) o.remove();
     this.syncSetUpButton();
   }
 
-  /** The footer's set-up button reads pressed while any set-up code is up. */
+  /** The footer's set-up button reads pressed in pick mode or while any set-up code is up. */
   private syncSetUpButton() {
-    this.setUpAllButton.setAttribute("aria-pressed", String(!!this.grid.querySelector(".overlay.setup")));
+    this.setUpAllButton.setAttribute(
+      "aria-pressed",
+      String(this.picking || !!this.grid.querySelector(".overlay.setup")),
+    );
   }
 
   /**
@@ -870,14 +936,17 @@ class WidgetBoard extends HTMLElement {
    * An overlay filling `within` that shows a QR code with a line or two of
    * text (and, for sign-in, the code to type), laid out to fit the tile:
    * see .overlay in STYLE. With onDelete, its corner button is a trash can
-   * that calls it instead of a close button.
+   * that calls it instead of a close button. onGone runs when it expires
+   * or is closed, unless something else has replaced it first.
    */
-  private codeOverlay(within: HTMLElement, kind: "setup" | "signin", onDelete?: () => void) {
+  private codeOverlay(within: HTMLElement, kind: "setup" | "signin", onDelete?: () => void, onGone?: () => void) {
     within.querySelector(".overlay")?.remove();
     const overlay = document.createElement("div");
     overlay.className = `overlay ${kind}`;
     const remove = () => {
+      if (!overlay.isConnected) return; // replaced or cleared already
       overlay.remove();
+      onGone?.();
       this.syncSetUpButton();
     };
     let close: HTMLButtonElement;
