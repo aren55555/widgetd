@@ -1,0 +1,101 @@
+/* The weather card. Neutral colours are the board's theme; the colours that
+   mean something about the weather (the sun, rain, snow, a bolt) and the
+   US EPA's air-quality bands are the widget's own, the same on every board. */
+.wx {
+  --ink: var(--wd-ink, #f3f4f6);
+  --ink-soft: var(--wd-ink-soft, #d1d5db);
+  --muted: var(--wd-ink-muted, #9ca3af);
+  --tile: color-mix(in oklab, var(--wd-raised, #374151) 35%, transparent);
+  --tile-today: color-mix(in oklab, var(--wd-raised, #374151) 75%, transparent);
+  --well: var(--wd-bg, #111827);
+  --accent: var(--wd-accent, #60a5fa);
+  --sun: #fbbf24;
+  --wet: #38bdf8;
+  --ice: #bae6fd;
+  --bolt: #fbbf24;
+
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: var(--wd-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.wx [hidden] { display: none !important; }
+.wx button { font: inherit; color: inherit; background: none; border: 0; margin: 0; padding: 0; cursor: pointer; }
+.wx button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.tint-sun { stroke: var(--sun); }
+.tint-wet { stroke: var(--wet); }
+.tint-ice { stroke: var(--ice); }
+.tint-bolt { stroke: var(--bolt); }
+.wd-icon { flex: none; display: block; }
+
+.empty { position: absolute; inset: 0; display: grid; place-items: center; padding: 12px; text-align: center; font-size: 13px; color: var(--muted); }
+
+/* ── Front ───────────────────────────────────────────────────────────── */
+.front { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px 12px 10px; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 18px; font-size: 13px; line-height: 16px; white-space: nowrap; }
+.head-left { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.place { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.now { color: var(--muted); }
+.aqi { display: inline-flex; align-items: center; gap: 5px; flex: none; font-size: 12px; color: var(--muted); }
+.aqi i { width: 8px; height: 8px; border-radius: 50%; background: var(--band); }
+.aqi b { font-weight: 600; color: var(--ink); }
+/* US EPA bands, softened for a dark card. */
+.aqi-good { --band: #34d399; }
+.aqi-moderate { --band: #fbbf24; }
+.aqi-sensitive { --band: #fb923c; }
+.aqi-unhealthy { --band: #f87171; }
+.aqi-very { --band: #a78bfa; }
+.aqi-hazardous { --band: #be123c; }
+
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; flex: 1; min-height: 0; }
+.tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0;
+  border-radius: 8px; background: var(--tile); }
+.tile.today { background: var(--tile-today); }
+@media (hover: hover) { .tile:hover { background: var(--tile-today); } }
+.tile .day { font-size: 11px; line-height: 14px; font-weight: 500; color: var(--ink-soft); }
+.tile .pop { font-size: 10px; line-height: 12px; color: var(--wet); }
+.tile .hi { margin-top: 10px; font-size: 26px; line-height: 28px; font-weight: 600; letter-spacing: -0.02em; }
+.tile .lo { font-size: 13px; line-height: 16px; color: var(--muted); }
+/* A three-digit high would crowd a narrow tile. */
+@container (max-width: 72px) { .tile .hi { font-size: 22px; } }
+.tile { container-type: inline-size; }
+
+/* ── Detail ──────────────────────────────────────────────────────────── */
+.detail { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; }
+.drain { position: absolute; top: 4px; left: 12px; right: 12px; height: 2px; border-radius: 1px; overflow: hidden;
+  background: color-mix(in oklab, var(--wd-raised, #374151) 60%, transparent); }
+.drain i { display: block; height: 100%; background: var(--accent); opacity: 0.7; animation: drain 30s linear forwards; }
+@keyframes drain { from { width: 100%; } to { width: 0; } }
+@media (prefers-reduced-motion: reduce) { .drain i { animation: none; opacity: 0.4; } }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 24px; }
+.back { display: inline-flex; align-items: center; gap: 2px; height: 24px; padding: 0 8px 0 2px; margin-left: -4px;
+  border-radius: 6px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+@media (hover: hover) { .back:hover { background: var(--tile-today); } }
+.sum { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.sum b { color: var(--ink); font-weight: 600; }
+
+.strip { position: relative; flex: 1; min-height: 40px; border-radius: 6px; overflow: hidden; background: var(--well); }
+.strip > * { position: absolute; }
+.strip svg { inset: 0; display: block; }
+.daylight { top: 0; bottom: 0; background: color-mix(in oklab, var(--wd-raised, #374151) 55%, transparent); }
+.bar { bottom: 0; background: var(--wet); border-radius: 2px 2px 0 0; }
+.nowline { top: 0; bottom: 0; width: 1px; background: var(--muted); }
+.arc { fill: none; stroke: var(--sun); stroke-width: 1.5; stroke-linecap: round; opacity: 0.9; }
+.sundot { fill: var(--sun); stroke: var(--well); stroke-width: 2; }
+
+.sunlabels { position: relative; height: 14px; font-size: 11px; line-height: 14px; color: var(--muted); }
+.sunlabel { position: absolute; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+.sunlabel .wd-icon { color: var(--sun); }
+
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: 999px;
+  background: color-mix(in oklab, var(--wd-raised, #374151) 60%, transparent); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pill .wd-icon { color: var(--muted); }

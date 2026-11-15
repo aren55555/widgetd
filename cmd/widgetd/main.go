@@ -41,13 +41,14 @@ import (
 	"github.com/aren55555/widgetd/examples/calendar"
 	githubnotifications "github.com/aren55555/widgetd/examples/github-notifications"
 	sportsgame "github.com/aren55555/widgetd/examples/sports-game"
+	"github.com/aren55555/widgetd/examples/weather"
 	"github.com/aren55555/widgetd/host"
 	"github.com/aren55555/widgetd/sdk/go/widget"
 )
 
 // builtin are the packages shipped inside this binary. Packages installed
 // with `widgetd install` sit beside them, and win on a name clash.
-var builtin = [][]byte{barttracker.Package, bitcoinspiral.Package, sportsgame.Package, githubnotifications.Package, calendar.Package, examples.ClockPackage}
+var builtin = [][]byte{barttracker.Package, bitcoinspiral.Package, sportsgame.Package, githubnotifications.Package, calendar.Package, weather.Package, examples.ClockPackage}
 
 // loadWidgets reads the built-in packages, then every .wpkg in dir.
 func loadWidgets(dir string) ([]widget.Spec, error) {

@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package weather.v1;
+
+import "buf/validate/validate.proto";
+
+// Which temperature unit the card shows.
+enum Units {
+  // Whatever each screen is set to (its region's unit, unless it says).
+  UNITS_SCREEN_SETTING = 0;
+  UNITS_CELSIUS = 1;
+  UNITS_FAHRENHEIT = 2;
+}
+
+message Config {
+  // A town or city to look for. The place field then lists what matches.
+  string search = 1 [(buf.validate.field).string.max_len = 100];
+  // The place, picked from what the search found: its Open-Meteo
+  // geocoding id.
+  string place = 2 [(buf.validate.field).string.pattern = "^[0-9]{0,12}$"];
+  // The name on the card. Empty: the place's own name.
+  string name = 3 [(buf.validate.field).string.max_len = 40];
+  // Overrides each screen's temperature unit. Wind and rain always follow
+  // the screen.
+  Units temperature = 4 [(buf.validate.field).enum.defined_only = true];
+}
+
+// The sky, as the card draws it. Open-Meteo's WMO codes, folded down to
+// what has an icon.
+enum Condition {
+  CONDITION_UNSPECIFIED = 0;
+  CONDITION_CLEAR = 1;
+  CONDITION_PARTLY_CLOUDY = 2;
+  CONDITION_CLOUDY = 3;
+  CONDITION_FOG = 4;
+  CONDITION_DRIZZLE = 5;
+  CONDITION_RAIN = 6;
+  CONDITION_SNOW = 7;
+  CONDITION_THUNDERSTORM = 8;
+}
+
+message Current {
+  float temperature_c = 1 [(buf.validate.field).float = {finite: true, gte: -100, lte: 70}];
+  Condition condition = 2 [(buf.validate.field).enum.defined_only = true];
+  // False at night, when a clear sky is drawn as a moon.
+  bool is_day = 3;
+  // US EPA air quality index; unset when Open-Meteo has none.
+  optional uint32 us_aqi = 4 [(buf.validate.field).uint32.lte = 999];
+}
+
+// One day at the place, from its local midnight to the next.
+message Day {
+  // Unix seconds: the place's local midnight starting the day.
+  int64 start = 1;
+  // Unix seconds: the next local midnight (23 or 25 hours on, across DST).
+  int64 end = 2;
+  Condition condition = 3 [(buf.validate.field).enum.defined_only = true];
+  float high_c = 4 [(buf.validate.field).float = {finite: true, gte: -100, lte: 70}];
+  float low_c = 5 [(buf.validate.field).float = {finite: true, gte: -100, lte: 70}];
+  // The highest hourly chance of rain or snow, in percent.
+  uint32 precip_chance = 6 [(buf.validate.field).uint32.lte = 100];
+  float precip_mm = 7 [(buf.validate.field).float = {finite: true, gte: 0, lte: 2000}];
+  // Unix seconds; 0 when the sun doesn't rise or set (polar day or night).
+  int64 sunrise = 8;
+  int64 sunset = 9;
+  // Mean relative humidity, in percent.
+  uint32 humidity = 10 [(buf.validate.field).uint32.lte = 100];
+  float wind_mps = 11 [(buf.validate.field).float = {finite: true, gte: 0, lte: 200}];
+  float gust_mps = 12 [(buf.validate.field).float = {finite: true, gte: 0, lte: 200}];
+  // Where the wind mostly comes from, in degrees clockwise from north.
+  uint32 wind_from_deg = 13 [(buf.validate.field).uint32.lt = 360];
+  // Hour by hour from start: rain or snow in mm, and its chance in percent.
+  repeated float hourly_precip_mm = 14 [(buf.validate.field).repeated = {
+    max_items: 25
+    items: {float: {finite: true, gte: 0, lte: 500}}
+  }];
+  repeated uint32 hourly_precip_chance = 15 [(buf.validate.field).repeated = {
+    max_items: 25
+    items: {uint32: {lte: 100}}
+  }];
+}
+
+// State is the whole card. Everything is in canonical units (°C, m/s, mm,
+// Unix seconds); each screen converts to its own.
+message State {
+  // The name on the card. Empty until a place is picked in the settings.
+  string name = 1 [(buf.validate.field).string.max_len = 40];
+  // The place's IANA time zone: day names, sunrise and sunset are the
+  // place's, not the screen's.
+  string time_zone = 2 [(buf.validate.field).string = {max_len: 64, pattern: "^([A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*)?$"}];
+  Units temperature = 3 [(buf.validate.field).enum.defined_only = true];
+  Current current = 4;
+  // Today and the three days after it.
+  repeated Day days = 5 [(buf.validate.field).repeated.max_items = 4];
+  // Unix seconds: when Open-Meteo was last read.
+  int64 updated = 6;
+}

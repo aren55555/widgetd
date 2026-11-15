@@ -1,0 +1,13 @@
+# The widget's manifest. widgetc reads it to wire the widget up.
+name    = "weather"
+version = "0.1.0"
+title   = "Weather"
+icon    = "cloud-sun"
+config  = "weather.v1.Config"
+
+# Open-Meteo, which needs no key: the forecast, the air quality, and the
+# place search the settings form uses to find a town by name.
+[network]
+hosts   = ["api.open-meteo.com", "air-quality-api.open-meteo.com", "geocoding-api.open-meteo.com"]
+methods = ["GET"]
+why     = "The forecast and air quality for one place, and the place search in its settings (Open-Meteo)"

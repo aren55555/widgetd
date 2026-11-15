@@ -24,13 +24,13 @@ client-build:
 
 # Build the example widgets into .wpkg packages (both authoring forms)
 examples:
-    {{mise}} go run ./cmd/widgetc build examples/bart-tracker examples/bitcoin-spiral examples/sports-game examples/github-notifications examples/calendar examples/clock.widget
+    {{mise}} go run ./cmd/widgetc build examples/bart-tracker examples/bitcoin-spiral examples/sports-game examples/github-notifications examples/calendar examples/weather examples/clock.widget
 
 # The full check suite
 test: generate client-build examples
     cd client && {{mise}} bun test
     cd sdk/web && {{mise}} bun test
-    {{mise}} go run ./cmd/widgetc test examples/bart-tracker examples/bitcoin-spiral examples/sports-game examples/github-notifications examples/calendar examples/clock.widget
+    {{mise}} go run ./cmd/widgetc test examples/bart-tracker examples/bitcoin-spiral examples/sports-game examples/github-notifications examples/calendar examples/weather examples/clock.widget
     # Folder and .widget parity; rebuilds the examples in place, so on its own
     WIDGETC_PARITY=1 {{mise}} go test -count=1 -run 'TestParity|TestFixture' ./cmd/widgetc
     {{mise}} go vet ./...
