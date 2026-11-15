@@ -1,7 +1,7 @@
 // The weather card. The front: the place, the temperature now, the sky as
 // an icon and the air quality on one line, then four day tiles. Tapping a
-// day opens it: a 24-hour strip (night, the sun's arc, rain by the hour)
-// and pills for humidity, wind and rain. Left alone for 30 s, the card goes
+// day opens it: a 24-hour strip (night, sunlight under the sun's arc, rain
+// by the hour) and a row of humidity, wind and rain. Left alone for 30 s, the card goes
 // back to the four days. All the arithmetic is in model.ts.
 
 import { defineWidget } from "@widgetd/sdk";
@@ -80,9 +80,6 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = "", text = ""):
   if (text) e.textContent = text;
   return e;
 }
-
-/** Text hidden from sight but read out. */
-const sr = (text: string) => el("span", "sr", text);
 
 defineWidget({
   state: StateSchema,
@@ -188,13 +185,13 @@ defineWidget({
       back.setAttribute("aria-label", "Back to the forecast");
       back.append(icon(ChevronLeft, { size: 16 }), el("span", "", dayTitle(d, nowSec, s.timeZone, u)));
       back.addEventListener("click", close);
+      // The sky and the high and low; the sky's name is in the stats below.
       const sum = el("div", "sum");
-      sum.append(
-        weatherIcon(iconFor(d.condition), 16),
-        el("span", "", conditionText(d.condition)),
-        el("b", "", degrees(d.highC, u)),
-        el("span", "", degrees(d.lowC, u)),
-      );
+      sum.setAttribute("aria-label", `High ${degrees(d.highC, u)}, low ${degrees(d.lowC, u)}`);
+      const temps = el("span", "temps");
+      temps.setAttribute("aria-hidden", "true");
+      temps.append(el("b", "", degrees(d.highC, u)), el("span", "slash", "/"), el("span", "", degrees(d.lowC, u)));
+      sum.append(weatherIcon(iconFor(d.condition), 18), temps);
       top.append(back, sum);
 
       // The strip: measured once laid out, since the arc is drawn in pixels.
@@ -221,22 +218,30 @@ defineWidget({
         labels.append(l);
       }
 
-      const pills = el("div", "pills");
-      const pill = (label: string, glyph: Element, value: string, cls = "") => {
-        const p = el("span", `pill ${cls}`);
-        p.title = label;
-        p.append(sr(label + " "), glyph, el("span", "", value));
-        return p;
+      // Four cells, each an icon and a value; the label shows above when there's room.
+      const stats = el("dl", "stats");
+      const stat = (label: string, glyph: Element, value: string, note = "") => {
+        const c = el("div", "stat");
+        c.title = label;
+        const k = el("dt", "", label);
+        const v = el("dd");
+        glyph.setAttribute("aria-hidden", "true");
+        v.append(glyph);
+        v.append(el("span", "", value));
+        if (note) v.append(el("small", "", note));
+        c.append(k, v);
+        return c;
       };
-      const arrow = icon(Navigation2, { size: 11 });
+      const arrow = icon(Navigation2, { size: 12 });
       arrow.style.transform = `rotate(${(d.windFromDeg + 180) % 360}deg)`;
-      pills.append(
-        pill("Humidity", icon(Droplet, { size: 12 }), `${d.humidity}%`),
-        pill("Wind", arrow, `${speed(d.windMps, u)} ${compass(d.windFromDeg)}`),
-        pill("Rain", weatherIcon("rain", 12), rain(d.precipMm, u)),
+      stats.append(
+        stat("Sky", weatherIcon(iconFor(d.condition), 13), conditionText(d.condition)),
+        stat("Rain", weatherIcon("rain", 13), rain(d.precipMm, u), d.precipChance ? `${d.precipChance}%` : ""),
+        stat("Wind", arrow, `${speed(d.windMps, u)} ${compass(d.windFromDeg)}`),
+        stat("Humidity", icon(Droplet, { size: 12 }), `${d.humidity}%`),
       );
 
-      detail.replaceChildren(drain, top, box, labels, pills);
+      detail.replaceChildren(drain, top, box, labels, stats);
       requestAnimationFrame(() => drawStrip(box, d, nowSec));
     };
 
@@ -245,13 +250,52 @@ defineWidget({
       const H = box.clientHeight;
       if (!W || !H) return;
       const m = strip(d, nowSec, W, H);
+      const svg = (cls: string) => {
+        const g = document.createElementNS(SVG_NS, "svg");
+        g.setAttribute("width", String(W));
+        g.setAttribute("height", String(H));
+        g.setAttribute("aria-hidden", "true");
+        g.setAttribute("class", cls);
+        return g;
+      };
+      const node = (name: string, attrs: Record<string, string | number>) => {
+        const n = document.createElementNS(SVG_NS, name);
+        for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+        return n;
+      };
       const parts: Element[] = [];
+
+      // The sky, under the rain: the day lighter than the night, fading
+      // through twilight; sunlight under the arc; a glow where the sun meets
+      // the horizon at dawn and dusk.
       if (m.daylight) {
+        const { left, width, twilight } = m.daylight;
         const day = el("div", "daylight");
-        day.style.left = `${m.daylight.left}%`;
-        day.style.width = `${m.daylight.width}%`;
+        day.style.left = `${left - twilight}%`;
+        day.style.width = `${width + 2 * twilight}%`;
+        day.style.setProperty("--fade", `${(twilight / (width + 2 * twilight)) * 100}%`);
         parts.push(day);
       }
+      if (m.area && m.horizon) {
+        const sky = svg("sky");
+        const defs = node("defs", {});
+        const light = node("linearGradient", { id: "wx-sunlight", x1: 0, y1: 0, x2: 0, y2: 1 });
+        light.append(
+          node("stop", { offset: 0, class: "sunlight-top" }),
+          node("stop", { offset: 1, class: "sunlight-bottom" }),
+        );
+        const glow = node("radialGradient", { id: "wx-glow" });
+        glow.append(node("stop", { offset: 0, class: "glow-in" }), node("stop", { offset: 1, class: "glow-out" }));
+        defs.append(light, glow);
+        sky.append(defs);
+        const { rise, set, y, reach } = m.horizon;
+        for (const x of [rise, set]) {
+          sky.append(node("ellipse", { cx: x, cy: y, rx: reach * 1.6, ry: H * 0.7, fill: "url(#wx-glow)" }));
+        }
+        sky.append(node("path", { d: m.area, fill: "url(#wx-sunlight)" }));
+        parts.push(sky);
+      }
+
       for (const b of m.bars) {
         const bar = el("div", "bar");
         Object.assign(bar.style, {
@@ -267,25 +311,12 @@ defineWidget({
         line.style.left = `${m.now.left}%`;
         parts.push(line);
       }
-      const svg = document.createElementNS(SVG_NS, "svg");
-      svg.setAttribute("width", String(W));
-      svg.setAttribute("height", String(H));
-      svg.setAttribute("aria-hidden", "true");
-      if (m.arc) {
-        const path = document.createElementNS(SVG_NS, "path");
-        path.setAttribute("d", m.arc);
-        path.setAttribute("class", "arc");
-        svg.append(path);
-      }
-      if (m.now?.y != null) {
-        const dot = document.createElementNS(SVG_NS, "circle");
-        dot.setAttribute("cx", String(m.now.x));
-        dot.setAttribute("cy", String(m.now.y));
-        dot.setAttribute("r", "4");
-        dot.setAttribute("class", "sundot");
-        svg.append(dot);
-      }
-      parts.push(svg);
+
+      // The arc and the sun, over the rain.
+      const sun = svg("sun");
+      if (m.arc) sun.append(node("path", { d: m.arc, class: "arc" }));
+      if (m.now?.y != null) sun.append(node("circle", { cx: m.now.x, cy: m.now.y, r: 4, class: "sundot" }));
+      parts.push(sun);
       box.replaceChildren(...parts);
     };
 

@@ -184,10 +184,14 @@ export interface Bar {
 }
 
 export interface Strip {
-  /** Daylight, as percent of the width; null in a polar day or night. */
-  daylight: { left: number; width: number } | null;
+  /** Daylight, as percent of the width, and twilight either side of it, also in percent; null in a polar day or night. */
+  daylight: { left: number; width: number; twilight: number } | null;
   /** The sun's arc, an SVG path over the strip's box, in px; "" without a sunrise and sunset. */
   arc: string;
+  /** The arc closed along the horizon: the sunlit area under it, in px; "" without a sunrise and sunset. */
+  area: string;
+  /** Where the sun meets the horizon, for the dawn and dusk glow: x of each, the horizon's y and the glow's reach, in px. */
+  horizon: { rise: number; set: number; y: number; reach: number } | null;
   bars: Bar[];
   /** Now, on today's strip only: x in px, y on the arc (or null at night), left in percent. */
   now: { x: number; y: number | null; left: number } | null;
@@ -197,6 +201,8 @@ export interface Strip {
 export const FULL_BAR_MM = 2;
 /** The tallest bar, as a share of the strip, so the arc stays readable above. */
 const BAR_SHARE = 72;
+/** How long dawn and dusk glow either side of sunrise and sunset: about civil twilight. */
+export const TWILIGHT_SEC = 40 * 60;
 
 /** The day's 24 (or 23, or 25) hours across a width×height strip: night, the sun's arc, rain bars. */
 export function strip(d: Day, nowSec: number, width: number, height: number): Strip {
@@ -211,6 +217,7 @@ export function strip(d: Day, nowSec: number, width: number, height: number): St
   const base = height - 3;
   const arcY = (t: number) => base - (base - top) * Math.sin((Math.PI * (t - rise)) / (set - rise));
   let arc = "";
+  let area = "";
   if (hasSun) {
     const pts: string[] = [];
     for (let k = 0; k <= 48; k++) {
@@ -218,6 +225,7 @@ export function strip(d: Day, nowSec: number, width: number, height: number): St
       pts.push(`${(frac(t) * width).toFixed(1)} ${arcY(t).toFixed(1)}`);
     }
     arc = "M" + pts.join(" L");
+    area = `${arc} L${(frac(set) * width).toFixed(1)} ${height} L${(frac(rise) * width).toFixed(1)} ${height} Z`;
   }
 
   const bars: Bar[] = [];
@@ -243,8 +251,14 @@ export function strip(d: Day, nowSec: number, width: number, height: number): St
     : null;
 
   return {
-    daylight: hasSun ? { left: frac(rise) * 100, width: ((set - rise) / span) * 100 } : null,
+    daylight: hasSun
+      ? { left: frac(rise) * 100, width: ((set - rise) / span) * 100, twilight: (TWILIGHT_SEC / span) * 100 }
+      : null,
     arc,
+    area,
+    horizon: hasSun
+      ? { rise: frac(rise) * width, set: frac(set) * width, y: base, reach: (TWILIGHT_SEC / span) * width }
+      : null,
     bars,
     now,
   };

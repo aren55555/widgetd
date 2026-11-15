@@ -75,27 +75,55 @@
 @keyframes drain { from { width: 100%; } to { width: 0; } }
 @media (prefers-reduced-motion: reduce) { .drain i { animation: none; opacity: 0.4; } }
 
-.top { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 24px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 24px; padding-right: 2px; }
 .back { display: inline-flex; align-items: center; gap: 2px; height: 24px; padding: 0 8px 0 2px; margin-left: -4px;
   border-radius: 6px; font-size: 13px; font-weight: 600; white-space: nowrap; }
 @media (hover: hover) { .back:hover { background: var(--tile-today); } }
-.sum { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; }
-.sum b { color: var(--ink); font-weight: 600; }
+.sum { display: inline-flex; align-items: center; gap: 6px; flex: none; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.temps { display: inline-flex; align-items: baseline; gap: 2px; }
+.temps b { color: var(--ink); font-size: 15px; font-weight: 600; }
+.temps .slash { opacity: 0.5; }
 
-.strip { position: relative; flex: 1; min-height: 40px; border-radius: 6px; overflow: hidden; background: var(--well); }
+/* Night is darker than the card; the day a lighter sky that fades into it
+   through twilight, with sunlight under the sun's arc. */
+.strip { position: relative; flex: 1; min-height: 40px; border-radius: 6px; overflow: hidden;
+  background: color-mix(in oklab, var(--well) 70%, #000); }
 .strip > * { position: absolute; }
 .strip svg { inset: 0; display: block; }
-.daylight { top: 0; bottom: 0; background: color-mix(in oklab, var(--wd-raised, #374151) 55%, transparent); }
+.daylight { top: 0; bottom: 0; --sky: color-mix(in oklab, var(--wd-raised, #374151) 70%, transparent);
+  background: linear-gradient(to right, transparent, var(--sky) var(--fade), var(--sky) calc(100% - var(--fade)), transparent); }
+.sunlight-top { stop-color: var(--sun); stop-opacity: 0.5; }
+.sunlight-bottom { stop-color: var(--sun); stop-opacity: 0.06; }
+.glow-in { stop-color: #fb923c; stop-opacity: 0.38; }
+.glow-out { stop-color: #fb923c; stop-opacity: 0; }
 .bar { bottom: 0; background: var(--wet); border-radius: 2px 2px 0 0; }
 .nowline { top: 0; bottom: 0; width: 1px; background: var(--muted); }
-.arc { fill: none; stroke: var(--sun); stroke-width: 1.5; stroke-linecap: round; opacity: 0.9; }
+.arc { fill: none; stroke: var(--sun); stroke-width: 1.75; stroke-linecap: round; }
 .sundot { fill: var(--sun); stroke: var(--well); stroke-width: 2; }
 
-.sunlabels { position: relative; height: 14px; font-size: 11px; line-height: 14px; color: var(--muted); }
+.sunlabels { position: relative; height: 14px; flex: none; font-size: 11px; line-height: 14px; color: var(--muted); }
 .sunlabel { position: absolute; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
 .sunlabel .wd-icon { color: var(--sun); }
 
-.pills { display: flex; flex-wrap: wrap; gap: 6px; }
-.pill { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: 999px;
-  background: color-mix(in oklab, var(--wd-raised, #374151) 60%, transparent); font-size: 12px; font-weight: 600; white-space: nowrap; }
-.pill .wd-icon { color: var(--muted); }
+/* Under the strip: a small label over each value, two by two, or in one
+   row of four on a wide card. */
+.detail { container-type: size; }
+.stats { --rule: 1px solid color-mix(in oklab, var(--wd-raised, #374151) 70%, transparent);
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 8px; flex: none; margin: 10px 0 0; padding-top: 8px;
+  border-top: var(--rule); }
+.stat { min-width: 0; padding: 0 8px; }
+.stat:nth-child(odd) { padding-left: 0; }
+.stat:nth-child(even) { border-left: var(--rule); }
+@container (min-width: 400px) {
+  .stats { grid-template-columns: repeat(4, auto); }
+  .stat:nth-child(odd):not(:first-child) { padding-left: 8px; border-left: var(--rule); }
+}
+.stat dt { display: none; margin-bottom: 3px; font-size: 10px; line-height: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.stat dd { display: flex; align-items: center; gap: 3px; margin: 0; font-size: 13px; line-height: 16px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat dd > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* The rain chance gives way before the amount does. */
+.stat dd small { flex-shrink: 100; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 500; color: var(--wet); }
+.stat .wd-icon { color: var(--muted); }
+@container (min-height: 200px) { .stat dt { display: block; } }
+@container (max-width: 260px) { .stat dd small { display: none; } }

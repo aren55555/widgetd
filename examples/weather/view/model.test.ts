@@ -152,7 +152,14 @@ describe("strip", () => {
   test("daylight and the sun's arc sit between sunrise and sunset", () => {
     const m = strip(sat, h(2026, 10, 24, 11), 240, 60); // 13:00 in Berlin
     expect(m.daylight!.left).toBeCloseTo((7 * 60 + 47) / 14.4, 5);
+    expect(m.daylight!.twilight).toBeCloseTo((40 / 1440) * 100, 5);
     expect(m.arc.startsWith("M")).toBe(true);
+    // The sunlit area is the arc, closed down to the strip's bottom.
+    expect(m.area.startsWith(m.arc)).toBe(true);
+    expect(m.area.endsWith("Z")).toBe(true);
+    expect(m.horizon!.rise).toBeCloseTo((m.daylight!.left / 100) * 240, 5);
+    expect(m.horizon!.y).toBe(57);
+    expect(m.horizon!.reach).toBeCloseTo((40 / 1440) * 240, 5);
     expect(m.now!.left).toBeCloseTo((13 / 24) * 100, 5);
     expect(m.now!.y).toBeLessThan(20); // near the top, early afternoon
     expect(strip(sat, h(2026, 10, 24, 20), 240, 60).now!.y).toBeNull(); // after dark
@@ -175,6 +182,8 @@ describe("strip", () => {
     const polar = create(DaySchema, { ...sat, sunrise: 0n, sunset: 0n });
     const m = strip(polar, h(2026, 10, 24, 11), 240, 60);
     expect(m.arc).toBe("");
+    expect(m.area).toBe("");
+    expect(m.horizon).toBeNull();
     expect(m.daylight).toBeNull();
     expect(m.now!.y).toBeNull();
   });
