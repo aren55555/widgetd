@@ -113,6 +113,9 @@ type WidgetAdminServiceClient interface {
 	// Admin.
 	ListInstances(context.Context, *connect.Request[v1.ListInstancesRequest]) (*connect.Response[v1.ListInstancesResponse], error)
 	RenameInstance(context.Context, *connect.Request[v1.RenameInstanceRequest]) (*connect.Response[v1.RenameInstanceResponse], error)
+	// Stop an instance and remove it with everything it stored. Screen or
+	// admin: a screen shows every instance, and its trash button confirms
+	// first.
 	DeleteInstance(context.Context, *connect.Request[v1.DeleteInstanceRequest]) (*connect.Response[v1.DeleteInstanceResponse], error)
 	// A widget's network grant, and an instance's recent fetches. Admin.
 	SetNetworkGrant(context.Context, *connect.Request[v1.SetNetworkGrantRequest]) (*connect.Response[v1.SetNetworkGrantResponse], error)
@@ -390,6 +393,9 @@ type WidgetAdminServiceHandler interface {
 	// Admin.
 	ListInstances(context.Context, *connect.Request[v1.ListInstancesRequest]) (*connect.Response[v1.ListInstancesResponse], error)
 	RenameInstance(context.Context, *connect.Request[v1.RenameInstanceRequest]) (*connect.Response[v1.RenameInstanceResponse], error)
+	// Stop an instance and remove it with everything it stored. Screen or
+	// admin: a screen shows every instance, and its trash button confirms
+	// first.
 	DeleteInstance(context.Context, *connect.Request[v1.DeleteInstanceRequest]) (*connect.Response[v1.DeleteInstanceResponse], error)
 	// A widget's network grant, and an instance's recent fetches. Admin.
 	SetNetworkGrant(context.Context, *connect.Request[v1.SetNetworkGrantRequest]) (*connect.Response[v1.SetNetworkGrantResponse], error)

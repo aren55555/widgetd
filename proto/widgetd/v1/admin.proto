@@ -11,7 +11,7 @@ option go_package = "github.com/aren55555/widgetd/gen/widgetd/v1;widgetdv1";
 // placeholder and ask for a configuration QR code; everything that changes
 // a running instance's configuration, its network access, or which
 // instances exist needs an admin's passkey session, which in practice means
-// a phone that scanned a QR code.
+// a phone that scanned a QR code. A screen may also delete an instance.
 service WidgetAdminService {
   // Installed widgets. Screen or admin.
   rpc ListWidgets(ListWidgetsRequest) returns (ListWidgetsResponse);
@@ -41,6 +41,10 @@ service WidgetAdminService {
   // Admin.
   rpc ListInstances(ListInstancesRequest) returns (ListInstancesResponse);
   rpc RenameInstance(RenameInstanceRequest) returns (RenameInstanceResponse);
+
+  // Stop an instance and remove it with everything it stored. Screen or
+  // admin: a screen shows every instance, and its trash button confirms
+  // first.
   rpc DeleteInstance(DeleteInstanceRequest) returns (DeleteInstanceResponse);
 
   // A widget's network grant, and an instance's recent fetches. Admin.

@@ -189,7 +189,7 @@ func TestRenameAndDelete(t *testing.T) {
 	wh := h.host()
 	ctx := context.Background()
 	c := h.adminClient()
-	admin := h.adminCookie()
+	admin, d2 := h.adminCookie(), h.deviceCookie("d2")
 	if err := wh.KV().Put("k", []byte("v")); err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +197,7 @@ func TestRenameAndDelete(t *testing.T) {
 	f := h.open(h.deviceCookie("d1"))
 	f.burst()
 
-	if _, err := c.RenameInstance(ctx, withCookie(&widgetdv1.RenameInstanceRequest{InstanceId: "one", Label: "Hall"}, h.deviceCookie("d2"))); connect.CodeOf(err) != connect.CodePermissionDenied {
+	if _, err := c.RenameInstance(ctx, withCookie(&widgetdv1.RenameInstanceRequest{InstanceId: "one", Label: "Hall"}, d2)); connect.CodeOf(err) != connect.CodePermissionDenied {
 		t.Fatalf("device renaming: %v", err)
 	}
 	if _, err := c.RenameInstance(ctx, withCookie(&widgetdv1.RenameInstanceRequest{InstanceId: "one", Label: "Hall"}, admin)); err != nil {
@@ -207,7 +207,12 @@ func TestRenameAndDelete(t *testing.T) {
 		t.Fatalf("renamed = %v", st)
 	}
 
-	if _, err := c.DeleteInstance(ctx, withCookie(&widgetdv1.DeleteInstanceRequest{InstanceId: "one"}, admin)); err != nil {
+	// Any paired screen may delete an instance (it shows them all); an
+	// unpaired browser may not.
+	if _, err := c.DeleteInstance(ctx, connect.NewRequest(&widgetdv1.DeleteInstanceRequest{InstanceId: "one"})); connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Fatalf("anonymous delete: %v", err)
+	}
+	if _, err := c.DeleteInstance(ctx, withCookie(&widgetdv1.DeleteInstanceRequest{InstanceId: "one"}, d2)); err != nil {
 		t.Fatal(err)
 	}
 	var purged, removed bool

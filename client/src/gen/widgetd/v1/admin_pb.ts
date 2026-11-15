@@ -1253,7 +1253,7 @@ export const SetProviderClientResponseSchema: GenMessage<SetProviderClientRespon
  * placeholder and ask for a configuration QR code; everything that changes
  * a running instance's configuration, its network access, or which
  * instances exist needs an admin's passkey session, which in practice means
- * a phone that scanned a QR code.
+ * a phone that scanned a QR code. A screen may also delete an instance.
  *
  * @generated from service widgetd.v1.WidgetAdminService
  */
@@ -1344,6 +1344,10 @@ export const WidgetAdminService: GenService<{
     output: typeof RenameInstanceResponseSchema;
   },
   /**
+   * Stop an instance and remove it with everything it stored. Screen or
+   * admin: a screen shows every instance, and its trash button confirms
+   * first.
+   *
    * @generated from rpc widgetd.v1.WidgetAdminService.DeleteInstance
    */
   deleteInstance: {

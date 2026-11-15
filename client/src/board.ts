@@ -146,10 +146,18 @@ dialog dd small { display: block; font-size: 11px; color: var(--wd-ink-faint, #7
   .overlay .code { font-size: clamp(16px, 16cqh, 36px); }
 }
 /* Above .fit, which follows it and covers the whole overlay. */
+.overlay .delete { position: absolute; right: 2px; top: 2px; z-index: 1; color: var(--wd-down, #ef4444); }
+.overlay .delete:hover, .overlay .delete:focus-visible { color: var(--wd-down, #ef4444);
+  background: color-mix(in oklab, var(--wd-down, #ef4444) 15%, transparent); }
+dialog .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+dialog p { margin: 0; color: var(--wd-ink-muted, #a1a1aa); }
+dialog .error { margin-top: 8px; color: var(--wd-down, #ef4444); }
+.action.danger { border-color: var(--wd-down, #ef4444); background: var(--wd-down, #ef4444); color: #fff; }
+.action:disabled { opacity: 0.6; cursor: default; }
 .overlay .close { position: absolute; right: 6px; top: 4px; z-index: 1; border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--wd-ink-faint, #71717a); }
 `;
 
-// Lucide icons (settings, pencil, qr-code, x, chevrons), inline: the board has no icon set.
+// Lucide icons (settings, pencil, qr-code, x, trash-2, chevrons), inline: the board has no icon set.
 const ICONS = {
   settings:
     '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
@@ -158,6 +166,8 @@ const ICONS = {
   "qr-code":
     '<rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  "trash-2":
+    '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
   "chevron-up": '<path d="m18 15-6-6-6 6"/>',
   "chevron-down": '<path d="m6 9 6 6 6-6"/>',
 };
@@ -734,13 +744,14 @@ class WidgetBoard extends HTMLElement {
    * phone. The code is good for one use and ten minutes; the phone still
    * needs an admin passkey to save anything. The overlay also shows the
    * instance's short id, which the admin page lists, to find it there (the
-   * same before and after it is set up).
+   * same before and after it is set up), and a trash button that deletes
+   * the instance once confirmed.
    */
   private async showSetUp(tiles: HTMLElement[], instanceId: string) {
     // One code for the instance, shown on each of its cards (or its
     // placeholder), with the instance's short id, the same on all of them.
     const shortId = this.instances.get(instanceId)?.status.shortId;
-    const os = tiles.map((t) => this.codeOverlay(t, "setup"));
+    const os = tiles.map((t) => this.codeOverlay(t, "setup", () => this.confirmDelete(instanceId)));
     try {
       const admin = createClient(WidgetAdminService, this.transport());
       const t = await admin.requestConfigTicket({ instanceId });
@@ -752,6 +763,55 @@ class WidgetBoard extends HTMLElement {
     } catch (e) {
       for (const o of os) o.fail(`Couldn't get a code: ${e instanceof Error ? e.message : String(e)}`);
     }
+  }
+
+  /**
+   * Ask before deleting an instance: it goes from every screen, with its
+   * settings and everything it stored. The stream then takes its cards down.
+   */
+  private confirmDelete(instanceId: string) {
+    const name = this.instances.get(instanceId)?.status.title || instanceId;
+    const header = document.createElement("header");
+    const h2 = document.createElement("h2");
+    h2.textContent = `Delete ${name}?`;
+    header.append(
+      h2,
+      iconButton("x", "Close", () => this.dialog.close()),
+    );
+    const section = document.createElement("section");
+    const text = document.createElement("p");
+    text.textContent =
+      "This removes the widget from every screen, along with its settings and the data it stored. It can't be undone.";
+    const error = document.createElement("p");
+    error.className = "error";
+    error.hidden = true;
+    const cancel = document.createElement("button");
+    cancel.className = "action";
+    cancel.textContent = "Cancel";
+    cancel.addEventListener("click", () => this.dialog.close());
+    const del = document.createElement("button");
+    del.className = "action danger";
+    del.textContent = "Delete";
+    del.addEventListener("click", () => {
+      del.disabled = cancel.disabled = true;
+      error.hidden = true;
+      const admin = createClient(WidgetAdminService, this.transport());
+      admin.deleteInstance({ instanceId }).then(
+        () => this.dialog.close(),
+        (e: unknown) => {
+          del.disabled = cancel.disabled = false;
+          error.textContent = `Couldn't delete it: ${e instanceof Error ? e.message : String(e)}`;
+          error.hidden = false;
+        },
+      );
+    });
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    actions.append(cancel, del);
+    section.append(text, error, actions);
+    this.dialog.replaceChildren(header, section);
+    if (!this.dialog.open) this.dialog.showModal();
+    cancel.focus();
   }
 
   /**
@@ -809,9 +869,10 @@ class WidgetBoard extends HTMLElement {
   /**
    * An overlay filling `within` that shows a QR code with a line or two of
    * text (and, for sign-in, the code to type), laid out to fit the tile:
-   * see .overlay in STYLE.
+   * see .overlay in STYLE. With onDelete, its corner button is a trash can
+   * that calls it instead of a close button.
    */
-  private codeOverlay(within: HTMLElement, kind: "setup" | "signin") {
+  private codeOverlay(within: HTMLElement, kind: "setup" | "signin", onDelete?: () => void) {
     within.querySelector(".overlay")?.remove();
     const overlay = document.createElement("div");
     overlay.className = `overlay ${kind}`;
@@ -819,11 +880,17 @@ class WidgetBoard extends HTMLElement {
       overlay.remove();
       this.syncSetUpButton();
     };
-    const close = document.createElement("button");
-    close.className = "close";
-    close.setAttribute("aria-label", "Close");
-    close.textContent = "×";
-    close.addEventListener("click", remove);
+    let close: HTMLButtonElement;
+    if (onDelete) {
+      close = iconButton("trash-2", "Delete widget", onDelete);
+      close.classList.add("delete");
+    } else {
+      close = document.createElement("button");
+      close.className = "close";
+      close.setAttribute("aria-label", "Close");
+      close.textContent = "×";
+      close.addEventListener("click", remove);
+    }
     const fit = document.createElement("div");
     fit.className = "fit";
     fit.textContent = "Getting a code…";

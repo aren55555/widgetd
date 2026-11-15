@@ -287,7 +287,9 @@ func (a *adminService) RenameInstance(ctx context.Context, req *connect.Request[
 }
 
 func (a *adminService) DeleteInstance(ctx context.Context, req *connect.Request[widgetdv1.DeleteInstanceRequest]) (*connect.Response[widgetdv1.DeleteInstanceResponse], error) {
-	if err := requireAdmin(a.caller(req)); err != nil {
+	// A screen may delete what it shows, which is every instance; an
+	// unpaired browser can't.
+	if err := requireViewer(a.caller(req)); err != nil {
 		return nil, err
 	}
 	if err := a.srv.deleteInstance(req.Msg.GetInstanceId()); err != nil {
