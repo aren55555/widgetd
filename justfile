@@ -2,6 +2,11 @@
 
 mise := "mise exec --"
 
+# List the recipes
+[private]
+default:
+    @{{just_executable()}} --justfile {{justfile()}} --list --unsorted
+
 # Everything a fresh clone needs
 setup: generate client-build examples
 
