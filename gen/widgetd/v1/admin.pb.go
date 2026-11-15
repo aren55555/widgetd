@@ -1802,7 +1802,11 @@ type ProviderInfo struct {
 	// How to register a client with the provider.
 	ClientHelp string `protobuf:"bytes,6,opt,name=client_help,json=clientHelp,proto3" json:"client_help,omitempty"`
 	// The last failure signing in a new account, if any.
-	Error         string `protobuf:"bytes,7,opt,name=error,proto3" json:"error,omitempty"`
+	Error string `protobuf:"bytes,7,opt,name=error,proto3" json:"error,omitempty"`
+	// What the provider calls the client's two halves ("Client ID",
+	// "Consumer key"), if not a client ID and client secret.
+	ClientIdLabel string `protobuf:"bytes,8,opt,name=client_id_label,json=clientIdLabel,proto3" json:"client_id_label,omitempty"`
+	SecretLabel   string `protobuf:"bytes,9,opt,name=secret_label,json=secretLabel,proto3" json:"secret_label,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1882,6 +1886,20 @@ func (x *ProviderInfo) GetClientHelp() string {
 func (x *ProviderInfo) GetError() string {
 	if x != nil {
 		return x.Error
+	}
+	return ""
+}
+
+func (x *ProviderInfo) GetClientIdLabel() string {
+	if x != nil {
+		return x.ClientIdLabel
+	}
+	return ""
+}
+
+func (x *ProviderInfo) GetSecretLabel() string {
+	if x != nil {
+		return x.SecretLabel
 	}
 	return ""
 }
@@ -2813,7 +2831,7 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\x06fields\x18\x01 \x03(\v2\x1e.widgetd.v1.ConfigFieldChoicesR\x06fields\"9\n" +
 	"\x03Use\x12\x1a\n" +
 	"\bprovider\x18\x01 \x01(\tR\bprovider\x12\x16\n" +
-	"\x06scopes\x18\x02 \x03(\tR\x06scopes\"\xd0\x01\n" +
+	"\x06scopes\x18\x02 \x03(\tR\x06scopes\"\x9b\x02\n" +
 	"\fProviderInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1d\n" +
@@ -2824,7 +2842,9 @@ const file_widgetd_v1_admin_proto_rawDesc = "" +
 	"\fredirect_uri\x18\x05 \x01(\tR\vredirectUri\x12\x1f\n" +
 	"\vclient_help\x18\x06 \x01(\tR\n" +
 	"clientHelp\x12\x14\n" +
-	"\x05error\x18\a \x01(\tR\x05error\"\x84\x02\n" +
+	"\x05error\x18\a \x01(\tR\x05error\x12&\n" +
+	"\x0fclient_id_label\x18\b \x01(\tR\rclientIdLabel\x12!\n" +
+	"\fsecret_label\x18\t \x01(\tR\vsecretLabel\"\x84\x02\n" +
 	"\aAccount\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\bprovider\x18\x02 \x01(\tR\bprovider\x12\x14\n" +

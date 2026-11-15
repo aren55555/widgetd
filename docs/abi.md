@@ -161,6 +161,19 @@ out), the save is refused with that reason, so it can be retried.
   named `headers`), how to tell who signed in (`[identity]`), and
   `[scopes.covers]`: what each scope unlocks, as URL prefixes optionally
   led by a method. The table is strict: an unlisted scope doesn't exist.
-  Google and GitHub ship built in (`host/providers/`). Whoever runs the host
-  registers an OAuth client with each provider and enters it under Accounts
-  on the admin page.
+  Google, GitHub and SnapTrade ship built in (`host/providers/`). Whoever
+  runs the host registers a client with each provider and enters it under
+  Accounts on the admin page.
+
+  SnapTrade (brokerage accounts such as Robinhood) isn't OAuth: its flow,
+  `snaptrade`, is built into the host, and the manifest only selects it. Its
+  client is a developer workspace's Client ID and consumer key, checked with
+  SnapTrade when saved. Each account is a SnapTrade user: signing in
+  registers one and opens SnapTrade's Connection Portal with
+  `connectionType=read`, where the person signs in on the brokerage's own
+  site. The account is granted `read` only if every connection it then has
+  is read-only; a connection that allows trading gets the user deleted. The
+  host signs requests with SnapTrade's query credentials and HMAC
+  `Signature` instead of `Authorization`, and signing out deletes the user
+  (revoke `snaptrade-user`). Its `read` scope covers only `GET`s of a
+  user's own data.

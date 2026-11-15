@@ -270,6 +270,10 @@ message ProviderInfo {
   string client_help = 6;
   // The last failure signing in a new account, if any.
   string error = 7;
+  // What the provider calls the client's two halves ("Client ID",
+  // "Consumer key"), if not a client ID and client secret.
+  string client_id_label = 8;
+  string secret_label = 9;
 }
 
 // An account the display has with a provider ("Google: Work"). Instances

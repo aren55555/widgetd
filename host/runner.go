@@ -190,16 +190,17 @@ func (h *runHost) Fetch(req *http.Request) (*http.Response, error) {
 	if err := h.ctx.Err(); err != nil {
 		return nil, err
 	}
-	var auth, provider, acct string
+	var sign signer
+	var provider, acct string
 	if widget.IsAuthorized(req) {
-		a, p, ac, err := h.in.srv.authorization(h.ctx, h.in, req.Method, req.URL)
+		sg, p, ac, err := h.in.srv.authorization(h.ctx, h.in, req.Method, req.URL)
 		if err != nil {
 			h.flagScope(err)
 			return nil, err
 		}
-		auth, provider, acct = a, p, ac
+		sign, provider, acct = sg, p, ac
 	}
-	resp, err := h.in.fetcher.do(h.ctx, req, auth)
+	resp, err := h.in.fetcher.do(h.ctx, req, sign)
 	if err == nil && provider != "" {
 		// The API may say the request needed a scope the token lacks: the
 		// widget used one it didn't declare. Fail it, and flag the widget.
@@ -211,7 +212,7 @@ func (h *runHost) Fetch(req *http.Request) (*http.Response, error) {
 			return nil, se
 		}
 	}
-	if err == nil && auth != "" && resp.StatusCode == http.StatusUnauthorized && !h.helper {
+	if err == nil && sign != nil && resp.StatusCode == http.StatusUnauthorized && !h.helper {
 		// The provider stopped accepting the account's token: forget it and
 		// put its widgets back to waiting; from another goroutine, since that
 		// stops this run and stopping waits for it.

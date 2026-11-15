@@ -37,20 +37,29 @@ type ProviderManifest struct {
 
 	SignIn struct {
 		// Flow is "browser" (authorization code + PKCE, RFC 6749 and 7636:
-		// a QR code to the consent page on a phone) or "device" (RFC 8628:
-		// a code to enter on the provider's site).
-		Flow       string            `toml:"flow"`
-		AuthURL    string            `toml:"auth_url"`
-		DeviceURL  string            `toml:"device_url"`
-		TokenURL   string            `toml:"token_url"`
+		// a QR code to the consent page on a phone), "device" (RFC 8628:
+		// a code to enter on the provider's site) or "snaptrade" (not OAuth:
+		// SnapTrade's API keys, a SnapTrade user per account, and its
+		// Connection Portal on a phone; see snaptrade.go).
+		Flow      string `toml:"flow"`
+		AuthURL   string `toml:"auth_url"`
+		DeviceURL string `toml:"device_url"`
+		TokenURL  string `toml:"token_url"`
+		// APIURL is the API the "snaptrade" flow registers users with.
+		APIURL     string            `toml:"api_url"`
 		AuthParams map[string]string `toml:"auth_params"`
 		// Revoke is "rfc7009" (POST the token to RevokeURL), "github-grant"
 		// (DELETE RevokeURL, with {client_id} filled in, and the token in a
-		// JSON body), or "none".
+		// JSON body), "snaptrade-user" (delete the account's SnapTrade user,
+		// and with it its brokerage connections), or "none".
 		Revoke    string `toml:"revoke"`
 		RevokeURL string `toml:"revoke_url"`
 		// ClientHelp tells whoever runs the host how to register a client.
 		ClientHelp string `toml:"client_help"`
+		// What the provider calls the client's two halves, for the admin
+		// page ("Client ID", "Consumer key"). Optional.
+		ClientIDLabel string `toml:"client_id_label"`
+		SecretLabel   string `toml:"secret_label"`
 	} `toml:"sign_in"`
 
 	// Identity says who an account is, so a sign-in to an existing account
@@ -90,6 +99,7 @@ type flow int
 const (
 	flowBrowser flow = iota + 1
 	flowDevice
+	flowSnapTrade
 )
 
 // rule is one entry of what a scope unlocks.
@@ -150,11 +160,21 @@ func parseProvider(b []byte) (*provider, error) {
 		if err := https("device_url", m.SignIn.DeviceURL); err != nil {
 			return nil, err
 		}
+	case "snaptrade":
+		p.Flow = flowSnapTrade
+		if err := https("api_url", m.SignIn.APIURL); err != nil {
+			return nil, err
+		}
+		if m.SignIn.Revoke != "snaptrade-user" {
+			return nil, errors.New(`sign_in.flow "snaptrade" revokes with "snaptrade-user"`)
+		}
 	default:
-		return nil, fmt.Errorf("sign_in.flow %q: want browser or device", m.SignIn.Flow)
+		return nil, fmt.Errorf("sign_in.flow %q: want browser, device or snaptrade", m.SignIn.Flow)
 	}
-	if err := https("token_url", m.SignIn.TokenURL); err != nil {
-		return nil, err
+	if p.Flow != flowSnapTrade {
+		if err := https("token_url", m.SignIn.TokenURL); err != nil {
+			return nil, err
+		}
 	}
 	switch m.SignIn.Revoke {
 	case "rfc7009":
@@ -165,9 +185,13 @@ func parseProvider(b []byte) (*provider, error) {
 		if err := https("revoke_url", m.SignIn.RevokeURL); err != nil || !strings.Contains(m.SignIn.RevokeURL, "{client_id}") {
 			return nil, fmt.Errorf("sign_in.revoke_url %q: want an https URL with {client_id}", m.SignIn.RevokeURL)
 		}
+	case "snaptrade-user":
+		if p.Flow != flowSnapTrade {
+			return nil, errors.New(`sign_in.revoke "snaptrade-user" is for flow "snaptrade"`)
+		}
 	case "none":
 	default:
-		return nil, fmt.Errorf("sign_in.revoke %q: want rfc7009, github-grant or none", m.SignIn.Revoke)
+		return nil, fmt.Errorf("sign_in.revoke %q: want rfc7009, github-grant, snaptrade-user or none", m.SignIn.Revoke)
 	}
 	switch m.Scopes.Missing {
 	case "", "rfc6750":
@@ -403,6 +427,8 @@ func (p *provider) revoke(ctx context.Context, s *Server, c signInClient, t *tok
 		endpoint := strings.ReplaceAll(p.m.SignIn.RevokeURL, "{client_id}", url.PathEscape(c.id))
 		hdr := http.Header{"Authorization": {"Basic " + base64.StdEncoding.EncodeToString([]byte(c.id+":"+c.secret))}}
 		return s.providerJSON(ctx, http.MethodDelete, endpoint, fmt.Sprintf(`{"access_token":%q}`, t.Access), hdr)
+	case "snaptrade-user":
+		return s.snapDeleteUser(ctx, p, c, t.User)
 	}
 	return nil
 }

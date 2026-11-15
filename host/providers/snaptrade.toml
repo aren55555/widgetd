@@ -1,0 +1,28 @@
+# SnapTrade, as a provider package: brokerage accounts (Robinhood and
+# others) through SnapTrade's API keys. Not OAuth: the "snaptrade" flow is
+# described in host/snaptrade.go. Widgets use it by declaring
+# [[uses]] provider = "snaptrade" with scopes = ["read"].
+name    = "snaptrade"
+title   = "SnapTrade"
+version = "1"
+
+[sign_in]
+flow    = "snaptrade"
+api_url = "https://api.snaptrade.com"
+# Signing out deletes the account's SnapTrade user, and with it the
+# brokerage connections made for it.
+revoke  = "snaptrade-user"
+client_id_label = "Client ID"
+secret_label    = "Consumer key"
+client_help = "SnapTrade dashboard → your developer workspace → API Keys: create a Client ID and consumer key. Accounts connect read-only: you sign in on the brokerage's own site, and widgetd refuses any connection that allows trading."
+
+[scopes.covers]
+# Reading only, and only a user's own data: never /snapTrade/ (users and
+# the client itself), /trade/ or anything but GET.
+read = [
+  "GET https://api.snaptrade.com/accounts",
+  "GET https://api.snaptrade.com/authorizations",
+  "GET https://api.snaptrade.com/connections",
+  "GET https://api.snaptrade.com/symbols",
+  "GET https://api.snaptrade.com/brokerages",
+]

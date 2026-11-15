@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"slices"
 	"strings"
 	"sync"
@@ -351,10 +352,10 @@ func (f *fetcher) Activity() []Activity {
 	return slices.Clone(f.activity)
 }
 
-// do performs a widget's request. auth, if set, is the Authorization the
-// host adds for a signed-in widget: after the widget's own headers are
-// stripped, so a widget can never set one itself.
-func (f *fetcher) do(ctx context.Context, req *http.Request, auth string) (*http.Response, error) {
+// do performs a widget's request. sign, if set, is how the host signs it
+// for a signed-in widget (an Authorization header, or SnapTrade's query and
+// Signature), applied after the widget's own such headers are stripped.
+func (f *fetcher) do(ctx context.Context, req *http.Request, sign signer) (*http.Response, error) {
 	start := time.Now()
 	act := Activity{At: start, Method: req.Method, Host: req.URL.Host, Path: req.URL.Path}
 	fail := func(err error) (*http.Response, error) {
@@ -382,8 +383,10 @@ func (f *fetcher) do(ctx context.Context, req *http.Request, auth string) (*http
 	for _, h := range hostOwnedHeaders {
 		out.Header.Del(h)
 	}
-	if auth != "" {
-		out.Header.Set("Authorization", auth)
+	if sign != nil {
+		if err := sign(out); err != nil {
+			return fail(fmt.Errorf("signing the request: %w", err))
+		}
 	}
 	ctx, cancel := context.WithTimeout(ctx, p.timeout)
 	client := &http.Client{
@@ -404,8 +407,16 @@ func (f *fetcher) do(ctx context.Context, req *http.Request, auth string) (*http
 		if errors.As(err, &pd) {
 			return fail(pd)
 		}
+		// A signed URL can carry credentials (SnapTrade's are in its
+		// query): name the widget's own URL instead.
+		var ue *url.Error
+		if errors.As(err, &ue) {
+			ue.URL = req.URL.Redacted()
+		}
 		return fail(err)
 	}
+	// The response's Request is the signed copy: hand back the widget's own.
+	resp.Request = req
 	act.Status = resp.StatusCode
 	resp.Body = &cappedBody{
 		r: io.LimitReader(resp.Body, p.maxBytes+1), c: resp.Body, limit: p.maxBytes,

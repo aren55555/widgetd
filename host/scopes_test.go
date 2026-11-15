@@ -30,8 +30,8 @@ func TestBuiltinProviders(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	g, gh := ps["google"], ps["github"]
-	if g == nil || gh == nil {
+	g, gh, st := ps["google"], ps["github"], ps["snaptrade"]
+	if g == nil || gh == nil || st == nil {
 		t.Fatalf("built-ins: %v", ps)
 	}
 	// The GitHub widget's calls: /user on any token, /notifications by scope.
@@ -50,6 +50,15 @@ func TestBuiltinProviders(t *testing.T) {
 		{g, []string{"https://www.googleapis.com/auth/calendar.readonly"}, "POST", "https://www.googleapis.com/calendar/v3/calendars/x/events", false},
 		{g, []string{"https://www.googleapis.com/auth/calendar.readonly"}, "GET", "https://gmail.googleapis.com/gmail/v1/users/me/messages", false},
 		{g, []string{"https://www.googleapis.com/auth/gmail.readonly"}, "GET", "https://gmail.googleapis.com/gmail/v1/users/me/messages", true},
+		// SnapTrade: reading a user's own data, never trading or the client.
+		{st, []string{"read"}, "GET", "https://api.snaptrade.com/accounts", true},
+		{st, []string{"read"}, "GET", "https://api.snaptrade.com/accounts/a1/positions/all", true},
+		{st, []string{"read"}, "GET", "https://api.snaptrade.com/authorizations", true},
+		{st, []string{"read"}, "POST", "https://api.snaptrade.com/trade/place", false},
+		{st, []string{"read"}, "POST", "https://api.snaptrade.com/accounts/a1/trading/simple", false},
+		{st, []string{"read"}, "DELETE", "https://api.snaptrade.com/authorizations/c1", false},
+		{st, []string{"read"}, "GET", "https://api.snaptrade.com/snapTrade/listUsers", false},
+		{st, []string{"read"}, "GET", "https://api.snaptrade.com/accountsx", false},
 	} {
 		if ok, _ := c.p.covers(c.scopes, c.method, mustURL(t, c.url)); ok != c.want {
 			t.Errorf("%s %s %s with %v: covered=%v, want %v", c.p.Name, c.method, c.url, c.scopes, ok, c.want)
@@ -73,14 +82,17 @@ a = ["https://api.example.com/"]
 		t.Fatalf("a good manifest: %v", err)
 	}
 	for name, m := range map[string]string{
-		"unknown field":       base + "\nsurprise = 1\n",
-		"http endpoint":       strings.Replace(base, "https://x.example.com/t", "http://x.example.com/t", 1),
-		"bad flow":            strings.Replace(base, `flow = "device"`, `flow = "carrier-pigeon"`, 1),
-		"bad revoke":          strings.Replace(base, `revoke = "none"`, `revoke = "please"`, 1),
-		"github-grant, no id": strings.Replace(base, `revoke = "none"`, `revoke = "github-grant"`+"\nrevoke_url = \"https://api.example.com/g\"", 1),
-		"no covers":           strings.Replace(base, "[scopes.covers]\na = [\"https://api.example.com/\"]\n", "", 1),
-		"plain http prefix":   strings.Replace(base, `a = ["https://api.example.com/"]`, `a = ["http://api.example.com/"]`, 1),
-		"lowercase method":    strings.Replace(base, `a = ["https://api.example.com/"]`, `a = ["get https://api.example.com/"]`, 1),
+		"unknown field":         base + "\nsurprise = 1\n",
+		"http endpoint":         strings.Replace(base, "https://x.example.com/t", "http://x.example.com/t", 1),
+		"bad flow":              strings.Replace(base, `flow = "device"`, `flow = "carrier-pigeon"`, 1),
+		"bad revoke":            strings.Replace(base, `revoke = "none"`, `revoke = "please"`, 1),
+		"github-grant, no id":   strings.Replace(base, `revoke = "none"`, `revoke = "github-grant"`+"\nrevoke_url = \"https://api.example.com/g\"", 1),
+		"no covers":             strings.Replace(base, "[scopes.covers]\na = [\"https://api.example.com/\"]\n", "", 1),
+		"plain http prefix":     strings.Replace(base, `a = ["https://api.example.com/"]`, `a = ["http://api.example.com/"]`, 1),
+		"lowercase method":      strings.Replace(base, `a = ["https://api.example.com/"]`, `a = ["get https://api.example.com/"]`, 1),
+		"snaptrade, no api":     strings.Replace(strings.Replace(base, `flow = "device"`, `flow = "snaptrade"`, 1), `revoke = "none"`, `revoke = "snaptrade-user"`, 1),
+		"snaptrade, revoke":     strings.Replace(base, `flow = "device"`, `flow = "snaptrade"`+"\napi_url = \"https://api.example.com\"", 1),
+		"snaptrade-user, oauth": strings.Replace(base, `revoke = "none"`, `revoke = "snaptrade-user"`, 1),
 	} {
 		if _, err := parseProvider([]byte(m)); err == nil {
 			t.Errorf("%s: should be refused", name)

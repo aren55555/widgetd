@@ -251,6 +251,9 @@ type token struct {
 	// says it gave (a person can untick a scope on Google's consent page).
 	Requested []string `json:"requested,omitempty"`
 	Granted   []string `json:"granted,omitempty"`
+	// User is the account's SnapTrade user ("snaptrade" flow), whose
+	// secret is Access.
+	User string `json:"user,omitempty"`
 }
 
 // account is one of the display's accounts with a provider.
@@ -625,6 +628,7 @@ type pendingSignIn struct {
 	verifier string // browser flow: the PKCE verifier
 	expires  time.Time
 	cancel   context.CancelFunc // device flow: its poller
+	snap     *snapPending       // snaptrade flow: its SnapTrade user
 }
 
 type signIns struct {
@@ -714,6 +718,14 @@ func (s *Server) beginSignIn(ctx context.Context, provider, accountID, instanceI
 		return &signInStart{url: s.auth.publicURL + s.base + "oauth/go/" + state, expires: ps.expires}, nil
 	case flowDevice:
 		return s.beginDevice(ctx, p, c, ps)
+	case flowSnapTrade:
+		if c.secret == "" {
+			return nil, fmt.Errorf("%s needs the %s too", p.Title, strings.ToLower(firstNonEmpty(p.m.SignIn.SecretLabel, "client secret")))
+		}
+		state := randomToken(16)
+		ps.snap = &snapPending{}
+		s.signIns.put(state, ps)
+		return &signInStart{url: s.auth.publicURL + s.base + "oauth/go/" + state, expires: ps.expires}, nil
 	}
 	return nil, errors.New("unknown sign-in flow")
 }
@@ -741,6 +753,10 @@ func (s *Server) serveOAuth(w http.ResponseWriter, r *http.Request, rest string)
 		}
 		p := s.providers[ps.provider]
 		c, _, _ := s.loadClient(ps.provider)
+		if p.Flow == flowSnapTrade {
+			s.snapPortal(w, r, state, ps, p, c)
+			return
+		}
 		q := url.Values{
 			"client_id":             {c.id},
 			"redirect_uri":          {s.redirectURI()},
@@ -790,28 +806,45 @@ func (s *Server) serveOAuth(w http.ResponseWriter, r *http.Request, rest string)
 			oauthPage(w, http.StatusBadGateway, "Sign-in didn't finish", err.Error())
 			return
 		}
-		id, err := s.signedIn(r.Context(), ps, reply.token(ps.scopes))
-		if err != nil {
-			oauthPage(w, http.StatusConflict, "Sign-in didn't finish", err.Error())
+		s.finishSignIn(w, r, ps, reply.token(ps.scopes))
+
+	case strings.HasPrefix(rest, "snaptrade/"):
+		// SnapTrade's Connection Portal sending the phone back. The state is
+		// in the path: the portal adds its own query parameters.
+		ps, ok := s.signIns.take(strings.TrimPrefix(rest, "snaptrade/"))
+		if !ok || ps.snap == nil {
+			oauthPage(w, http.StatusBadRequest, "This sign-in has expired", "Tap Sign in on the screen again.")
 			return
 		}
-		if ps.account == "" {
-			// A new account: it can't be used until it's named, which the
-			// admin page (where this sign-in started) asks for now.
-			http.Redirect(w, r, s.base+"admin/access?name="+url.QueryEscape(id), http.StatusSeeOther)
-			return
-		}
-		if ps.admin {
-			// Back to the admin page it started on; a screen's QR sign-in
-			// was on a phone, which can close the page instead.
-			http.Redirect(w, r, s.base+"admin/access", http.StatusSeeOther)
-			return
-		}
-		oauthPage(w, http.StatusOK, "Signed in to "+p.Title, "You can close this page. The widgets on your screens will start in a moment.")
+		s.snapReturned(w, r, ps)
 
 	default:
 		http.NotFound(w, r)
 	}
+}
+
+// finishSignIn stores a sign-in's token and sends the phone on: to name a
+// new account, back to the admin page, or to a page saying it's done.
+func (s *Server) finishSignIn(w http.ResponseWriter, r *http.Request, ps *pendingSignIn, t *token) {
+	p := s.providers[ps.provider]
+	id, err := s.signedIn(r.Context(), ps, t)
+	if err != nil {
+		oauthPage(w, http.StatusConflict, "Sign-in didn't finish", err.Error())
+		return
+	}
+	if ps.account == "" {
+		// A new account: it can't be used until it's named, which the
+		// admin page (where this sign-in started) asks for now.
+		http.Redirect(w, r, s.base+"admin/access?name="+url.QueryEscape(id), http.StatusSeeOther)
+		return
+	}
+	if ps.admin {
+		// Back to the admin page it started on; a screen's QR sign-in
+		// was on a phone, which can close the page instead.
+		http.Redirect(w, r, s.base+"admin/access", http.StatusSeeOther)
+		return
+	}
+	oauthPage(w, http.StatusOK, "Signed in to "+p.Title, "You can close this page. The widgets on your screens will start in a moment.")
 }
 
 // signedIn stores a sign-in: for an existing account (which must be the
@@ -1020,13 +1053,17 @@ func (s *Server) awaitDevice(ctx context.Context, cancel context.CancelFunc, p *
 
 // ---- signing widgets' requests ----
 
-// authorization is the Authorization header for a signed request from an
-// instance, the provider it's for and the account it's signed with; or why
-// it can't be signed. A request is signed only with the account the
-// instance is bound to, and only if one of the scopes the widget itself
-// declared covers it, by its provider's table: a widget can't use a scope
-// another widget sharing the account declared.
-func (s *Server) authorization(ctx context.Context, in *instance, method string, u *url.URL) (auth, providerName, acct string, err error) {
+// signer signs an outgoing request (the host's copy, never the widget's):
+// an Authorization header, or SnapTrade's query parameters and Signature.
+type signer func(*http.Request) error
+
+// authorization is how to sign a request from an instance, the provider
+// it's for and the account it's signed with; or why it can't be signed. A
+// request is signed only with the account the instance is bound to, and
+// only if one of the scopes the widget itself declared covers it, by its
+// provider's table: a widget can't use a scope another widget sharing the
+// account declared.
+func (s *Server) authorization(ctx context.Context, in *instance, method string, u *url.URL) (sign signer, providerName, acct string, err error) {
 	var p *provider
 	for _, name := range in.w.usedProviders() {
 		pr := s.providers[name]
@@ -1034,32 +1071,43 @@ func (s *Server) authorization(ctx context.Context, in *instance, method string,
 			continue
 		}
 		if ok, would := pr.covers(in.w.scopesFor(name), method, u); !ok {
-			return "", "", "", &widget.ScopeError{Provider: pr.Title, Missing: would}
+			return nil, "", "", &widget.ScopeError{Provider: pr.Title, Missing: would}
 		}
 		p = pr
 		break
 	}
 	if p == nil {
-		return "", "", "", &PolicyDeniedError{Rule: "this widget's accounts don't cover " + u.Host, URL: u.Redacted()}
+		return nil, "", "", &PolicyDeniedError{Rule: "this widget's accounts don't cover " + u.Host, URL: u.Redacted()}
 	}
 	a, err := s.loadAcct(in.binding(p.Name))
 	if err != nil {
-		return "", "", "", err
+		return nil, "", "", err
 	}
 	if a == nil || a.Label == "" || a.Token == nil || !covers(a.Token.Granted, in.w.scopesFor(p.Name)) {
-		return "", "", "", fmt.Errorf("%s isn't signed in for this widget", p.Title)
+		return nil, "", "", fmt.Errorf("%s isn't signed in for this widget", p.Title)
 	}
 	t := a.Token
+	if p.Flow == flowSnapTrade {
+		c, ok, err := s.loadClient(p.Name)
+		if err != nil {
+			return nil, "", "", err
+		}
+		if !ok || c.secret == "" {
+			return nil, "", "", fmt.Errorf("%s's API keys aren't set", p.Title)
+		}
+		return func(r *http.Request) error { return snapSign(r, c, t) }, p.Name, a.ID, nil
+	}
 	if !t.Expiry.IsZero() && time.Until(t.Expiry) < time.Minute {
 		if t, err = s.refresh(ctx, p, a); err != nil {
-			return "", "", "", err
+			return nil, "", "", err
 		}
 	}
 	typ := t.Type
 	if typ == "" || strings.EqualFold(typ, "bearer") {
 		typ = "Bearer"
 	}
-	return typ + " " + t.Access, p.Name, a.ID, nil
+	auth := typ + " " + t.Access
+	return func(r *http.Request) error { r.Header.Set("Authorization", auth); return nil }, p.Name, a.ID, nil
 }
 
 // refresh trades an account's refresh token for a new access token.
@@ -1105,6 +1153,11 @@ func (s *Server) accountLapsed(id string) {
 	if err := s.storeToken(id, nil); err != nil {
 		s.log.Error("accounts: signing out a lapsed account failed", "account", id, "err", err)
 	}
+	if p := s.providers[a.Provider]; p != nil && p.Flow == flowSnapTrade && a.Token != nil && a.Token.User != "" {
+		// A SnapTrade user isn't dead when a call is refused: delete it,
+		// connections and all, rather than leave it behind unreachable.
+		s.snapDeleteLater(p, a.Token.User, "its sign-in lapsed")
+	}
 	s.log.Warn("accounts: sign-in lapsed", "account", id, "provider", a.Provider)
 	s.reconcile(a.Provider)
 }
@@ -1134,7 +1187,10 @@ func (a *adminService) ListAccounts(ctx context.Context, req *connect.Request[wi
 	}
 	for _, n := range sortedKeys(used) {
 		p := s.providers[n]
-		info := &widgetdv1.ProviderInfo{Name: n, Title: p.Title, ClientHelp: p.m.SignIn.ClientHelp, Error: s.accountError(n)}
+		info := &widgetdv1.ProviderInfo{
+			Name: n, Title: p.Title, ClientHelp: p.m.SignIn.ClientHelp, Error: s.accountError(n),
+			ClientIdLabel: p.m.SignIn.ClientIDLabel, SecretLabel: p.m.SignIn.SecretLabel,
+		}
 		if c, ok, _ := s.loadClient(n); ok {
 			info.ClientSet, info.SecretSet = true, c.secret != ""
 		}
@@ -1342,15 +1398,20 @@ func (a *adminService) SetProviderClient(ctx context.Context, req *connect.Reque
 	if err := requireAdmin(a.caller(req)); err != nil {
 		return nil, err
 	}
-	if _, ok := a.srv.providers[req.Msg.GetProvider()]; !ok {
+	p, ok := a.srv.providers[req.Msg.GetProvider()]
+	if !ok {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no such provider"))
 	}
 	id, secret := strings.TrimSpace(req.Msg.GetClientId()), strings.TrimSpace(req.Msg.GetClientSecret())
 	if len(id) > 200 || len(secret) > 500 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("too long"))
 	}
-	if err := a.srv.setClient(req.Msg.GetProvider(), id, secret); err != nil {
+	if err := a.srv.setClient(p.Name, id, secret); err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	if p.Flow == flowSnapTrade {
+		// API keys can be checked at once, unlike an OAuth client.
+		a.srv.snapCheckClient(ctx, p)
 	}
 	return connect.NewResponse(&widgetdv1.SetProviderClientResponse{}), nil
 }

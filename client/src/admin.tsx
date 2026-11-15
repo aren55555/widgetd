@@ -1552,10 +1552,14 @@ function ProviderItem(props: { p: ProviderInfo; reload: () => Promise<void> }) {
   const [id, setId] = createSignal("");
   const [secret, setSecret] = createSignal("");
   const st = createStatus();
+  // What the provider calls its client's halves (SnapTrade: "Consumer key").
+  const idLabel = p.clientIdLabel || "Client ID";
+  const secretLabel = p.secretLabel || "Client secret";
   return (
     <details class={`${ui.fieldset} w-full`} open={!p.clientSet}>
       <summary class="cursor-pointer font-semibold">
-        {p.title} app {p.clientSet ? (p.secretSet ? "· registered" : "· client ID only") : "· not registered yet"}
+        {p.title} app{" "}
+        {p.clientSet ? (p.secretSet ? "· registered" : `· ${idLabel.toLowerCase()} only`) : "· not registered yet"}
       </summary>
       <Show when={p.error}>
         <p class={`text-sm ${ui.error}`}>{p.error}</p>
@@ -1572,9 +1576,9 @@ function ProviderItem(props: { p: ProviderInfo; reload: () => Promise<void> }) {
         class={ui.input}
         value={id()}
         onInput={(e) => setId(e.currentTarget.value)}
-        placeholder={p.clientSet ? "Client ID registered. Enter a new one to replace it." : "Client ID"}
+        placeholder={p.clientSet ? `${idLabel} registered. Enter a new one to replace it.` : idLabel}
         autocomplete="off"
-        aria-label={`${p.title} client ID`}
+        aria-label={`${p.title} ${idLabel.toLowerCase()}`}
       />
       <input
         class={ui.input}
@@ -1582,8 +1586,8 @@ function ProviderItem(props: { p: ProviderInfo; reload: () => Promise<void> }) {
         value={secret()}
         onInput={(e) => setSecret(e.currentTarget.value)}
         autocomplete="new-password"
-        placeholder={p.secretSet ? "Client secret stored. Enter a new one to replace it." : "Client secret"}
-        aria-label={`${p.title} client secret`}
+        placeholder={p.secretSet ? `${secretLabel} stored. Enter a new one to replace it.` : secretLabel}
+        aria-label={`${p.title} ${secretLabel.toLowerCase()}`}
       />
       <button
         class={`${ui.btn.small} mt-2`}

@@ -429,7 +429,8 @@ func TestTwoAccountsOneProvider(t *testing.T) {
 	h.waitState("ia", RUN)
 	h.waitState("ib", RUN)
 	u := mustURL(t, "https://api.example.com/me")
-	authA, _, acctA, err := h.srv.authorization(context.Background(), h.srv.instances["ia"], "GET", u)
+	signA, _, acctA, err := h.srv.authorization(context.Background(), h.srv.instances["ia"], "GET", u)
+	authA := signedAuth(t, signA)
 	if err != nil || acctA != work || authA != "Bearer "+h.acct(work).Token.Access {
 		t.Fatalf("ia signed with %q (%s), %v; want Work's token", authA, acctA, err)
 	}
@@ -543,9 +544,24 @@ func TestSignedOnlyForOwnProvider(t *testing.T) {
 			t.Errorf("signed a request to %s", raw)
 		}
 	}
-	if auth, p, _, err := h.srv.authorization(context.Background(), in, "GET", mustURL(t, "https://api.example.com/me")); err != nil || p != "idp" || !strings.HasPrefix(auth, "Bearer tok-") {
+	sign, p, _, err := h.srv.authorization(context.Background(), in, "GET", mustURL(t, "https://api.example.com/me"))
+	if auth := signedAuth(t, sign); err != nil || p != "idp" || !strings.HasPrefix(auth, "Bearer tok-") {
 		t.Fatalf("own provider: %q %q %v", auth, p, err)
 	}
+}
+
+// signedAuth is the Authorization header sign puts on a request ("" for no
+// signer).
+func signedAuth(t *testing.T, sign signer) string {
+	t.Helper()
+	if sign == nil {
+		return ""
+	}
+	r, _ := http.NewRequest(http.MethodGet, "https://api.example.com/", http.NoBody)
+	if err := sign(r); err != nil {
+		t.Fatal(err)
+	}
+	return r.Header.Get("Authorization")
 }
 
 func TestLapsedAccountWaitsAgain(t *testing.T) {
