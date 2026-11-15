@@ -23,6 +23,7 @@ import { timestampDate } from "@bufbuild/protobuf/wkt";
 import { create, createFileRegistry, fromBinary, toBinary } from "@bufbuild/protobuf";
 import { FileDescriptorSetSchema } from "@bufbuild/protobuf/wkt";
 import {
+  createEffect,
   createMemo,
   createResource,
   createSignal,
@@ -416,6 +417,9 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
   const secrets: Secrets = { fields: new Set(form.secretFields), set: new Set(form.secretsSet), clear: new Set() };
 
   let config: { form: ConfigForm; bytes: () => Uint8Array; noChoices: () => string } | undefined;
+  // Ask the widget for its pick-lists again: after an edit, or once an
+  // account it reads them from is attached.
+  let refreshChoices = async () => {};
   if (form.configType) {
     const registry = createFileRegistry(fromBinary(FileDescriptorSetSchema, form.schema));
     const desc = registry.getMessage(form.configType);
@@ -430,7 +434,7 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
     const [noChoices, setNoChoices] = createSignal("");
     let asked = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const refreshChoices = async () => {
+    refreshChoices = async () => {
       const mine = ++asked;
       try {
         const res = await admin.getConfigChoices({ ...target, config: toBinary(desc, msg) });
@@ -496,6 +500,16 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
           aria-label="Name"
         />
       </label>
+      <Show when={w.uses.length}>
+        <InstanceAccounts
+          instanceId={form.instanceId}
+          askNames={!onSaved}
+          onChange={async () => {
+            await onSaved?.();
+            await refreshChoices();
+          }}
+        />
+      </Show>
       <Show when={config?.noChoices()}>
         {(why) => <p class="text-sm text-amber-600">⚠ Couldn't load the options to pick from: {why()}.</p>}
       </Show>
@@ -522,6 +536,58 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
         <NetworkNote w={w} />
         {fields}
       </Page>
+    </Show>
+  );
+}
+
+/**
+ * The accounts an instance uses, picked before its settings: the widget
+ * may need one to offer its pick-lists (a calendar's calendars), and won't
+ * run without one. Shown on a screen's QR page too, which is otherwise
+ * outside the admin app, so it loads what it needs itself.
+ */
+function InstanceAccounts(props: { instanceId: string; askNames: boolean; onChange: () => Promise<void> }) {
+  const load = async () => {
+    const [{ instances }, { accounts, providers }] = await Promise.all([
+      admin.listInstances({}),
+      admin.listAccounts({}),
+    ]);
+    return { inst: instances.find((i) => i.id === props.instanceId), accounts, providers };
+  };
+  const [data, { mutate }] = createResource(load);
+  const reload = async () => {
+    mutate(await load());
+    await props.onChange();
+  };
+  return (
+    <Show when={data()}>
+      {(d) => (
+        <Show when={d().inst}>
+          {(inst) => (
+            <>
+              {/* A new account arrives unnamed, and is no use until it has a name. The admin app asks at its top. */}
+              <For
+                each={d().accounts.filter(
+                  (a) => props.askNames && !a.label && inst().bindings.some((b) => b.accountId === a.id),
+                )}
+              >
+                {(a) => (
+                  <NameAccount
+                    a={a}
+                    d={{ providers: d().providers, instances: [inst()], widgets: [] }}
+                    reload={reload}
+                  />
+                )}
+              </For>
+              <For each={inst().bindings}>
+                {(b) => (
+                  <BindingPicker inst={inst()} provider={b.provider} accountId={b.accountId} d={d()} reload={reload} />
+                )}
+              </For>
+            </>
+          )}
+        </Show>
+      )}
     </Show>
   );
 }
@@ -673,6 +739,15 @@ function AdminApp() {
   // open; ?card=<id> fills it in.
   const [find, setFind] = createSignal(new URLSearchParams(location.search).get("card") ?? "");
   const query = () => normalizeQuery(find());
+  // Back from a provider's sign-in (which lands on Access): once any new
+  // account has its name, go back to where the sign-in started.
+  const fromSignIn = adminRoute(location.pathname).tab === "access";
+  createEffect(() => {
+    const d = data();
+    if (!fromSignIn || !d || d.accounts.some((a) => !a.label)) return;
+    const back = takeReturn();
+    if (back && back !== location.pathname) location.assign(back);
+  });
   return (
     <Show when={data()}>
       {(d) => (
@@ -929,21 +1004,6 @@ function InstanceDetail(props: {
       <Suspense fallback={<p class={ui.muted}>Loading…</p>}>
         <Configure target={{ instanceId: props.inst.id }} onSaved={props.reload} />
       </Suspense>
-
-      <Show when={props.inst.bindings.length}>
-        <h2 class={H2}>Accounts</h2>
-        <For each={props.inst.bindings}>
-          {(b) => (
-            <BindingPicker
-              inst={props.inst}
-              provider={b.provider}
-              accountId={b.accountId}
-              d={props.d}
-              reload={props.reload}
-            />
-          )}
-        </For>
-      </Show>
 
       <h2 class={H2}>Network</h2>
       <Show when={props.widget}>{(w) => <NetworkNote w={w()} />}</Show>
@@ -1212,6 +1272,32 @@ function ScreenItem(props: { device: Device; query: string; reload: () => Promis
   );
 }
 
+// A browser sign-in leaves for the provider's page and comes back to the
+// admin app's Access tab (to name a new account). If it started elsewhere
+// (a screen's QR page, an instance's page), the admin app sends the browser
+// back there once nothing is left to name.
+const RETURN_KEY = "widgetd.signInReturn";
+
+function rememberReturn() {
+  const back = { href: location.pathname, until: Date.now() + 10 * 60_000 };
+  sessionStorage.setItem(RETURN_KEY, JSON.stringify(back));
+}
+
+/** Where a sign-in that just came back started, if it's still fresh; read once. */
+function takeReturn(): string | undefined {
+  const raw = sessionStorage.getItem(RETURN_KEY);
+  sessionStorage.removeItem(RETURN_KEY);
+  if (!raw) return undefined;
+  try {
+    const back = JSON.parse(raw) as { href?: unknown; until?: unknown };
+    if (typeof back.href !== "string" || !back.href.startsWith(base)) return undefined;
+    if (typeof back.until !== "number" || Date.now() > back.until) return undefined;
+    return back.href;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Starting a sign-in from this page: a browser sign-in goes to the
  * provider's consent page right here (and comes back to name the account,
@@ -1229,6 +1315,7 @@ function createSignIn(st: ReturnType<typeof createStatus>, reload: () => Promise
     st.run(async () => {
       const s = await admin.beginSignIn(req);
       if (!s.userCode) {
+        rememberReturn();
         location.assign(s.url);
         return;
       }
@@ -1293,7 +1380,7 @@ function BindingPicker(props: {
   inst: InstanceInfo;
   provider: string;
   accountId: string;
-  d: HomeData;
+  d: Pick<HomeData, "accounts" | "providers">;
   reload: () => Promise<void>;
 }) {
   const st = createStatus();
@@ -1347,7 +1434,11 @@ function BindingPicker(props: {
 }
 
 /** A new account can't be used until it has a name. */
-function NameAccount(props: { a: Account; d: HomeData; reload: () => Promise<void> }) {
+function NameAccount(props: {
+  a: Account;
+  d: Pick<HomeData, "providers" | "instances" | "widgets">;
+  reload: () => Promise<void>;
+}) {
   const [name, setName] = createSignal("");
   const st = createStatus();
   const title = () => props.d.providers.find((p) => p.name === props.a.provider)?.title ?? props.a.provider;
