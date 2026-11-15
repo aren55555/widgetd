@@ -1112,8 +1112,15 @@ func (s *Server) authorization(ctx context.Context, in *instance, method string,
 	if err != nil {
 		return nil, "", "", err
 	}
-	if a == nil || a.Label == "" || a.Token == nil || !covers(a.Token.Granted, in.w.scopesFor(p.Name)) {
-		return nil, "", "", fmt.Errorf("%s isn't signed in for this widget", p.Title)
+	switch {
+	case a == nil:
+		return nil, "", "", fmt.Errorf("no %s account is chosen for this widget", p.Title)
+	case a.Label == "":
+		return nil, "", "", fmt.Errorf("the %s account for this widget needs a name first", p.Title)
+	case a.Token == nil:
+		return nil, "", "", fmt.Errorf("%s account %q is signed out: sign it in again", p.Title, a.Label)
+	case !covers(a.Token.Granted, in.w.scopesFor(p.Name)):
+		return nil, "", "", fmt.Errorf("%s account %q hasn't allowed what this widget needs: sign it in again", p.Title, a.Label)
 	}
 	t := a.Token
 	if p.Flow == flowSnapTrade {

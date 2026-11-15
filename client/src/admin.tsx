@@ -1392,6 +1392,13 @@ function BindingPicker(props: {
   // HTML parser turns NUL into U+FFFD there, so the change handler would never match it.
   const NEW = "+new";
   const before = new Set(props.d.accounts.map((a) => a.id));
+  // The bound account, if it isn't signed in for everything this widget
+  // (and the others on it) need: binding asks only when the pick changes,
+  // and a provider's consent page may let someone untick a permission.
+  const short = () => {
+    const a = props.d.accounts.find((x) => x.id === props.accountId);
+    return a?.label && !accountCovers(a) ? a : undefined;
+  };
   return (
     <div class="w-full">
       <label class={ui.label}>
@@ -1427,6 +1434,26 @@ function BindingPicker(props: {
           </option>
         </select>
       </label>
+      <Show when={short()}>
+        {(a) => (
+          <div class="mt-2 flex flex-col items-start gap-2">
+            <p class="text-sm text-amber-600">
+              ⚠ {a().label} {a().signedIn ? "hasn't allowed everything this widget needs" : "is signed out"}. Sign it in
+              again, and leave every permission {title()} asks about ticked.
+            </p>
+            <button
+              class={ui.btn.small}
+              disabled={st.busy() || !p()?.clientSet}
+              onClick={signIn.start({ provider: props.provider, accountId: a().id }, (all) => {
+                const now = all.find((x) => x.id === a().id);
+                return !!now && accountCovers(now);
+              })}
+            >
+              Sign in{a().identity ? ` as ${a().identity}` : ""} again
+            </button>
+          </div>
+        )}
+      </Show>
       <signIn.View />
       <st.View />
     </div>
