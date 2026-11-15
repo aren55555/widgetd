@@ -25,7 +25,8 @@ import (
 //	manifest.json   Manifest
 //	schema.binpb    FileDescriptorSet: the widget's protos and their imports
 //	server.wasm     the server half, a WASI preview 1 command
-//	view/view.js    the view, and anything else under view/
+//	view/view.js    the view, and anything else under view/: view.css, and
+//	                fonts/ for the fonts the manifest lists
 //
 // widgetc builds them. LoadPackage turns one into a widget.Spec the host
 // runs sandboxed; the host never needs the widget's source or generated code.
@@ -47,9 +48,45 @@ type Manifest struct {
 	Secrets []string `json:"secrets,omitempty"`
 	// Uses are the accounts it uses, and with what scopes.
 	Uses []widget.Use `json:"uses,omitempty"`
+	// Fonts are the font families bundled with the view, under view/fonts/.
+	Fonts []Font `json:"fonts,omitempty"`
 	// Protos are the widget's own files within the descriptor set (the rest
 	// are their imports).
 	Protos []string `json:"protos"`
+}
+
+// Font is a font family bundled with a widget's view: where it came from,
+// its licence, and its files, all under the view's fonts/. The view's CSS
+// names the family; widgetc put the @font-face rules ahead of view.css.
+type Font struct {
+	Family string `json:"family"`
+	// Source is the package it was bundled from, "@fontsource/x@5.3.0".
+	Source string `json:"source"`
+	// License is the font's licence file, in the view, which travels with it.
+	License string   `json:"license"`
+	Files   []string `json:"files"`
+}
+
+// checkFonts makes sure every font file the manifest lists is a font in the
+// view's fonts/ (and its licence is there), so a package can't claim files
+// it doesn't carry.
+func checkFonts(fonts []Font, view fs.FS) error {
+	for _, f := range fonts {
+		for _, p := range append([]string{f.License}, f.Files...) {
+			if path.Dir(p) != "fonts" || !fs.ValidPath(p) {
+				return fmt.Errorf("font %q: %q is not in fonts/", f.Family, p)
+			}
+			if _, err := fs.Stat(view, p); err != nil {
+				return fmt.Errorf("font %q: %w", f.Family, err)
+			}
+		}
+		for _, p := range f.Files {
+			if path.Ext(p) != ".woff2" {
+				return fmt.Errorf("font %q: %q is not a .woff2", f.Family, p)
+			}
+		}
+	}
+	return nil
 }
 
 const (
@@ -139,6 +176,9 @@ func LoadPackage(b []byte) (widget.Spec, error) {
 	view, err := fs.Sub(zr, "view")
 	if err != nil {
 		return widget.Spec{}, err
+	}
+	if err := checkFonts(m.Fonts, view); err != nil {
+		return widget.Spec{}, fmt.Errorf("package manifest: %w", err)
 	}
 	return widget.Spec{
 		Name:    m.Name,

@@ -3,7 +3,7 @@
 // and treats them the same.
 //
 //	<widget>/
-//	  widget.toml          manifest: name, version, title, icon, config message, network request
+//	  widget.toml          manifest: name, version, title, icon, fonts, config message, network request
 //	  buf.yaml, buf.lock   the schema's buf module (proto/ plus its deps); buf.lock
 //	                       is written by `buf dep update` if missing
 //	  proto/...            the schema: State, Delta, Config
@@ -32,6 +32,20 @@
 // looked up in the view's own @widgetd/sdk/icons the way <wd-icon> finds
 // one. Its shapes go into the package, and widgetd's pages draw it beside
 // the widget's title.
+//
+// widget.toml's [[fonts]] are the font families the view uses, from
+// Fontsource (https://fontsource.org: Google Fonts and others as npm
+// packages). The view depends on each one's package, @fontsource/<family in
+// kebab case>, so its version is pinned like any dependency. The build copies
+// just the faces asked for (weights, default [400]; styles, default
+// ["normal"]; subsets, default ["latin"]) as .woff2, with the font's licence,
+// into the package's view/fonts/, and puts their @font-face rules ahead of
+// view.css, so the view's CSS names the family and nothing is fetched at run
+// time:
+//
+//	[[fonts]]
+//	family  = "Barlow Condensed"
+//	weights = [600, 700]
 //
 // `widgetc test` runs `go test ./...` if the widget has Go tests, and
 // `bun test` in view/ if it has script tests.
@@ -86,6 +100,65 @@ type manifest struct {
 		Why     string   `toml:"why"`
 	} `toml:"network"`
 	Uses []widget.Use `toml:"uses"`
+	// Fonts are the font families the view uses, bundled into the package.
+	Fonts []fontRequest `toml:"fonts"`
+}
+
+// fontRequest is one [[fonts]] entry of widget.toml: a Fontsource family
+// (https://fontsource.org) and the faces of it to bundle.
+type fontRequest struct {
+	Family  string   `toml:"family" json:"family"`
+	Weights []int    `toml:"weights" json:"weights"`
+	Styles  []string `toml:"styles" json:"styles"`
+	Subsets []string `toml:"subsets" json:"subsets"`
+}
+
+var (
+	fontFamilyRE = regexp.MustCompile(`^[A-Za-z0-9]+( [A-Za-z0-9]+)*$`)
+	fontSubsetRE = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
+)
+
+// fontsWithDefaults checks the manifest's [[fonts]] and fills in their
+// defaults: weight 400, the normal style, the latin subset.
+func fontsWithDefaults(fonts []fontRequest) ([]fontRequest, error) {
+	out := make([]fontRequest, 0, len(fonts))
+	seen := map[string]bool{}
+	for _, f := range fonts {
+		where := fmt.Sprintf("widget.toml: fonts: %q", f.Family)
+		if !fontFamilyRE.MatchString(f.Family) {
+			return nil, fmt.Errorf("%s: want a family name like \"Barlow Condensed\"", where)
+		}
+		if seen[f.Family] {
+			return nil, fmt.Errorf("%s: listed twice", where)
+		}
+		seen[f.Family] = true
+		if len(f.Weights) == 0 {
+			f.Weights = []int{400}
+		}
+		for _, w := range f.Weights {
+			if w < 100 || w > 900 || w%100 != 0 {
+				return nil, fmt.Errorf("%s: weight %d: want 100, 200, … 900", where, w)
+			}
+		}
+		if len(f.Styles) == 0 {
+			f.Styles = []string{"normal"}
+		}
+		for _, s := range f.Styles {
+			if s != "normal" && s != "italic" {
+				return nil, fmt.Errorf("%s: style %q: want \"normal\" or \"italic\"", where, s)
+			}
+		}
+		if len(f.Subsets) == 0 {
+			f.Subsets = []string{"latin"}
+		}
+		for _, s := range f.Subsets {
+			if !fontSubsetRE.MatchString(s) {
+				return nil, fmt.Errorf("%s: subset %q: want a Fontsource subset like \"latin\"", where, s)
+			}
+		}
+		out = append(out, f)
+	}
+	return out, nil
 }
 
 var nameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)
@@ -230,11 +303,11 @@ func build(dir string) (manifest, error) {
 	if err != nil {
 		return m, err
 	}
-	icon, err := bundleView(dir, m.Icon)
+	extras, err := bundleView(dir, m.Icon, m.Fonts)
 	if err != nil {
 		return m, err
 	}
-	return m, pack(dir, importPath, m, icon, protos)
+	return m, pack(dir, importPath, m, extras, protos)
 }
 
 // runTests runs the Go tests anywhere in a widget folder, and the script
@@ -345,50 +418,70 @@ var buildViewScript []byte
 // iconNameRE is the form of a Lucide icon name, as widget.toml's `icon`.
 var iconNameRE = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
-// bundleView bundles view/view.ts (and copies view/view.css) into dist/, and
-// resolves the manifest's icon, if any, from the view's @widgetd/sdk/icons.
-// The bundle is a classic script: the card frame runs in an opaque origin,
-// where a module script would need CORS.
-func bundleView(dir, iconName string) (*widget.Icon, error) {
+// viewExtras is what bundling a view resolves besides the bundle: the
+// manifest's icon, and its fonts as bundled.
+type viewExtras struct {
+	Icon  *widget.Icon `json:"icon,omitempty"`
+	Fonts []host.Font  `json:"fonts,omitempty"`
+	// FontFaces is the @font-face CSS for Fonts, put ahead of view.css.
+	FontFaces string `json:"fontFaces,omitempty"`
+}
+
+// bundleView bundles view/view.ts (and copies view/view.css) into dist/,
+// resolves the manifest's icon, if any, from the view's @widgetd/sdk/icons,
+// and bundles its fonts, if any, from the view's @fontsource packages (see
+// buildview.ts). The bundle is a classic script: the card frame runs in an
+// opaque origin, where a module script would need CORS.
+func bundleView(dir, iconName string, fonts []fontRequest) (viewExtras, error) {
+	var x viewExtras
 	if iconName != "" && !iconNameRE.MatchString(iconName) {
-		return nil, fmt.Errorf("widget.toml: icon %q: want a Lucide name like \"cloud-sun\"", iconName)
+		return x, fmt.Errorf("widget.toml: icon %q: want a Lucide name like \"cloud-sun\"", iconName)
+	}
+	fonts, err := fontsWithDefaults(fonts)
+	if err != nil {
+		return x, err
 	}
 	dist := filepath.Join(dir, "dist")
 	if err := os.RemoveAll(dist); err != nil {
-		return nil, err
+		return x, err
 	}
 	work, err := os.MkdirTemp("", "widgetc-view")
 	if err != nil {
-		return nil, err
+		return x, err
 	}
 	defer os.RemoveAll(work)
 	script := filepath.Join(work, "buildview.ts")
 	if err := os.WriteFile(script, buildViewScript, 0o644); err != nil {
-		return nil, err
+		return x, err
 	}
-	iconJSON := filepath.Join(work, "icon.json")
-	if err := run(dir, "bun", script, filepath.Join(dir, "view"), dist, iconJSON, iconName); err != nil {
-		return nil, err
+	req, err := json.Marshal(map[string]any{"icon": iconName, "fonts": fonts})
+	if err != nil {
+		return x, err
 	}
-	var icon *widget.Icon
-	if iconName != "" {
-		b, err := os.ReadFile(iconJSON)
-		if err != nil {
-			return nil, err
-		}
-		icon = new(widget.Icon)
-		if err := json.Unmarshal(b, icon); err != nil {
-			return nil, fmt.Errorf("icon %s: %w", iconName, err)
-		}
+	reqPath, outPath := filepath.Join(work, "request.json"), filepath.Join(work, "extras.json")
+	if err := os.WriteFile(reqPath, req, 0o644); err != nil {
+		return x, err
+	}
+	if err := run(dir, "bun", script, filepath.Join(dir, "view"), dist, reqPath, outPath); err != nil {
+		return x, err
+	}
+	b, err := os.ReadFile(outPath)
+	if err != nil {
+		return x, err
+	}
+	if err := json.Unmarshal(b, &x); err != nil {
+		return x, fmt.Errorf("view extras: %w", err)
 	}
 	css, err := os.ReadFile(filepath.Join(dir, "view", "view.css"))
-	if errors.Is(err, fs.ErrNotExist) {
-		return icon, nil
+	switch {
+	case errors.Is(err, fs.ErrNotExist) && x.FontFaces == "":
+		return x, nil
+	case err != nil && !errors.Is(err, fs.ErrNotExist):
+		return x, err
 	}
-	if err != nil {
-		return nil, err
-	}
-	return icon, os.WriteFile(filepath.Join(dist, "view.css"), css, 0o644)
+	// The fonts' @font-face rules go first, so the view's own CSS can use the
+	// families. Their URLs are relative to view.css, beside fonts/.
+	return x, os.WriteFile(filepath.Join(dist, "view.css"), append([]byte(x.FontFaces), css...), 0o644)
 }
 
 // mainTmpl is the sandboxed server half's entry point: the widget's own
@@ -412,7 +505,7 @@ func main() {
 
 // pack builds server.wasm and the schema, and writes <name>.wpkg: the one
 // file a host needs to run the widget.
-func pack(dir, importPath string, m manifest, icon *widget.Icon, protos []string) error {
+func pack(dir, importPath string, m manifest, extras viewExtras, protos []string) error {
 	work, err := os.MkdirTemp("", "widgetc")
 	if err != nil {
 		return err
@@ -491,7 +584,8 @@ func pack(dir, importPath string, m manifest, icon *widget.Icon, protos []string
 	}
 	defer out.Close()
 	man := host.Manifest{
-		Name: m.Name, Version: m.Version, Title: m.Title, Icon: icon, Config: m.Config, Modes: modes, Secrets: m.Secrets,
+		Name: m.Name, Version: m.Version, Title: m.Title, Icon: extras.Icon, Fonts: extras.Fonts,
+		Config: m.Config, Modes: modes, Secrets: m.Secrets,
 		Network: widget.NetworkRequest{Hosts: m.Network.Hosts, Methods: m.Network.Methods, Why: m.Network.Why},
 	}
 	man.Uses = m.Uses

@@ -60,6 +60,14 @@ func (s *Server) serveFrame(w http.ResponseWriter, r *http.Request, name, digest
 	}{assets, cssErr == nil})
 }
 
+// assetTypes are the types of view files Go's built-in table doesn't know,
+// which would otherwise depend on the machine's mime.types: bundled fonts
+// and their licences.
+var assetTypes = map[string]string{
+	".woff2": "font/woff2",
+	".txt":   "text/plain; charset=utf-8",
+}
+
 // serveAsset serves a file of a widget's built view.
 func (s *Server) serveAsset(w http.ResponseWriter, r *http.Request, name, digest, file string) {
 	lw, ok := s.widgets[name]
@@ -74,7 +82,9 @@ func (s *Server) serveAsset(w http.ResponseWriter, r *http.Request, name, digest
 		return
 	}
 	h := w.Header()
-	if ct := mime.TypeByExtension(path.Ext(file)); ct != "" {
+	if ct := assetTypes[path.Ext(file)]; ct != "" {
+		h.Set("Content-Type", ct)
+	} else if ct := mime.TypeByExtension(path.Ext(file)); ct != "" {
 		h.Set("Content-Type", ct)
 	}
 	h.Set("Cache-Control", "public, max-age=31536000, immutable")
