@@ -13,12 +13,17 @@ import { createSignal, Show, untrack, type Accessor, type JSX, For } from "solid
 
 import {
   choiceOptions,
+  clockMinutes,
+  clockRules,
+  formatClock,
+  parseClock,
   defaultItem,
   enumLabel,
   humanize,
   normalizePath,
   parseScalar,
   type Choices,
+  type ClockRules,
   type FieldChoice,
   type Secrets,
 } from "./form.ts";
@@ -282,6 +287,8 @@ function itemEditor(
   }
   if (t === ScalarType.BYTES) return wrap(<p class={ui.muted}>Can't be edited here.</p>);
   if (t === ScalarType.STRING && ctx.secrets.fields.has(path)) return wrap(secretInput(path, holder, key, commit, ctx));
+  const clock = t === ScalarType.STRING ? clockRules(f) : undefined;
+  if (clock) return wrap(clockInput(clock, holder, key, set));
   if (t === ScalarType.STRING) {
     // The widget's pick-list for this field, once it offers one.
     const picks = () => ctx.choices().get(path);
@@ -315,6 +322,69 @@ function textInput(t: ScalarType, holder: Rec, key: string, path: string, ctx: C
         ctx.changed();
       }}
     />
+  );
+}
+
+/**
+ * A time of day ("HH:MM") as an hour and a minute picker. A saved minute
+ * that isn't on the five-minute grid stays selectable, and nothing is
+ * written until one of them changes.
+ */
+function clockInput(rules: ClockRules, holder: Rec, key: string, set: (v: string) => void): JSX.Element {
+  const saved = parseClock(scalarText(holder[key]));
+  const [hour, setHour] = createSignal(saved ? String(saved.hour) : "");
+  const [minute, setMinute] = createSignal(saved?.minute ?? 0);
+  const hours = Array.from({ length: rules.midnight ? 25 : 24 }, (_, h) => h);
+  const minutes = clockMinutes(saved?.minute);
+  // No minutes to pick when the default is used, or at the end of the day.
+  const fixed = () => hour() === "" || hour() === "24";
+  const write = () => {
+    if (hour() === "") set("");
+    else set(formatClock(Number(hour()), fixed() ? 0 : minute()));
+  };
+  return (
+    <div class="flex items-center gap-2">
+      <select
+        class={ui.select}
+        aria-label="Hour"
+        onChange={(ev) => {
+          setHour(ev.currentTarget.value);
+          if (fixed()) setMinute(0);
+          write();
+        }}
+      >
+        <Show when={rules.unset || !saved}>
+          <option value="" selected={hour() === ""}>
+            {rules.unset ? "(default)" : "(choose)"}
+          </option>
+        </Show>
+        <For each={hours}>
+          {(h) => (
+            <option value={String(h)} selected={hour() === String(h)}>
+              {String(h).padStart(2, "0")}
+            </option>
+          )}
+        </For>
+      </select>
+      <span aria-hidden="true">:</span>
+      <select
+        class={ui.select}
+        aria-label="Minute"
+        disabled={fixed()}
+        onChange={(ev) => {
+          setMinute(Number(ev.currentTarget.value));
+          write();
+        }}
+      >
+        <For each={minutes}>
+          {(m) => (
+            <option value={String(m)} selected={minute() === m}>
+              {String(m).padStart(2, "0")}
+            </option>
+          )}
+        </For>
+      </select>
+    </div>
   );
 }
 

@@ -1,7 +1,25 @@
 import { describe, expect, test } from "bun:test";
-import { ScalarType } from "@bufbuild/protobuf";
+import { create, createFileRegistry, ScalarType, setExtension, type DescField } from "@bufbuild/protobuf";
+import {
+  FieldDescriptorProto_Label,
+  FieldDescriptorProto_Type,
+  FieldOptionsSchema,
+  FileDescriptorProtoSchema,
+} from "@bufbuild/protobuf/wkt";
+import { field as fieldRules, FieldRulesSchema } from "@bufbuild/protovalidate/gen/buf/validate/validate_pb.js";
 
-import { choiceOptions, enumLabel, humanize, normalizePath, parseScalar, sameChoices } from "./form.ts";
+import {
+  choiceOptions,
+  clockMinutes,
+  clockRules,
+  enumLabel,
+  formatClock,
+  humanize,
+  normalizePath,
+  parseClock,
+  parseScalar,
+  sameChoices,
+} from "./form.ts";
 
 describe("humanize", () => {
   test("snake and camel case read as words", () => {
@@ -65,5 +83,70 @@ describe("choices", () => {
     expect(sameChoices(a, new Map([["team", [...picks]]]))).toBe(true);
     expect(sameChoices(a, new Map())).toBe(false);
     expect(sameChoices(a, new Map([["team", picks.slice(1)]]))).toBe(false);
+  });
+});
+
+/** A string field with this protovalidate pattern (or none). */
+function stringField(pattern?: string): DescField {
+  const options = create(FieldOptionsSchema);
+  if (pattern !== undefined)
+    setExtension(options, fieldRules, create(FieldRulesSchema, { type: { case: "string", value: { pattern } } }));
+  const reg = createFileRegistry(
+    create(FileDescriptorProtoSchema, {
+      name: "t.proto",
+      package: "t",
+      syntax: "proto3",
+      messageType: [
+        {
+          name: "M",
+          field: [
+            {
+              name: "f",
+              jsonName: "f",
+              number: 1,
+              type: FieldDescriptorProto_Type.STRING,
+              label: FieldDescriptorProto_Label.OPTIONAL,
+              options,
+            },
+          ],
+        },
+      ],
+    }),
+    () => undefined,
+  );
+  return reg.getMessage("t.M")!.fields[0];
+}
+
+describe("clock fields", () => {
+  test("a pattern for clock times makes a clock field", () => {
+    // The calendar's work_start and work_end.
+    expect(clockRules(stringField("^(([01][0-9]|2[0-3]):[0-5][0-9])?$"))).toEqual({ unset: true, midnight: false });
+    expect(clockRules(stringField("^(([01][0-9]|2[0-3]):[0-5][0-9]|24:00)?$"))).toEqual({
+      unset: true,
+      midnight: true,
+    });
+    expect(clockRules(stringField("^([01][0-9]|2[0-3]):[0-5][0-9]$"))).toEqual({ unset: false, midnight: false });
+  });
+  test("anything else doesn't", () => {
+    expect(clockRules(stringField())).toBeUndefined();
+    expect(clockRules(stringField(""))).toBeUndefined();
+    expect(clockRules(stringField("^.*$"))).toBeUndefined();
+    expect(clockRules(stringField("^[0-9]{2}:[0-9]{2}$"))).toBeUndefined(); // allows 25:00
+    expect(clockRules(stringField("^([01][0-9]|2[0-3]):[0-2][0-9]$"))).toBeUndefined(); // not every minute
+    expect(clockRules(stringField("(("))).toBeUndefined();
+  });
+  test("parse and format", () => {
+    expect(parseClock("08:15")).toEqual({ hour: 8, minute: 15 });
+    expect(parseClock("24:00")).toEqual({ hour: 24, minute: 0 });
+    expect(parseClock("")).toBeUndefined();
+    expect(parseClock("8:15")).toBeUndefined();
+    expect(formatClock(8, 5)).toBe("08:05");
+  });
+  test("minutes keep an off-grid saved minute", () => {
+    expect(clockMinutes(undefined)).toHaveLength(12);
+    expect(clockMinutes(30)).toHaveLength(12);
+    const m = clockMinutes(13);
+    expect(m).toHaveLength(13);
+    expect(m.slice(2, 5)).toEqual([10, 13, 15]);
   });
 });

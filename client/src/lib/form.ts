@@ -8,7 +8,8 @@
 // component in ConfigForm.tsx; the parsing and naming it relies on are here,
 // pure, and tested.
 
-import { create, ScalarType, type DescEnum, type DescField } from "@bufbuild/protobuf";
+import { create, getOption, hasOption, ScalarType, type DescEnum, type DescField } from "@bufbuild/protobuf";
+import { field as fieldRules } from "@bufbuild/protovalidate/gen/buf/validate/validate_pb.js";
 
 /** "time_zone" → "Time zone". */
 export function humanize(name: string): string {
@@ -118,4 +119,57 @@ export function sameChoices(a: Choices, b: Choices): boolean {
     if (w?.length !== v.length || v.some((c, i) => c.value !== w[i].value || c.label !== w[i].label)) return false;
   }
   return true;
+}
+
+/**
+ * How a time-of-day field may be set: `unset` if "" is allowed, `midnight`
+ * if "24:00" is (an end of day).
+ */
+export interface ClockRules {
+  unset: boolean;
+  midnight: boolean;
+}
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * Whether a string field holds a time of day as "HH:MM": its protovalidate
+ * pattern accepts every 24-hour clock time and nothing else shaped like one.
+ * The schema says so without any form-specific annotation, so such a field
+ * gets hour and minute pickers instead of a text box.
+ */
+export function clockRules(f: DescField): ClockRules | undefined {
+  if (f.fieldKind === "list" || f.fieldKind === "map" || f.scalar !== ScalarType.STRING) return undefined;
+  const rules = hasOption(f, fieldRules) ? getOption(f, fieldRules).type : undefined;
+  const pattern = rules?.case === "string" ? rules.value.pattern : "";
+  if (!pattern) return undefined;
+  let re: RegExp;
+  try {
+    re = new RegExp(pattern, "u");
+  } catch {
+    return undefined;
+  }
+  for (let h = 0; h < 24; h++) for (let m = 0; m < 60; m++) if (!re.test(`${pad2(h)}:${pad2(m)}`)) return undefined;
+  if (["9:00", "09:5", "009:00", "24:01", "25:00", "12:60", "1200", "ab:cd", "12:00x"].some((s) => re.test(s)))
+    return undefined;
+  return { unset: re.test(""), midnight: re.test("24:00") };
+}
+
+/** "HH:MM" as hour and minute, or undefined if it isn't one. */
+export function parseClock(s: string): { hour: number; minute: number } | undefined {
+  const m = /^(\d{2}):(\d{2})$/.exec(s);
+  return m ? { hour: Number(m[1]), minute: Number(m[2]) } : undefined;
+}
+
+/** An hour and minute as "HH:MM". */
+export const formatClock = (hour: number, minute: number) => `${pad2(hour)}:${pad2(minute)}`;
+
+/** The minutes a picker offers: every five, plus the current one if it's between them. */
+export function clockMinutes(current: number | undefined): number[] {
+  const out = Array.from({ length: 12 }, (_, i) => i * 5);
+  if (current !== undefined && !out.includes(current)) {
+    out.push(current);
+    out.sort((a, b) => a - b);
+  }
+  return out;
 }
