@@ -482,3 +482,45 @@ func TestSnapTradePersonalRefusesTrading(t *testing.T) {
 		t.Fatalf("a personal user must never be deleted: %v", d)
 	}
 }
+
+// With personal keys and a brokerage already connected (in SnapTrade's
+// dashboard), the sign-in link signs the account in at once: no portal, and
+// no second connection.
+func TestSnapTradePersonalUsesExistingConnection(t *testing.T) {
+	h := newSnapHarness(t)
+	h.snap.personal.Store(true)
+	h.setKeys()
+	h.snap.mu.Lock()
+	h.snap.conns["me"] = []map[string]any{{"id": "dash-1", "type": "read", "disabled": false, "brokerage": map[string]any{"name": "Robinhood"}}}
+	h.snap.mu.Unlock()
+
+	start, err := h.adminClient().BeginSignIn(context.Background(), withCookie(&widgetdv1.BeginSignInRequest{Provider: "snaptrade", InstanceId: "is"}, h.adminCookie()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	link, _ := url.Parse(start.Msg.GetUrl())
+	noFollow := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	resp, err := noFollow.Get(h.http.URL + link.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	loc, _ := url.Parse(resp.Header.Get("Location"))
+	id := loc.Query().Get("name")
+	if resp.StatusCode != http.StatusSeeOther || id == "" {
+		t.Fatalf("the link should sign in without the portal: %d %s", resp.StatusCode, loc)
+	}
+	if a, err := h.srv.loadAcct(id); err != nil || a == nil || a.Token == nil || a.Token.Type != snapPersonal {
+		t.Fatalf("account: %+v %v", a, err)
+	}
+	h.snap.mu.Lock()
+	n := len(h.snap.conns["me"])
+	h.snap.mu.Unlock()
+	if n != 1 {
+		t.Fatalf("connections: %d, want the dashboard's one", n)
+	}
+	// The link is spent.
+	if resp, err := noFollow.Get(h.http.URL + link.Path); err != nil || resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("a used link: %v %v", resp, err)
+	}
+}

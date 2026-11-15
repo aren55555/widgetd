@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -42,7 +43,9 @@ import (
 // A sign-in finds that out from registerUser's refusal, and then works as
 // that user: no userId or userSecret on any call, the token is just a
 // marker (Type snapPersonal), and nothing is ever deleted, because the
-// user and its connections are the person's own, not widgetd's.
+// user and its connections are the person's own, not widgetd's. If that
+// user already has a connection (made in SnapTrade's dashboard, say), the
+// sign-in uses it and skips the Connection Portal.
 //
 // The host's own calls (register, portal, delete) are its own: a widget
 // gets only what its scopes cover, which for SnapTrade is GET.
@@ -313,7 +316,8 @@ func (s *Server) snapDeleteLater(p *provider, user, why string) {
 
 // snapPortal handles a phone opening a SnapTrade sign-in link: it gets the
 // account a SnapTrade user, then sends the phone to SnapTrade's Connection
-// Portal for a read-only connection.
+// Portal for a read-only connection. With personal keys and a connection
+// already made, it signs the account in at once instead.
 func (s *Server) snapPortal(w http.ResponseWriter, r *http.Request, state string, ps *pendingSignIn, p *provider, c signInClient) {
 	if ps.snap == nil || c.secret == "" {
 		oauthPage(w, http.StatusConflict, "Sign-in didn't start", p.Title+"'s API keys aren't set.")
@@ -344,6 +348,24 @@ func (s *Server) snapPortal(w http.ResponseWriter, r *http.Request, state string
 			sp.user, sp.secret, sp.isNew = user, secret, true
 		}
 	}
+	if sp.personal {
+		// Personal keys: the person may have connected a brokerage already,
+		// e.g. in SnapTrade's dashboard. If so, use it: no portal.
+		var auths []snapAuthorization
+		if err := s.snapCall(r.Context(), p, c, http.MethodGet, "/authorizations", nil, nil, &auths); err != nil {
+			oauthPage(w, http.StatusBadGateway, "Sign-in didn't start", err.Error())
+			return
+		}
+		if slices.ContainsFunc(auths, func(a snapAuthorization) bool { return !a.Disabled || a.Type != "read" }) {
+			taken, ok := s.signIns.take(state)
+			if !ok {
+				oauthPage(w, http.StatusNotFound, "This sign-in link has expired", "Tap Sign in on the screen again for a new one.")
+				return
+			}
+			s.snapAccept(w, r, taken, p, auths, sp.user, sp.secret, sp.isNew, sp.personal)
+			return
+		}
+	}
 	var reply struct {
 		RedirectURI string `json:"redirectURI"`
 	}
@@ -362,9 +384,7 @@ func (s *Server) snapPortal(w http.ResponseWriter, r *http.Request, state string
 	http.Redirect(w, r, reply.RedirectURI, http.StatusFound)
 }
 
-// snapReturned handles the Connection Portal sending the phone back: the
-// account is signed in, granted "read", only if every one of its
-// connections is read-only.
+// snapReturned handles the Connection Portal sending the phone back.
 func (s *Server) snapReturned(w http.ResponseWriter, r *http.Request, ps *pendingSignIn) {
 	p := s.providers[ps.provider]
 	sp := ps.snap
@@ -399,6 +419,12 @@ func (s *Server) snapReturned(w http.ResponseWriter, r *http.Request, ps *pendin
 		notSignedIn(http.StatusOK, "No brokerage was connected.")
 		return
 	}
+	s.snapAccept(w, r, ps, p, auths, user, secret, isNew, personal)
+}
+
+// snapAccept signs the account in with the SnapTrade user's connections,
+// granted "read", only if every one of them is read-only.
+func (s *Server) snapAccept(w http.ResponseWriter, r *http.Request, ps *pendingSignIn, p *provider, auths []snapAuthorization, user, secret string, isNew, personal bool) {
 	for _, a := range auths {
 		if a.Type == "read" {
 			continue
