@@ -105,16 +105,42 @@
   margin-left: 10px;
 }
 
+/* The score, as on a US scoreboard: lit seven-segment digits over the
+   faint shapes of the unlit ones, in a black panel. --seg is the lit
+   colour: amber, or green for the winner. */
 .score {
-  min-width: 3ch;
+  --seg: #ffb020;
+  display: flex;
   margin-left: 10px;
-  font-size: 20px;
-  font-weight: 700;
-  text-align: right;
+  padding: 4px 5px;
+  border-radius: 3px;
+  font-size: 22px;
+  line-height: 0;
+  background: #0a0a0a;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+.score[hidden] {
+  display: none;
+}
+
+.segments polygon {
+  fill: var(--seg);
+  opacity: 0.08;
+}
+
+.segments polygon.on {
+  opacity: 1;
+}
+
+.segments {
+  filter: drop-shadow(0 0 2px color-mix(in oklab, var(--seg) 60%, transparent));
 }
 
 .team.winner .score {
-  color: var(--wd-up, #4ade80);
+  --seg: var(--wd-up, #4ade80);
 }
 
 .status {
@@ -129,7 +155,7 @@
 }
 
 /* Text over the chart gets a halo of the card's colour so it stays legible. */
-.charted :is(.name, .record, .score, .status) {
+.charted :is(.name, .record, .status) {
   text-shadow:
     0 0 6px var(--wd-surface, #18181b),
     0 0 3px var(--wd-surface, #18181b),
@@ -213,10 +239,11 @@
   opacity: 0.35;
 }
 
-/* Hovering where the score is known: it stays bright, as it stood then. */
+/* Hovering where the score is known: it stays bright, as it stood then,
+   in the plain amber (no one had won yet). */
 .hovering.past .game .score {
+  --seg: #ffb020;
   opacity: 1;
-  color: var(--wd-ink, #e5e7eb);
 }
 
 .hover .rule {

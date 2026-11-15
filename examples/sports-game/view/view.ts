@@ -3,6 +3,7 @@ import { icon, Star } from "@widgetd/sdk/icons";
 
 import { League, StateSchema, State_Phase, type State, type Team } from "./gen/sportsgame/v1/sportsgame_pb.ts";
 import { Chart } from "./chart.ts";
+import { sevenSegment } from "./segments.ts";
 import { creditLine, lineColors, scoreAt, startLabel, teamColor, TYPICAL_MS } from "./game.ts";
 
 defineWidget({
@@ -33,8 +34,12 @@ defineWidget({
       if (!s?.home || !s.away || s.phase === State_Phase.PRE) return;
       const then = hoverAt !== undefined && TRACKED.has(s.league) ? scoreAt(s.scores, hoverAt) : undefined;
       card.classList.toggle("past", !!then);
-      awayRow.setScore(then ? String(then.away) : s.away.score);
-      homeRow.setScore(then ? String(then.home) : s.home.score);
+      const away = then ? String(then.away) : s.away.score;
+      const home = then ? String(then.home) : s.home.score;
+      // Both scores as wide as the wider, so their digits line up.
+      const width = Math.max(2, away.length, home.length);
+      awayRow.setScore(away, width);
+      homeRow.setScore(home, width);
     };
 
     const render = () => {
@@ -139,11 +144,16 @@ class TeamRow {
     this.record.textContent = o.record;
     this.record.hidden = !o.record;
     this.pct.textContent = o.pct;
-    this.score.textContent = o.score;
+    this.setScore(o.score, Math.max(2, o.score.length));
   }
 
-  setScore(score: string): void {
-    this.score.textContent = score;
+  /** The score as a scoreboard shows it: blank before the game, else lit digits. */
+  setScore(score: string, width: number): void {
+    const key = `${score}/${width}`;
+    if (this.score.dataset.shown === key) return;
+    this.score.dataset.shown = key;
+    this.score.hidden = !score;
+    this.score.replaceChildren(...(score ? [sevenSegment(score, width)] : []));
   }
 }
 
