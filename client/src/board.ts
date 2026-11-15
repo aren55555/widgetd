@@ -732,29 +732,26 @@ class WidgetBoard extends HTMLElement {
   /**
    * Cover `within` with a QR code that opens this instance's settings on a
    * phone. The code is good for one use and ten minutes; the phone still
-   * needs an admin passkey to save anything. A card's overlay also shows
-   * its short id, which the admin page lists, to find the card there.
+   * needs an admin passkey to save anything. The overlay also shows the
+   * instance's short id, which the admin page lists, to find it there (the
+   * same before and after it is set up).
    */
   private async showSetUp(tiles: HTMLElement[], instanceId: string) {
-    // One code for the instance, shown on each of its cards.
-    const os = tiles.map((t) => ({ o: this.codeOverlay(t, "setup"), shortId: this.cardAt(t)?.mounted.shortId }));
+    // One code for the instance, shown on each of its cards (or its
+    // placeholder), with the instance's short id, the same on all of them.
+    const shortId = this.instances.get(instanceId)?.status.shortId;
+    const os = tiles.map((t) => this.codeOverlay(t, "setup"));
     try {
       const admin = createClient(WidgetAdminService, this.transport());
       const t = await admin.requestConfigTicket({ instanceId });
       const expires = t.expiresAt ? Number(t.expiresAt.seconds) * 1000 : Date.now() + 600_000;
-      for (const { o, shortId } of os) {
+      for (const o of os) {
         o.show(t.url, ["Scan with your phone to set this up."], undefined, shortId);
         o.expireAt(expires);
       }
     } catch (e) {
-      for (const { o } of os) o.fail(`Couldn't get a code: ${e instanceof Error ? e.message : String(e)}`);
+      for (const o of os) o.fail(`Couldn't get a code: ${e instanceof Error ? e.message : String(e)}`);
     }
-  }
-
-  /** The card whose tile is el, if el is a card's (not an instance's placeholder). */
-  private cardAt(el: HTMLElement): CardHost | undefined {
-    for (const c of this.cards.values()) if (c.el === el) return c;
-    return undefined;
   }
 
   /**
@@ -853,7 +850,7 @@ class WidgetBoard extends HTMLElement {
         if (shortId) {
           const s = document.createElement("div");
           s.className = "sid";
-          s.title = "This card's id, as the admin page lists it";
+          s.title = "This widget's id, as the admin page lists it";
           s.textContent = shortId;
           info.append(s);
         }

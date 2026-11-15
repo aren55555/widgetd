@@ -108,6 +108,12 @@ message InstanceStatus {
   string account_label = 9;
   // The widget's own icon, if it declares one.
   Icon icon = 10;
+  // A short id for the instance, like a git short hash: the first seven
+  // hex digits of the SHA-256 of its id. It is the same before and after
+  // the instance is set up, and on every card it shows. Screens show it
+  // with the set-up code, and the admin page lists it, so an admin can
+  // find the instance behind a tile they're looking at.
+  string short_id = 11;
 }
 
 // Icon is a widget's icon (`icon` in its widget.toml): a Lucide icon as
@@ -153,11 +159,8 @@ message Mounted {
   string action_type = 8;
   // The widget's own icon, if it declares one.
   Icon icon = 9;
-  // A short, stable id for the card, like a git short hash: the first
-  // seven hex digits of the SHA-256 of its full card id. Screens show it
-  // with a card's set-up code, and the admin page lists it, so an admin
-  // can find the instance behind a card they're looking at.
-  string short_id = 10;
+  reserved 10;
+  reserved "short_id";
 }
 
 // Layout is a size hint in grid units.

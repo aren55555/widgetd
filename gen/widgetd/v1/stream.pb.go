@@ -579,7 +579,13 @@ type InstanceStatus struct {
 	Account      string `protobuf:"bytes,8,opt,name=account,proto3" json:"account,omitempty"`
 	AccountLabel string `protobuf:"bytes,9,opt,name=account_label,json=accountLabel,proto3" json:"account_label,omitempty"`
 	// The widget's own icon, if it declares one.
-	Icon          *Icon `protobuf:"bytes,10,opt,name=icon,proto3" json:"icon,omitempty"`
+	Icon *Icon `protobuf:"bytes,10,opt,name=icon,proto3" json:"icon,omitempty"`
+	// A short id for the instance, like a git short hash: the first seven
+	// hex digits of the SHA-256 of its id. It is the same before and after
+	// the instance is set up, and on every card it shows. Screens show it
+	// with the set-up code, and the admin page lists it, so an admin can
+	// find the instance behind a tile they're looking at.
+	ShortId       string `protobuf:"bytes,11,opt,name=short_id,json=shortId,proto3" json:"short_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -682,6 +688,13 @@ func (x *InstanceStatus) GetIcon() *Icon {
 		return x.Icon
 	}
 	return nil
+}
+
+func (x *InstanceStatus) GetShortId() string {
+	if x != nil {
+		return x.ShortId
+	}
+	return ""
 }
 
 // Icon is a widget's icon (`icon` in its widget.toml): a Lucide icon as
@@ -875,12 +888,7 @@ type Mounted struct {
 	// The message a card accepts from viewers; empty if it takes none.
 	ActionType string `protobuf:"bytes,8,opt,name=action_type,json=actionType,proto3" json:"action_type,omitempty"`
 	// The widget's own icon, if it declares one.
-	Icon *Icon `protobuf:"bytes,9,opt,name=icon,proto3" json:"icon,omitempty"`
-	// A short, stable id for the card, like a git short hash: the first
-	// seven hex digits of the SHA-256 of its full card id. Screens show it
-	// with a card's set-up code, and the admin page lists it, so an admin
-	// can find the instance behind a card they're looking at.
-	ShortId       string `protobuf:"bytes,10,opt,name=short_id,json=shortId,proto3" json:"short_id,omitempty"`
+	Icon          *Icon `protobuf:"bytes,9,opt,name=icon,proto3" json:"icon,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -976,13 +984,6 @@ func (x *Mounted) GetIcon() *Icon {
 		return x.Icon
 	}
 	return nil
-}
-
-func (x *Mounted) GetShortId() string {
-	if x != nil {
-		return x.ShortId
-	}
-	return ""
 }
 
 // Layout is a size hint in grid units.
@@ -1231,7 +1232,7 @@ const file_widgetd_v1_stream_proto_rawDesc = "" +
 	"\tunmounted\x18\x06 \x01(\v2\x15.widgetd.v1.UnmountedH\x00R\tunmounted\x12)\n" +
 	"\x05fault\x18\a \x01(\v2\x11.widgetd.v1.FaultH\x00R\x05fault\x128\n" +
 	"\binstance\x18\b \x01(\v2\x1a.widgetd.v1.InstanceStatusH\x00R\binstanceB\x06\n" +
-	"\x04body\"\xd7\x03\n" +
+	"\x04body\"\xf2\x03\n" +
 	"\x0eInstanceStatus\x126\n" +
 	"\x05state\x18\x01 \x01(\x0e2 .widgetd.v1.InstanceStatus.StateR\x05state\x12\x16\n" +
 	"\x06widget\x18\x02 \x01(\tR\x06widget\x12\x14\n" +
@@ -1243,7 +1244,8 @@ const file_widgetd_v1_stream_proto_rawDesc = "" +
 	"\aaccount\x18\b \x01(\tR\aaccount\x12#\n" +
 	"\raccount_label\x18\t \x01(\tR\faccountLabel\x12$\n" +
 	"\x04icon\x18\n" +
-	" \x01(\v2\x10.widgetd.v1.IconR\x04icon\"\x8f\x01\n" +
+	" \x01(\v2\x10.widgetd.v1.IconR\x04icon\x12\x19\n" +
+	"\bshort_id\x18\v \x01(\tR\ashortId\"\x8f\x01\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12STATE_NEEDS_CONFIG\x10\x01\x12\x11\n" +
@@ -1264,7 +1266,7 @@ const file_widgetd_v1_stream_proto_rawDesc = "" +
 	"\tWidgetRef\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x16\n" +
-	"\x06digest\x18\x03 \x01(\tR\x06digest\"\xf8\x02\n" +
+	"\x06digest\x18\x03 \x01(\tR\x06digest\"\xed\x02\n" +
 	"\aMounted\x12-\n" +
 	"\x06widget\x18\x01 \x01(\v2\x15.widgetd.v1.WidgetRefR\x06widget\x12\x1b\n" +
 	"\tframe_url\x18\x02 \x01(\tR\bframeUrl\x12\x1d\n" +
@@ -1277,9 +1279,8 @@ const file_widgetd_v1_stream_proto_rawDesc = "" +
 	"\x05title\x18\a \x01(\tR\x05title\x12\x1f\n" +
 	"\vaction_type\x18\b \x01(\tR\n" +
 	"actionType\x12$\n" +
-	"\x04icon\x18\t \x01(\v2\x10.widgetd.v1.IconR\x04icon\x12\x19\n" +
-	"\bshort_id\x18\n" +
-	" \x01(\tR\ashortId\"0\n" +
+	"\x04icon\x18\t \x01(\v2\x10.widgetd.v1.IconR\x04iconJ\x04\b\n" +
+	"\x10\vR\bshort_id\"0\n" +
 	"\x06Layout\x12\x12\n" +
 	"\x04cols\x18\x01 \x01(\rR\x04cols\x12\x12\n" +
 	"\x04rows\x18\x02 \x01(\rR\x04rows\"\x8e\x01\n" +

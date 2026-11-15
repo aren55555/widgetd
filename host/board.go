@@ -285,30 +285,12 @@ func instanceFrame(id string, st *widgetdv1.InstanceStatus) *widgetdv1.WidgetFra
 	return &widgetdv1.WidgetFrame{InstanceId: id, Body: &widgetdv1.WidgetFrame_Instance{Instance: st}}
 }
 
-// shortHash is the short id screens and the admin page show for a card
-// (Mounted.short_id, of its full id) or a device (Device.short_id): the
-// first seven hex digits of the SHA-256 of id.
+// shortHash is the short id screens and the admin page show for an
+// instance (InstanceStatus.short_id) or a device (Device.short_id): the
+// first seven hex digits of the SHA-256 of its id.
 func shortHash(id string) string {
 	sum := sha256.Sum256([]byte(id))
 	return hex.EncodeToString(sum[:])[:7]
-}
-
-// instanceCards returns an instance's mounted cards, in board order.
-func (b *board) instanceCards(instanceID string) []*widgetdv1.CardRef {
-	b.mu.Lock()
-	var cs []*card
-	for _, c := range b.cards {
-		if c.instanceID == instanceID {
-			cs = append(cs, c)
-		}
-	}
-	b.mu.Unlock()
-	sort.Slice(cs, func(i, j int) bool { return cs[i].order < cs[j].order })
-	out := make([]*widgetdv1.CardRef, 0, len(cs))
-	for _, c := range cs {
-		out = append(out, &widgetdv1.CardRef{Id: c.id, ShortId: c.mounted.GetShortId(), Title: c.mounted.GetTitle()})
-	}
-	return out
 }
 
 // card returns the mounted card with this id.

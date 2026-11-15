@@ -1,15 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { create } from "@bufbuild/protobuf";
 
-import { CardRefSchema, InstanceInfoSchema } from "../gen/widgetd/v1/admin_pb.ts";
+import { InstanceInfoSchema } from "../gen/widgetd/v1/admin_pb.ts";
 import { DeviceSchema } from "../gen/widgetd/v1/auth_pb.ts";
+import { InstanceStatusSchema } from "../gen/widgetd/v1/stream_pb.ts";
 import { deviceMatches, instanceMatches, normalizeQuery, shortIdMatches } from "./find.ts";
 
 const inst = create(InstanceInfoSchema, {
   id: "clock-ab12cd",
   widget: "clock",
   label: "Kitchen",
-  cards: [create(CardRefSchema, { id: "clock-ab12cd/main", shortId: "3f9a0c1" })],
+  status: create(InstanceStatusSchema, { shortId: "3f9a0c1" }),
 });
 
 describe("find", () => {
@@ -23,7 +24,7 @@ describe("find", () => {
     expect(shortIdMatches("3f9a0c1", "")).toBe(false);
   });
 
-  test("matches an instance by a card's short id, or its names", () => {
+  test("matches an instance by its short id, or its names", () => {
     expect(instanceMatches(inst, "Clock", "")).toBe(true);
     expect(instanceMatches(inst, "Clock", "3f9a0c1")).toBe(true);
     expect(instanceMatches(inst, "Clock", "kitchen")).toBe(true);

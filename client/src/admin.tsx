@@ -913,7 +913,7 @@ function StateDot(props: { state: InstanceStatus_State | undefined }) {
 function InstanceRow(props: {
   inst: InstanceInfo;
   widget: WidgetInfo | undefined;
-  /** The admin's search, normalized: a card whose short id it starts is highlighted. */
+  /** The admin's search, normalized: an instance whose short id it starts is highlighted. */
   query: string;
 }) {
   return (
@@ -934,12 +934,12 @@ function InstanceRow(props: {
           <Show when={props.inst.status?.warning}>
             <p class="text-sm text-amber-600">⚠ {props.inst.status?.warning}</p>
           </Show>
-          <Show when={props.inst.cards.length}>
-            <div class="mt-1 flex flex-wrap gap-1.5">
-              <For each={props.inst.cards}>
-                {(c) => <ShortId id={c.shortId} query={props.query} title={c.title ? `${c.title} (${c.id})` : c.id} />}
-              </For>
-            </div>
+          <Show when={props.inst.status?.shortId}>
+            {(sid) => (
+              <div class="mt-1">
+                <ShortId id={sid()} query={props.query} title={props.inst.id} />
+              </div>
+            )}
           </Show>
         </div>
         <span class="opacity-50">
@@ -990,13 +990,13 @@ function InstanceDetail(props: {
         <Show when={props.inst.status?.warning}>
           <p class="text-sm text-amber-600">⚠ {props.inst.status?.warning}</p>
         </Show>
-        <Show when={props.inst.cards.length}>
-          <div class="mt-1 flex flex-wrap items-center gap-1.5">
-            <span class={ui.muted}>Cards:</span>
-            <For each={props.inst.cards}>
-              {(c) => <ShortId id={c.shortId} query="" title={c.title ? `${c.title} (${c.id})` : c.id} />}
-            </For>
-          </div>
+        <Show when={props.inst.status?.shortId}>
+          {(sid) => (
+            <div class="mt-1 flex items-center gap-1.5">
+              <span class={ui.muted}>ID:</span>
+              <ShortId id={sid()} query="" title={props.inst.id} />
+            </div>
+          )}
         </Show>
       </div>
 
@@ -1185,7 +1185,7 @@ function SettingsTab(props: { d: HomeData; reload: () => Promise<void> }) {
   );
 }
 
-/** A card's or screen's short id, highlighted when the admin's search finds it. */
+/** An instance's or screen's short id, highlighted when the admin's search finds it. */
 function ShortId(props: { id: string; query: string; title: string }) {
   return (
     <code
