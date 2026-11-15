@@ -37,16 +37,50 @@ import (
 //     keyed with the consumer key (docs.snaptrade.com/docs/request-signatures).
 //   - Signing out deletes the SnapTrade user, which ends its connections.
 //
+// Personal keys (SnapTrade's free tier) are different: the key comes with
+// its one user, the person who made it, and SnapTrade refuses registerUser.
+// A sign-in finds that out from registerUser's refusal, and then works as
+// that user: no userId or userSecret on any call, the token is just a
+// marker (Type snapPersonal), and nothing is ever deleted, because the
+// user and its connections are the person's own, not widgetd's.
+//
 // The host's own calls (register, portal, delete) are its own: a widget
 // gets only what its scopes cover, which for SnapTrade is GET.
+
+// snapPersonal is the token Type of an account signed in with personal
+// keys: it has no user or secret of its own.
+const snapPersonal = "snaptrade-personal"
 
 // snapPending is a SnapTrade sign-in's user, once the phone has opened the
 // sign-in link.
 type snapPending struct {
-	mu     sync.Mutex
-	user   string
-	secret string
-	isNew  bool // registered for this sign-in: deleted if it fails
+	mu       sync.Mutex
+	user     string
+	secret   string
+	isNew    bool // registered for this sign-in: deleted if it fails
+	personal bool // personal keys: the key's own user, no user or secret
+}
+
+// query is the user credentials for the pending sign-in's calls: none for
+// personal keys.
+func (sp *snapPending) query() url.Values {
+	if sp.personal {
+		return nil
+	}
+	return snapUserQuery(sp.user, sp.secret)
+}
+
+// ready says whether the pending sign-in has its user yet.
+func (sp *snapPending) ready() bool { return sp.personal || sp.user != "" }
+
+// snapPersonalKeys says whether err is SnapTrade refusing registerUser
+// because the keys are personal.
+func snapPersonalKeys(err error) bool {
+	var se *SnapTradeError
+	if !errors.As(err, &se) {
+		return false
+	}
+	return se.Code == "1012" || strings.Contains(strings.ToLower(se.Detail), "personal snaptrade keys")
 }
 
 // snapAuthorization is one of a SnapTrade user's brokerage connections.
@@ -103,7 +137,8 @@ func snapSignature(consumerKey string, content any, path, query string) (string,
 // account's SnapTrade user. Any credentials the widget put in the query
 // are replaced.
 func snapSign(r *http.Request, c signInClient, t *token) error {
-	if t.User == "" {
+	personal := t.Type == snapPersonal
+	if t.User == "" && !personal {
 		return errors.New("the account has no SnapTrade user")
 	}
 	q := r.URL.Query()
@@ -112,8 +147,10 @@ func snapSign(r *http.Request, c signInClient, t *token) error {
 	}
 	q.Set("clientId", c.id)
 	q.Set("timestamp", strconv.FormatInt(time.Now().Unix(), 10))
-	q.Set("userId", t.User)
-	q.Set("userSecret", t.Access)
+	if !personal {
+		q.Set("userId", t.User)
+		q.Set("userSecret", t.Access)
+	}
 	r.URL.RawQuery = q.Encode()
 
 	var content any
@@ -149,6 +186,7 @@ func snapSign(r *http.Request, c signInClient, t *token) error {
 type SnapTradeError struct {
 	Path   string
 	Status string
+	Code   string // SnapTrade's error code, if it gave one ("1012")
 	Detail string // SnapTrade's own message, if it gave one
 }
 
@@ -212,11 +250,12 @@ func (s *Server) snapCall(ctx context.Context, p *provider, c signInClient, meth
 	}
 	if resp.StatusCode/100 != 2 {
 		var e struct {
-			Detail  string `json:"detail"`
-			Message string `json:"message"`
+			Detail  string          `json:"detail"`
+			Message string          `json:"message"`
+			Code    json.RawMessage `json:"code"` // a string or a number
 		}
 		_ = json.Unmarshal(b, &e) // best effort: the status says enough
-		return &SnapTradeError{Path: path, Status: resp.Status, Detail: firstNonEmpty(e.Detail, e.Message)}
+		return &SnapTradeError{Path: path, Status: resp.Status, Code: strings.Trim(string(e.Code), `"`), Detail: firstNonEmpty(e.Detail, e.Message)}
 	}
 	if into == nil {
 		return nil
@@ -283,24 +322,32 @@ func (s *Server) snapPortal(w http.ResponseWriter, r *http.Request, state string
 	sp := ps.snap
 	sp.mu.Lock()
 	defer sp.mu.Unlock()
-	if sp.user == "" && ps.account != "" {
+	if !sp.ready() && ps.account != "" {
 		// Signing an account in again: its user, if it still has one.
-		if a, err := s.loadAcct(ps.account); err == nil && a != nil && a.Token != nil && a.Token.User != "" {
-			sp.user, sp.secret = a.Token.User, a.Token.Access
+		if a, err := s.loadAcct(ps.account); err == nil && a != nil && a.Token != nil {
+			switch {
+			case a.Token.Type == snapPersonal:
+				sp.personal = true
+			case a.Token.User != "":
+				sp.user, sp.secret = a.Token.User, a.Token.Access
+			}
 		}
 	}
-	if sp.user == "" {
-		user, secret, err := s.snapRegister(r.Context(), p, c)
-		if err != nil {
+	if !sp.ready() {
+		switch user, secret, err := s.snapRegister(r.Context(), p, c); {
+		case snapPersonalKeys(err):
+			sp.personal = true
+		case err != nil:
 			oauthPage(w, http.StatusBadGateway, "Sign-in didn't start", err.Error())
 			return
+		default:
+			sp.user, sp.secret, sp.isNew = user, secret, true
 		}
-		sp.user, sp.secret, sp.isNew = user, secret, true
 	}
 	var reply struct {
 		RedirectURI string `json:"redirectURI"`
 	}
-	err := s.snapCall(r.Context(), p, c, http.MethodPost, "/snapTrade/login", snapUserQuery(sp.user, sp.secret), map[string]any{
+	err := s.snapCall(r.Context(), p, c, http.MethodPost, "/snapTrade/login", sp.query(), map[string]any{
 		"connectionType":    "read",
 		"customRedirect":    s.auth.publicURL + s.base + "oauth/snaptrade/" + state,
 		"immediateRedirect": true,
@@ -322,9 +369,9 @@ func (s *Server) snapReturned(w http.ResponseWriter, r *http.Request, ps *pendin
 	p := s.providers[ps.provider]
 	sp := ps.snap
 	sp.mu.Lock()
-	user, secret, isNew := sp.user, sp.secret, sp.isNew
+	user, secret, isNew, personal, ready, query := sp.user, sp.secret, sp.isNew, sp.personal, sp.ready(), sp.query()
 	sp.mu.Unlock()
-	if user == "" {
+	if !ready {
 		oauthPage(w, http.StatusBadRequest, "This sign-in has expired", "Tap Sign in on the screen again.")
 		return
 	}
@@ -344,7 +391,7 @@ func (s *Server) snapReturned(w http.ResponseWriter, r *http.Request, ps *pendin
 		return
 	}
 	var auths []snapAuthorization
-	if err := s.snapCall(r.Context(), p, c, http.MethodGet, "/authorizations", snapUserQuery(user, secret), nil, &auths); err != nil {
+	if err := s.snapCall(r.Context(), p, c, http.MethodGet, "/authorizations", query, nil, &auths); err != nil {
 		notSignedIn(http.StatusBadGateway, err.Error())
 		return
 	}
@@ -356,6 +403,18 @@ func (s *Server) snapReturned(w http.ResponseWriter, r *http.Request, ps *pendin
 		if a.Type == "read" {
 			continue
 		}
+		name := firstNonEmpty(a.Brokerage.Name, "brokerage")
+		if personal {
+			// The person's own user and connections, perhaps made outside
+			// widgetd: refuse, but leave them be.
+			if ps.account != "" {
+				s.accountLapsed(ps.account)
+			}
+			oauthPage(w, http.StatusOK, "Not signed in", fmt.Sprintf(
+				"Your SnapTrade %s connection allows trading (type %q), and widgetd only accepts read-only connections. Remove it in the SnapTrade dashboard, then sign in again and connect it read-only.",
+				name, a.Type))
+			return
+		}
 		// Not read-only: delete the whole user, connections and all, even
 		// an existing account's (signing it out deletes its user).
 		if isNew {
@@ -365,13 +424,14 @@ func (s *Server) snapReturned(w http.ResponseWriter, r *http.Request, ps *pendin
 		}
 		oauthPage(w, http.StatusOK, "Not signed in", fmt.Sprintf(
 			"The %s connection allows trading (type %q). widgetd only accepts read-only connections, so it was removed.",
-			firstNonEmpty(a.Brokerage.Name, "brokerage"), a.Type))
+			name, a.Type))
 		return
 	}
-	s.finishSignIn(w, r, ps, &token{
-		Access: secret, Type: "snaptrade", User: user,
-		Requested: ps.scopes, Granted: []string{"read"},
-	})
+	t := &token{Access: secret, Type: "snaptrade", User: user, Requested: ps.scopes, Granted: []string{"read"}}
+	if personal {
+		t.Access, t.Type, t.User = "", snapPersonal, ""
+	}
+	s.finishSignIn(w, r, ps, t)
 }
 
 // snapCheckClient checks a SnapTrade client's keys with SnapTrade, and says

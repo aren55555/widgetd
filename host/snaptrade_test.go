@@ -55,6 +55,7 @@ type fakeSnapTrade struct {
 	connType  atomic.Value      // the type the next connection gets
 	trades    atomic.Bool       // can_access_trades
 	reject    atomic.Bool       // refuse the widget's calls
+	personal  atomic.Bool       // personal keys: one user, "me", and no registerUser
 	seen      []string          // "METHOD path", for widget calls
 }
 
@@ -82,12 +83,21 @@ func (f *fakeSnapTrade) handler(t *testing.T) http.Handler {
 		defer f.mu.Unlock()
 		user := q.Get("userId")
 		authed := user != "" && f.users[user] != "" && f.users[user] == q.Get("userSecret")
+		if f.personal.Load() {
+			// The key is the user: credentials of any other are refused.
+			authed = user == "" && !q.Has("userSecret")
+			user = "me"
+		}
 		body, _ := content.(map[string]any)
 		reply := func(v any) { _ = json.NewEncoder(w).Encode(v) }
 		switch r.Method + " " + r.URL.Path {
 		case "GET /snapTrade/partners":
 			reply(map[string]any{"can_access_trades": f.trades.Load(), "can_access_holdings": true})
 		case "POST /snapTrade/registerUser":
+			if f.personal.Load() {
+				http.Error(w, `{"detail":"Personal SnapTrade keys are provisioned with their user automatically at signup. Use the OAuth bearer flow to access the API; registerUser is not available for personal keys.","status_code":400,"code":"1012"}`, http.StatusBadRequest)
+				return
+			}
 			id, _ := body["userId"].(string)
 			f.users[id] = "sec-" + id
 			reply(map[string]any{"userId": id, "userSecret": "sec-" + id})
@@ -402,5 +412,73 @@ func TestSnapSignBody(t *testing.T) {
 	}
 	if b, _ := io.ReadAll(r.Body); string(b) != `{"b":1,"a":"<x>"}` {
 		t.Fatalf("the body should be sent as the widget wrote it: %s", b)
+	}
+}
+
+// Personal keys come with their one user and refuse registerUser: the
+// account is that user, sent no user credentials, and signing out leaves
+// the person's own SnapTrade user and connections alone.
+func TestSnapTradePersonalKeys(t *testing.T) {
+	h := newSnapHarness(t)
+	h.snap.personal.Store(true)
+	h.setKeys()
+
+	resp, body := h.signIn()
+	loc, _ := url.Parse(resp.Header.Get("Location"))
+	id := loc.Query().Get("name")
+	if resp.StatusCode != http.StatusSeeOther || id == "" {
+		t.Fatalf("a new account should be sent to be named: %d %s %s", resp.StatusCode, loc, body)
+	}
+	a, err := h.srv.loadAcct(id)
+	if err != nil || a == nil || a.Token == nil || a.Token.Type != snapPersonal || a.Token.User != "" || a.Token.Access != "" ||
+		!slices.Equal(a.Token.Granted, []string{"read"}) {
+		t.Fatalf("account: %+v %v", a, err)
+	}
+	if _, err := h.adminClient().LabelAccount(context.Background(), withCookie(&widgetdv1.LabelAccountRequest{AccountId: id, Label: "Robinhood"}, h.adminCookie())); err != nil {
+		t.Fatal(err)
+	}
+	h.waitState(RUN)
+	select {
+	case r := <-h.results:
+		if r != "200 OK leaked=false" {
+			t.Fatalf("widget fetch: %s", r)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the widget never fetched")
+	}
+	h.snap.mu.Lock()
+	seen := slices.Clone(h.snap.seen)
+	h.snap.mu.Unlock()
+	if len(seen) != 1 || strings.Contains(seen[0], "userId") || strings.Contains(seen[0], "userSecret") {
+		t.Fatalf("SnapTrade saw %v", seen)
+	}
+
+	if _, err := h.adminClient().SignOut(context.Background(), withCookie(&widgetdv1.SignOutRequest{AccountId: id}, h.adminCookie())); err != nil {
+		t.Fatal(err)
+	}
+	h.waitState(NS)
+	time.Sleep(100 * time.Millisecond) // a deletion would be in the background
+	if d := h.snap.deletedUsers(); len(d) != 0 {
+		t.Fatalf("a personal user must never be deleted: %v", d)
+	}
+}
+
+// With personal keys a trading connection is refused, but it's the
+// person's own, so nothing is deleted.
+func TestSnapTradePersonalRefusesTrading(t *testing.T) {
+	h := newSnapHarness(t)
+	h.snap.personal.Store(true)
+	h.setKeys()
+	h.snap.connType.Store("trade")
+	resp, body := h.signIn()
+	if resp.StatusCode != http.StatusOK || !strings.Contains(body, "allows trading") || !strings.Contains(body, "SnapTrade dashboard") {
+		t.Fatalf("a trading connection should be refused: %d %s", resp.StatusCode, body)
+	}
+	if accts, err := h.srv.listAccts("snaptrade"); err != nil || len(accts) != 0 {
+		t.Fatalf("no account should be made: %v %v", accts, err)
+	}
+	time.Sleep(100 * time.Millisecond)
+	if d := h.snap.deletedUsers(); len(d) != 0 {
+		t.Fatalf("a personal user must never be deleted: %v", d)
 	}
 }
