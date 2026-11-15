@@ -1,0 +1,20 @@
+# The widget's manifest. widgetc reads it to wire the widget up.
+name    = "bart-tracker"
+version = "0.1.0"
+title   = "BART tracker"
+icon    = "train-front"
+config  = "barttracker.v1.Config"
+
+# The departure board's split-flap digits, bundled into the package from
+# @fontsource/barlow-condensed (in view/package.json), so a screen needs
+# nothing installed and nothing is fetched at run time.
+[[fonts]]
+family  = "Barlow Condensed"
+weights = [700]
+
+# BART's realtime trip updates (api.bart.gov, no key) every 20 seconds, and
+# its published schedule (the static GTFS zip on www.bart.gov) once a day.
+[network]
+hosts   = ["api.bart.gov", "www.bart.gov"]
+methods = ["GET"]
+why     = "Live train predictions from BART's realtime feed, and BART's published schedule for its lines and stations"

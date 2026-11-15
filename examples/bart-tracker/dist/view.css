@@ -1,0 +1,413 @@
+/* Barlow Condensed, from @fontsource/barlow-condensed@5.3.0; licence: fonts/barlow-condensed-LICENSE.txt */
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:block;src:url(fonts/barlow-condensed-latin-700-normal.woff2) format("woff2")}
+/* The tracker's look, settled in spikes/bart-tracker (see its DESIGN.md):
+   a near-black departure board with a two-track strip map above it. */
+
+.wrap {
+  --surface: #0d0d0f;
+  --edge: #27272a;
+  --ink: #e5e7eb;
+  --muted: #a1a1aa;
+  --faint: #71717a;
+  --mono: var(--wd-font-mono, ui-monospace, monospace);
+  --sans: var(--wd-font-sans, ui-sans-serif, system-ui, sans-serif);
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--sans);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 14px 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.head .pair {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.head .asof {
+  font: 11px var(--mono);
+  color: var(--faint);
+}
+
+svg.map {
+  display: block;
+  width: 100%;
+  flex: none;
+}
+
+.note {
+  padding: 18px 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Departures: one column per direction, each a trip, origin first. */
+.cols {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  border-top: 1px solid var(--edge);
+  min-height: 0;
+}
+
+.col {
+  padding: 10px 14px;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.col + .col {
+  border-left: 1px solid var(--edge);
+}
+
+.col h3 {
+  margin: 0 0 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.col h3 > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.col h3 b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.col h3 .legend {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+}
+
+.dep {
+  display: grid;
+  grid-template-columns: 4px 1fr auto;
+  column-gap: 8px;
+  align-items: center;
+  padding: 5px 0;
+  max-height: 120px;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease,
+    max-height 0.45s ease,
+    padding 0.45s ease;
+}
+
+.dep + .dep {
+  border-top: 1px solid color-mix(in srgb, var(--edge) 60%, transparent);
+}
+
+.dep .bar {
+  align-self: stretch;
+  border-radius: 2px;
+}
+
+.dep .times {
+  display: flex;
+  align-items: center;
+  font-size: 12.5px;
+  color: #f4f4f5;
+  white-space: nowrap;
+}
+
+.dep .times .arrow {
+  margin: 0 0.35em;
+  font-size: 0.8em;
+  color: var(--faint);
+}
+
+.dep .train-info {
+  margin-top: 3px;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dep .min {
+  grid-row: span 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 3px;
+  /* Room between the arrival time and the countdown. */
+  padding-left: 12px;
+  font: 600 17px var(--mono);
+  white-space: nowrap;
+}
+
+.dep .min small {
+  margin-bottom: 0.15em;
+  font: 400 10px var(--sans);
+  color: var(--muted);
+}
+
+.dep .min .flap {
+  color: #ffd23f;
+}
+
+.dep .times,
+.dep .train-info,
+.dep .min {
+  transition: font-size 0.4s ease;
+}
+
+/* The next train is much bigger than the ones after it. */
+.dep.next {
+  padding: 10px 0 12px;
+}
+
+.dep.next .times {
+  font-size: 18px;
+}
+
+.dep.next .train-info {
+  font-size: 11px;
+}
+
+.dep.next .min {
+  padding-left: 16px;
+  font-size: 32px;
+}
+
+.dep.entering {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.dep.leaving {
+  opacity: 0;
+  transform: translateY(-8px);
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Always room for three, so the board's height never jumps. */
+.dep.slot {
+  visibility: hidden;
+}
+
+/* A revised departure flashes, red if later, green if earlier. */
+.dep.later {
+  animation: flash-later 1.8s ease-out;
+}
+
+.dep.earlier {
+  animation: flash-earlier 1.8s ease-out;
+}
+
+@keyframes flash-later {
+  from {
+    background: rgba(248, 113, 113, 0.28);
+  }
+}
+
+@keyframes flash-earlier {
+  from {
+    background: rgba(74, 222, 128, 0.24);
+  }
+}
+
+.none {
+  min-height: 44px;
+  font-size: 12px;
+  color: var(--faint);
+}
+
+/* Narrow columns: no legend (the "min" carries it), everything a step down. */
+@container (max-width: 300px) {
+  .col h3 .legend {
+    display: none;
+  }
+}
+
+@container (max-width: 240px) {
+  .col .dep .times {
+    font-size: 10.5px;
+  }
+
+  .col .dep .min {
+    padding-left: 8px;
+    font-size: 14px;
+  }
+
+  .col .dep .min small {
+    font-size: 9px;
+  }
+
+  .col .dep.next .times {
+    font-size: 12px;
+  }
+
+  .col .dep.next .min {
+    padding-left: 8px;
+    font-size: 21px;
+  }
+}
+
+/* Split-flap fields: one tile per character, split across the middle. */
+.roll {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.05em;
+}
+
+.flap {
+  --fh: 1.34em; /* tile height */
+  position: relative;
+  display: inline-block;
+  width: 0.7em;
+  height: var(--fh);
+  border-radius: 0.09em;
+  perspective: 3em;
+  font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+  font-weight: 700;
+  box-shadow:
+    0 0.06em 0.12em rgba(0, 0, 0, 0.7),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.04);
+}
+
+.flap .h {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  backface-visibility: hidden;
+}
+
+.flap .t {
+  top: 0;
+  border-radius: 0.09em 0.09em 0 0;
+  background: linear-gradient(#2c2c31, #232327);
+  transform-origin: 50% 100%;
+}
+
+.flap .b {
+  bottom: 0;
+  border-radius: 0 0 0.09em 0.09em;
+  background: linear-gradient(#1e1e22, #18181b);
+  transform-origin: 50% 0;
+}
+
+/* Each half holds the full face; the bottom half shows its lower part. */
+.flap .face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--fh);
+}
+
+.flap .b .face {
+  margin-top: calc(var(--fh) / -2);
+}
+
+/* Centre on the digit itself (cap height to baseline), not the font's line
+   box, where condensed faces sit high. */
+.flap .g {
+  text-box: trim-both cap alphabetic;
+  line-height: 1;
+}
+
+.flap .leaf {
+  z-index: 2;
+}
+
+/* While a leaf swings over it, the static bottom half is in shadow. */
+.flap.flipping > .b:not(.leaf) {
+  filter: brightness(0.55);
+}
+
+/* The split, and the hinge's faint highlight under it. */
+.flap::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% - 0.5px);
+  height: 1px;
+  background: rgba(0, 0, 0, 0.85);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
+  z-index: 3;
+}
+
+@keyframes flap-top {
+  to {
+    transform: rotateX(-90deg);
+    filter: brightness(0.4);
+  }
+}
+
+@keyframes flap-bottom {
+  from {
+    transform: rotateX(90deg);
+    filter: brightness(1.6);
+  }
+}
+
+.sep {
+  margin: 0 -0.02em;
+  color: var(--muted);
+}
+
+/* Trains slide (ease in and out) as the view re-places them, and fade in
+   and out at the ends of the stretch. */
+svg.map.live .train {
+  transition:
+    transform 1.6s cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 0.7s ease;
+}
+
+.train.entering,
+.train.leaving {
+  opacity: 0;
+}
+
+/* A train's tooltip, kept inside the card. */
+.tip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 10;
+  padding: 4px 8px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+[hidden] {
+  display: none !important;
+}

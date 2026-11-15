@@ -36,6 +36,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/aren55555/widgetd/examples"
+	barttracker "github.com/aren55555/widgetd/examples/bart-tracker"
 	bitcoinspiral "github.com/aren55555/widgetd/examples/bitcoin-spiral"
 	"github.com/aren55555/widgetd/examples/calendar"
 	githubnotifications "github.com/aren55555/widgetd/examples/github-notifications"
@@ -46,7 +47,7 @@ import (
 
 // builtin are the packages shipped inside this binary. Packages installed
 // with `widgetd install` sit beside them, and win on a name clash.
-var builtin = [][]byte{bitcoinspiral.Package, sportsgame.Package, githubnotifications.Package, calendar.Package, examples.ClockPackage}
+var builtin = [][]byte{barttracker.Package, bitcoinspiral.Package, sportsgame.Package, githubnotifications.Package, calendar.Package, examples.ClockPackage}
 
 // loadWidgets reads the built-in packages, then every .wpkg in dir.
 func loadWidgets(dir string) ([]widget.Spec, error) {

@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package barttracker.v1;
+
+import "buf/validate/validate.proto";
+
+// Config is one pair of stations. Track another pair with another instance.
+message Config {
+  option (buf.validate.message).cel = {
+    id: "two_stations"
+    message: "pick two different stations"
+    expression: "this.from != this.to"
+  };
+  // BART's code for the first station, e.g. "MONT" (Montgomery St).
+  string from = 1 [(buf.validate.field).string.pattern = "^[0-9A-Z]{2,4}$"];
+  // BART's code for the second station, e.g. "LAFY" (Lafayette).
+  string to = 2 [(buf.validate.field).string.pattern = "^[0-9A-Z]{2,4}$"];
+}
+
+message Station {
+  string id = 1 [(buf.validate.field).string.pattern = "^[0-9A-Z]{2,4}$"];
+  string name = 2 [(buf.validate.field).string.max_len = 64];
+}
+
+// Train is one running between the two stations, as of the state.
+message Train {
+  // GTFS trip id: the same train from one state to the next.
+  string trip = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 32
+  }];
+  // Heading from Config.from to Config.to; else the other way.
+  bool outbound = 2;
+  // Its line's colour, hex without "#".
+  string color = 3 [(buf.validate.field).string.pattern = "^[0-9a-fA-F]{6}$"];
+  // The station the train ends at, e.g. "Antioch".
+  string destination = 4 [(buf.validate.field).string.max_len = 64];
+  // Where it is on State.line: it left from_index and reaches to_index at
+  // arrive_unix_ms. Equal when it's standing at a station.
+  uint32 from_index = 5 [(buf.validate.field).uint32.lt = 64];
+  uint32 to_index = 6 [(buf.validate.field).uint32.lt = 64];
+  int64 arrive_unix_ms = 7 [(buf.validate.field).int64.gt = 0];
+  // The scheduled running time from from_index to to_index, so the view can
+  // place the train between them by how much of it has passed.
+  uint32 stretch_seconds = 8 [(buf.validate.field).uint32.lte = 3600];
+}
+
+// Departure is a train that stops at both stations, leaving one for the other.
+message Departure {
+  string trip = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 32
+  }];
+  string color = 2 [(buf.validate.field).string.pattern = "^[0-9a-fA-F]{6}$"];
+  string destination = 3 [(buf.validate.field).string.max_len = 64];
+  int64 leaves_unix_ms = 4 [(buf.validate.field).int64.gt = 0];
+  int64 arrives_unix_ms = 5 [(buf.validate.field).int64.gt = 0];
+}
+
+// State is the pair's card. Times are absolute; the view counts down and
+// moves trains from its own clock between states.
+message State {
+  Station from = 1;
+  Station to = 2;
+  // The stations from `from` to `to`, in order, both included. Empty when no
+  // train runs directly between them.
+  repeated Station line = 3 [(buf.validate.field).repeated.max_items = 64];
+  // The trains between the two stations, either way.
+  repeated Train trains = 4 [(buf.validate.field).repeated.max_items = 64];
+  // The next direct trains each way, soonest first: from → to, and to → from.
+  // A few more than the view shows, so it still has enough as trains leave.
+  repeated Departure outbound = 5 [(buf.validate.field).repeated.max_items = 8];
+  repeated Departure inbound = 6 [(buf.validate.field).repeated.max_items = 8];
+  int64 as_of_unix_ms = 7;
+}
+
+// Network is what the server half keeps of BART's published schedule (its
+// static GTFS), in its own storage, refreshed daily: enough to tell which
+// way a live train runs, where it is, and what line it's on.
+message Network {
+  int64 fetched_unix_ms = 1;
+  repeated Station stations = 2;
+  // GTFS platform stop ids ("M20-1") to their station, an index into stations.
+  map<string, uint32> platforms = 3;
+  repeated Pattern patterns = 4;
+  // GTFS trip ids to the pattern they run, an index into patterns.
+  map<string, uint32> trips = 5;
+}
+
+// Pattern is one line's stopping pattern: the stations a trip calls at.
+message Pattern {
+  // Indices into Network.stations, in order.
+  repeated uint32 stations = 1;
+  // Scheduled running seconds from each station to the next: one fewer than
+  // stations.
+  repeated uint32 seconds = 2;
+  // The line's colour, hex without "#".
+  string color = 3;
+}
