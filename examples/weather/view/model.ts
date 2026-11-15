@@ -6,6 +6,7 @@ import type { DisplayPrefs } from "@widgetd/sdk/prefs";
 import { DistanceUnit, HourCycle, SpeedUnit, TemperatureUnit } from "@widgetd/sdk/prefs";
 
 import { Condition, Units, type Day, type State } from "./gen/weather/v1/weather_pb.ts";
+import { horizonGlow, skyLight, solarElevation } from "./sun.ts";
 
 /** How this screen shows the card's quantities. */
 export interface Units3 {
@@ -183,49 +184,93 @@ export interface Bar {
   opacity: number;
 }
 
-export interface Strip {
-  /** Daylight, as percent of the width, and twilight either side of it, also in percent; null in a polar day or night. */
-  daylight: { left: number; width: number; twilight: number } | null;
-  /** The sun's arc, an SVG path over the strip's box, in px; "" without a sunrise and sunset. */
-  arc: string;
-  /** The arc closed along the horizon: the sunlit area under it, in px; "" without a sunrise and sunset. */
+/** Where a place is, in degrees north and east. */
+export interface Place {
+  lat: number;
+  lon: number;
+}
+
+/** The place in a state, or null before one is picked (or from a server too old to say). */
+export const placeOf = (s: State): Place | null =>
+  s.latitude != null && s.longitude != null ? { lat: s.latitude, lon: s.longitude } : null;
+
+/** The sky at one moment, at offset 0..1 along the strip. */
+export interface SkyStop {
+  offset: number;
+  /** skyLight: 0 night to 1 the sun overhead. */
+  light: number;
+  /** horizonGlow: 0 to 1. */
+  glow: number;
+}
+
+/** The sun's track through the day, in px over the strip's box. */
+export interface SunTrack {
+  /** Its elevation all day, above the horizon and below it. */
+  path: string;
+  /** The same path closed along the horizon: the part above it is the day's sunlight. */
   area: string;
-  /** Where the sun meets the horizon, for the dawn and dusk glow: x of each, the horizon's y and the glow's reach, in px. */
-  horizon: { rise: number; set: number; y: number; reach: number } | null;
+  /** The horizon's y. */
+  horizon: number;
+  /** Highest point, with its elevation in degrees, if the sun comes up at all. */
+  peak: { x: number; y: number; t: number; deg: number } | null;
+}
+
+export interface Strip {
+  /** The sky's brightness and glow along the day; empty without a place. */
+  sky: SkyStop[];
+  /** Null without a place. */
+  sun: SunTrack | null;
   bars: Bar[];
-  /** Now, on today's strip only: x in px, y on the arc (or null at night), left in percent. */
-  now: { x: number; y: number | null; left: number } | null;
+  /** Now, on today's strip only: x in px, left in percent, and the sun's y and elevation if it's known. */
+  now: { x: number; left: number; y: number | null; deg: number | null } | null;
 }
 
 /** mm in an hour that fills the strip's height; heavier rain is clipped. */
 export const FULL_BAR_MM = 2;
-/** The tallest bar, as a share of the strip, so the arc stays readable above. */
+/** The tallest bar, as a share of the strip, so the sun stays readable above. */
 const BAR_SHARE = 72;
-/** How long dawn and dusk glow either side of sunrise and sunset: about civil twilight. */
-export const TWILIGHT_SEC = 40 * 60;
+/** Samples of the sun across a day: every 10 minutes. */
+const SAMPLES = 144;
+/** How far below the horizon the strip reaches, as sin(elevation): about 24° down, past astronomical twilight. */
+const DEPTH = 0.4;
 
-/** The day's 24 (or 23, or 25) hours across a width×height strip: night, the sun's arc, rain bars. */
-export function strip(d: Day, nowSec: number, width: number, height: number): Strip {
+/**
+ * The day's 24 (or 23, or 25) hours across a width×height strip: the sky,
+ * the sun's track and rain bars. The track's height is sin(elevation): 0 at
+ * the horizon, the top of the strip with the sun overhead. That is also how
+ * strongly the sun lights level ground, so the area between the track and
+ * the horizon is the day's sunlight, before cloud.
+ */
+export function strip(d: Day, nowSec: number, width: number, height: number, place: Place | null): Strip {
   const start = Number(d.start);
   const span = Number(d.end) - start;
   const frac = (t: number) => (t - start) / span;
-  const rise = Number(d.sunrise);
-  const set = Number(d.sunset);
-  const hasSun = rise > 0 && set > rise;
 
-  const top = 6;
-  const base = height - 3;
-  const arcY = (t: number) => base - (base - top) * Math.sin((Math.PI * (t - rise)) / (set - rise));
-  let arc = "";
-  let area = "";
-  if (hasSun) {
+  const top = 4;
+  const horizon = top + (height - top) / (1 + DEPTH);
+  const y = (deg: number) => horizon - Math.sin((deg * Math.PI) / 180) * (horizon - top);
+  const elevation = (t: number) => (place ? solarElevation(place.lat, place.lon, t) : 0);
+
+  const sky: SkyStop[] = [];
+  let sun: SunTrack | null = null;
+  if (place) {
     const pts: string[] = [];
-    for (let k = 0; k <= 48; k++) {
-      const t = rise + ((set - rise) * k) / 48;
-      pts.push(`${(frac(t) * width).toFixed(1)} ${arcY(t).toFixed(1)}`);
+    let peak: SunTrack["peak"] = null;
+    for (let k = 0; k <= SAMPLES; k++) {
+      const t = start + (span * k) / SAMPLES;
+      const deg = elevation(t);
+      sky.push({ offset: k / SAMPLES, light: skyLight(deg), glow: horizonGlow(deg) });
+      const x = (k / SAMPLES) * width;
+      pts.push(`${x.toFixed(1)} ${y(deg).toFixed(1)}`);
+      if (deg > 0 && (!peak || deg > peak.deg)) peak = { x, y: y(deg), t, deg };
     }
-    arc = "M" + pts.join(" L");
-    area = `${arc} L${(frac(set) * width).toFixed(1)} ${height} L${(frac(rise) * width).toFixed(1)} ${height} Z`;
+    const path = "M" + pts.join(" L");
+    sun = {
+      path,
+      area: `${path} L${width} ${horizon.toFixed(1)} L0 ${horizon.toFixed(1)} Z`,
+      horizon,
+      peak: peak && { ...peak, t: Math.round(peak.t) },
+    };
   }
 
   const bars: Bar[] = [];
@@ -242,26 +287,12 @@ export function strip(d: Day, nowSec: number, width: number, height: number): St
   });
 
   const isToday = start <= nowSec && nowSec < Number(d.end);
+  const deg = place ? elevation(nowSec) : null;
   const now = isToday
-    ? {
-        x: frac(nowSec) * width,
-        y: hasSun && nowSec > rise && nowSec < set ? arcY(nowSec) : null,
-        left: frac(nowSec) * 100,
-      }
+    ? { x: frac(nowSec) * width, left: frac(nowSec) * 100, y: deg == null ? null : y(deg), deg }
     : null;
 
-  return {
-    daylight: hasSun
-      ? { left: frac(rise) * 100, width: ((set - rise) / span) * 100, twilight: (TWILIGHT_SEC / span) * 100 }
-      : null,
-    arc,
-    area,
-    horizon: hasSun
-      ? { rise: frac(rise) * width, set: frac(set) * width, y: base, reach: (TWILIGHT_SEC / span) * width }
-      : null,
-    bars,
-    now,
-  };
+  return { sky, sun, bars, now };
 }
 
 /** Percent along the strip, for a label under it. */

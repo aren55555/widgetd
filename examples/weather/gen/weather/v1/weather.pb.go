@@ -464,7 +464,11 @@ type State struct {
 	// Today and the three days after it.
 	Days []*Day `protobuf:"bytes,5,rep,name=days,proto3" json:"days,omitempty"`
 	// Unix seconds: when Open-Meteo was last read.
-	Updated       int64 `protobuf:"varint,6,opt,name=updated,proto3" json:"updated,omitempty"`
+	Updated int64 `protobuf:"varint,6,opt,name=updated,proto3" json:"updated,omitempty"`
+	// Where the place is, in degrees north and east: the view works out
+	// where the sun is in its sky. Unset until a place is picked.
+	Latitude      *float64 `protobuf:"fixed64,7,opt,name=latitude,proto3,oneof" json:"latitude,omitempty"`
+	Longitude     *float64 `protobuf:"fixed64,8,opt,name=longitude,proto3,oneof" json:"longitude,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -541,6 +545,20 @@ func (x *State) GetUpdated() int64 {
 	return 0
 }
 
+func (x *State) GetLatitude() float64 {
+	if x != nil && x.Latitude != nil {
+		return *x.Latitude
+	}
+	return 0
+}
+
+func (x *State) GetLongitude() float64 {
+	if x != nil && x.Longitude != nil {
+		return *x.Longitude
+	}
+	return 0
+}
+
 var File_weather_v1_weather_proto protoreflect.FileDescriptor
 
 const file_weather_v1_weather_proto_rawDesc = "" +
@@ -581,14 +599,19 @@ const file_weather_v1_weather_proto_rawDesc = "" +
 	"\rwind_from_deg\x18\r \x01(\rB\b\xbaH\x05*\x03\x10\xe8\x02R\vwindFromDeg\x12B\n" +
 	"\x10hourly_precip_mm\x18\x0e \x03(\x02B\x18\xbaH\x15\x92\x01\x12\x10\x19\"\x0e\n" +
 	"\f@\x01\x1d\x00\x00\xfaC-\x00\x00\x00\x00R\x0ehourlyPrecipMm\x12@\n" +
-	"\x14hourly_precip_chance\x18\x0f \x03(\rB\x0e\xbaH\v\x92\x01\b\x10\x19\"\x04*\x02\x18dR\x12hourlyPrecipChance\"\xaa\x02\n" +
+	"\x14hourly_precip_chance\x18\x0f \x03(\rB\x0e\xbaH\v\x92\x01\b\x10\x19\"\x04*\x02\x18dR\x12hourlyPrecipChance\"\xbb\x03\n" +
 	"\x05State\x12\x1b\n" +
 	"\x04name\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x18(R\x04name\x12M\n" +
 	"\ttime_zone\x18\x02 \x01(\tB0\xbaH-r+\x18@2'^([A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*)?$R\btimeZone\x12=\n" +
 	"\vtemperature\x18\x03 \x01(\x0e2\x11.weather.v1.UnitsB\b\xbaH\x05\x82\x01\x02\x10\x01R\vtemperature\x12-\n" +
 	"\acurrent\x18\x04 \x01(\v2\x13.weather.v1.CurrentR\acurrent\x12-\n" +
 	"\x04days\x18\x05 \x03(\v2\x0f.weather.v1.DayB\b\xbaH\x05\x92\x01\x02\x10\x04R\x04days\x12\x18\n" +
-	"\aupdated\x18\x06 \x01(\x03R\aupdated*J\n" +
+	"\aupdated\x18\x06 \x01(\x03R\aupdated\x128\n" +
+	"\blatitude\x18\a \x01(\x01B\x17\xbaH\x14\x12\x12\x19\x00\x00\x00\x00\x00\x80V@)\x00\x00\x00\x00\x00\x80V\xc0H\x00R\blatitude\x88\x01\x01\x12:\n" +
+	"\tlongitude\x18\b \x01(\x01B\x17\xbaH\x14\x12\x12\x19\x00\x00\x00\x00\x00\x80f@)\x00\x00\x00\x00\x00\x80f\xc0H\x01R\tlongitude\x88\x01\x01B\v\n" +
+	"\t_latitudeB\f\n" +
+	"\n" +
+	"_longitude*J\n" +
 	"\x05Units\x12\x18\n" +
 	"\x14UNITS_SCREEN_SETTING\x10\x00\x12\x11\n" +
 	"\rUNITS_CELSIUS\x10\x01\x12\x14\n" +
@@ -649,6 +672,7 @@ func file_weather_v1_weather_proto_init() {
 		return
 	}
 	file_weather_v1_weather_proto_msgTypes[1].OneofWrappers = []any{}
+	file_weather_v1_weather_proto_msgTypes[3].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

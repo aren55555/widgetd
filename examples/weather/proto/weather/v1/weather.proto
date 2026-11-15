@@ -94,4 +94,8 @@ message State {
   repeated Day days = 5 [(buf.validate.field).repeated.max_items = 4];
   // Unix seconds: when Open-Meteo was last read.
   int64 updated = 6;
+  // Where the place is, in degrees north and east: the view works out
+  // where the sun is in its sky. Unset until a place is picked.
+  optional double latitude = 7 [(buf.validate.field).double = {gte: -90, lte: 90}];
+  optional double longitude = 8 [(buf.validate.field).double = {gte: -180, lte: 180}];
 }

@@ -121,8 +121,10 @@ func lookup(ctx context.Context, h widget.Host, id string) (place, error) {
 // seconds, and days run midnight to midnight at the place. Any value may be
 // null.
 type forecast struct {
-	Timezone string `json:"timezone"`
-	Current  struct {
+	Latitude  *float64 `json:"latitude"`
+	Longitude *float64 `json:"longitude"`
+	Timezone  string   `json:"timezone"`
+	Current   struct {
 		Temperature *float64 `json:"temperature_2m"`
 		WeatherCode *int     `json:"weather_code"`
 		IsDay       *int     `json:"is_day"`

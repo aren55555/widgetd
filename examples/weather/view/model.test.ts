@@ -14,6 +14,7 @@ import {
   degrees,
   FULL_BAR_MM,
   iconFor,
+  placeOf,
   rain,
   speed,
   strip,
@@ -149,25 +150,55 @@ describe("days", () => {
 });
 
 describe("strip", () => {
-  test("daylight and the sun's arc sit between sunrise and sunset", () => {
-    const m = strip(sat, h(2026, 10, 24, 11), 240, 60); // 13:00 in Berlin
-    expect(m.daylight!.left).toBeCloseTo((7 * 60 + 47) / 14.4, 5);
-    expect(m.daylight!.twilight).toBeCloseTo((40 / 1440) * 100, 5);
-    expect(m.arc.startsWith("M")).toBe(true);
-    // The sunlit area is the arc, closed down to the strip's bottom.
-    expect(m.area.startsWith(m.arc)).toBe(true);
-    expect(m.area.endsWith("Z")).toBe(true);
-    expect(m.horizon!.rise).toBeCloseTo((m.daylight!.left / 100) * 240, 5);
-    expect(m.horizon!.y).toBe(57);
-    expect(m.horizon!.reach).toBeCloseTo((40 / 1440) * 240, 5);
+  const berlin = { lat: 52.52, lon: 13.41 };
+  // 240×58: the strip's top is y 4, the horizon y 42.6 (sin 0), its bottom sin −0.4.
+  const W = 240;
+  const H = 58;
+
+  test("the sun's track is its height in the sky: horizon at sunrise, highest near noon", () => {
+    const m = strip(sat, h(2026, 10, 24, 11), W, H, berlin); // 13:00 in Berlin
+    const track = m.sun!;
+    expect(track.horizon).toBeCloseTo(4 + 54 / 1.4, 5);
+    expect(track.path.startsWith("M0.0 ")).toBe(true);
+    expect(track.area.startsWith(track.path)).toBe(true);
+    // Late October in Berlin: about 25° at solar noon, which is near 12:55 CEST.
+    expect(track.peak!.deg).toBeGreaterThan(24);
+    expect(track.peak!.deg).toBeLessThan(26);
+    expect(Math.abs(track.peak!.t - h(2026, 10, 24, 10, 55))).toBeLessThan(10 * 60);
+    expect(track.peak!.y).toBeCloseTo(
+      track.horizon - Math.sin((track.peak!.deg * Math.PI) / 180) * (track.horizon - 4),
+      5,
+    );
+    // The sky: dark at midnight, light at noon, glowing near sunrise.
+    expect(m.sky).toHaveLength(145);
+    expect(m.sky[0].light).toBe(0);
+    expect(m.sky[78].light).toBeGreaterThan(0.6); // 13:00
+    expect(Math.max(...m.sky.slice(40, 52).map((x) => x.glow))).toBeGreaterThan(0.9); // 06:40–08:40
     expect(m.now!.left).toBeCloseTo((13 / 24) * 100, 5);
-    expect(m.now!.y).toBeLessThan(20); // near the top, early afternoon
-    expect(strip(sat, h(2026, 10, 24, 20), 240, 60).now!.y).toBeNull(); // after dark
-    expect(strip(sun, h(2026, 10, 24, 11), 240, 60).now).toBeNull(); // not today
+    expect(m.now!.y!).toBeLessThan(track.horizon);
+    // After dark the sun is still tracked, below the horizon.
+    const late = strip(sat, h(2026, 10, 24, 20), W, H, berlin).now!;
+    expect(late.deg!).toBeLessThan(-30);
+    expect(late.y!).toBeGreaterThan(track.horizon);
+    expect(strip(sun, h(2026, 10, 24, 11), W, H, berlin).now).toBeNull(); // not today
+  });
+
+  test("no place, no sun", () => {
+    const m = strip(sat, h(2026, 10, 24, 11), W, H, null);
+    expect(m.sun).toBeNull();
+    expect(m.sky).toEqual([]);
+    expect(m.now!.y).toBeNull();
+  });
+
+  test("placeOf needs both coordinates", () => {
+    expect(placeOf(create(StateSchema, { latitude: 52.52, longitude: 13.41 }))).toEqual(berlin);
+    expect(placeOf(create(StateSchema, { latitude: 52.52 }))).toBeNull();
+    // 0, 0 is a place (in the Gulf of Guinea), not a missing one.
+    expect(placeOf(create(StateSchema, { latitude: 0, longitude: 0 }))).toEqual({ lat: 0, lon: 0 });
   });
 
   test("a 25-hour day divides into 25 hours", () => {
-    const m = strip(sun, 0, 240, 60);
+    const m = strip(sun, 0, 240, 60, null);
     expect(m.bars).toHaveLength(2);
     expect(m.bars[0].left).toBeCloseTo((9 / 25) * 100 + (100 / 25) * 0.12, 5);
     // Height is the amount, clipped; opacity the chance.
@@ -176,15 +207,5 @@ describe("strip", () => {
     expect(m.bars[0].opacity).toBe(1);
     expect(m.bars[1].opacity).toBe(0.25);
     expect(along(sun, Number(sun.start) + 12.5 * 3600)).toBe(50);
-  });
-
-  test("no sunrise, no arc", () => {
-    const polar = create(DaySchema, { ...sat, sunrise: 0n, sunset: 0n });
-    const m = strip(polar, h(2026, 10, 24, 11), 240, 60);
-    expect(m.arc).toBe("");
-    expect(m.area).toBe("");
-    expect(m.horizon).toBeNull();
-    expect(m.daylight).toBeNull();
-    expect(m.now!.y).toBeNull();
   });
 });

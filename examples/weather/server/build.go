@@ -73,6 +73,10 @@ func build(now time.Time, name string, units pb.Units, f *forecast, aqi *float64
 			IsDay:        f.Current.IsDay == nil || *f.Current.IsDay == 1,
 		},
 	}
+	if lat, lon := f.Latitude, f.Longitude; lat != nil && lon != nil &&
+		math.Abs(*lat) <= 90 && math.Abs(*lon) <= 180 {
+		st.Latitude, st.Longitude = lat, lon
+	}
 	if aqi != nil && !math.IsNaN(*aqi) {
 		v := uint32(math.Round(math.Max(0, math.Min(999, *aqi))))
 		st.Current.UsAqi = &v

@@ -61,6 +61,9 @@ func TestBuild(t *testing.T) {
 	if st.GetName() != "Berlin" || st.GetTimeZone() != "Europe/Berlin" || st.GetTemperature() != pb.Units_UNITS_CELSIUS {
 		t.Fatalf("header: %q %q %v", st.GetName(), st.GetTimeZone(), st.GetTemperature())
 	}
+	if st.GetLatitude() != 52.52 || st.GetLongitude() != 13.41 {
+		t.Fatalf("place: %v, %v", st.GetLatitude(), st.GetLongitude())
+	}
 	if c := st.GetCurrent(); c.GetTemperatureC() != 12.4 || c.GetCondition() != pb.Condition_CONDITION_CLEAR || !c.GetIsDay() || c.GetUsAqi() != 38 {
 		t.Fatalf("current: %v", c)
 	}

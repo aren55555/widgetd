@@ -84,22 +84,28 @@
 .temps b { color: var(--ink); font-size: 15px; font-weight: 600; }
 .temps .slash { opacity: 0.5; }
 
-/* Night is darker than the card; the day a lighter sky that fades into it
-   through twilight, with sunlight under the sun's arc. */
+/* The strip is night; the sky over it is lit as brightly as the sun's
+   elevation says (see sun.ts), with an orange glow at the horizon around
+   sunrise and sunset, and sunlight between the sun's track and the horizon. */
 .strip { position: relative; flex: 1; min-height: 40px; border-radius: 6px; overflow: hidden;
-  background: color-mix(in oklab, var(--well) 70%, #000); }
+  background: color-mix(in oklab, var(--well) 70%, #000);
+  --sky: color-mix(in oklab, var(--wd-raised, #374151) 75%, #7dd3fc); }
 .strip > * { position: absolute; }
 .strip svg { inset: 0; display: block; }
-.daylight { top: 0; bottom: 0; --sky: color-mix(in oklab, var(--wd-raised, #374151) 70%, transparent);
-  background: linear-gradient(to right, transparent, var(--sky) var(--fade), var(--sky) calc(100% - var(--fade)), transparent); }
-.sunlight-top { stop-color: var(--sun); stop-opacity: 0.5; }
-.sunlight-bottom { stop-color: var(--sun); stop-opacity: 0.06; }
-.glow-in { stop-color: #fb923c; stop-opacity: 0.38; }
-.glow-out { stop-color: #fb923c; stop-opacity: 0; }
+.sky-stop { stop-color: var(--sky); }
+.glow-stop { stop-color: #fb923c; }
+.glow { opacity: 0.5; }
+.sunlight-top { stop-color: var(--sun); stop-opacity: 0.55; }
+.sunlight-bottom { stop-color: var(--sun); stop-opacity: 0.1; }
 .bar { bottom: 0; background: var(--wet); border-radius: 2px 2px 0 0; }
 .nowline { top: 0; bottom: 0; width: 1px; background: var(--muted); }
-.arc { fill: none; stroke: var(--sun); stroke-width: 1.75; stroke-linecap: round; }
+.horizon { stroke: var(--muted); stroke-width: 1; opacity: 0.35; }
+.sunpath { fill: none; stroke: var(--sun); stroke-width: 1.75; stroke-linejoin: round; }
+.sunpath-night { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0.6; }
 .sundot { fill: var(--sun); stroke: var(--well); stroke-width: 2; }
+.sundot-night { fill: var(--well); stroke: var(--muted); stroke-width: 1.5; }
+.peak { transform: translate(-50%, 3px); font-size: 10px; line-height: 12px; font-weight: 600; color: var(--sun); }
+.peak.above { transform: translate(-50%, calc(-100% - 3px)); }
 
 .sunlabels { position: relative; height: 14px; flex: none; font-size: 11px; line-height: 14px; color: var(--muted); }
 .sunlabel { position: absolute; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }

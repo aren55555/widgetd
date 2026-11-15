@@ -1,7 +1,8 @@
 // The weather card. The front: the place, the temperature now, the sky as
 // an icon and the air quality on one line, then four day tiles. Tapping a
-// day opens it: a 24-hour strip (night, sunlight under the sun's arc, rain
-// by the hour) and a row of humidity, wind and rain. Left alone for 30 s, the card goes
+// day opens it: a 24-hour strip (the sky lit by where the sun really is,
+// the sun's height through the day, rain by the hour) and a grid of sky,
+// rain, wind and humidity. Left alone for 30 s, the card goes
 // back to the four days. All the arithmetic is in model.ts.
 
 import { defineWidget } from "@widgetd/sdk";
@@ -36,6 +37,7 @@ import {
   dayTitle,
   degrees,
   iconFor,
+  placeOf,
   rain,
   speed,
   strip,
@@ -194,7 +196,7 @@ defineWidget({
       sum.append(weatherIcon(iconFor(d.condition), 18), temps);
       top.append(back, sum);
 
-      // The strip: measured once laid out, since the arc is drawn in pixels.
+      // The strip: measured once laid out, since the sun's track is drawn in pixels.
       const box = el("div", "strip");
       box.setAttribute("role", "img");
       const sky = Number(d.sunrise) && Number(d.sunset);
@@ -242,14 +244,14 @@ defineWidget({
       );
 
       detail.replaceChildren(drain, top, box, labels, stats);
-      requestAnimationFrame(() => drawStrip(box, d, nowSec));
+      requestAnimationFrame(() => drawStrip(box, s, d, u, nowSec));
     };
 
-    const drawStrip = (box: HTMLElement, d: Day, nowSec: number) => {
+    const drawStrip = (box: HTMLElement, s: State, d: Day, u: Units3, nowSec: number) => {
       const W = box.clientWidth;
       const H = box.clientHeight;
       if (!W || !H) return;
-      const m = strip(d, nowSec, W, H);
+      const m = strip(d, nowSec, W, H, placeOf(s));
       const svg = (cls: string) => {
         const g = document.createElementNS(SVG_NS, "svg");
         g.setAttribute("width", String(W));
@@ -258,41 +260,55 @@ defineWidget({
         g.setAttribute("class", cls);
         return g;
       };
-      const node = (name: string, attrs: Record<string, string | number>) => {
+      const node = (name: string, attrs: Record<string, string | number> = {}, ...kids: Element[]) => {
         const n = document.createElementNS(SVG_NS, name);
         for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+        n.append(...kids);
         return n;
       };
       const parts: Element[] = [];
 
-      // The sky, under the rain: the day lighter than the night, fading
-      // through twilight; sunlight under the arc; a glow where the sun meets
-      // the horizon at dawn and dusk.
-      if (m.daylight) {
-        const { left, width, twilight } = m.daylight;
-        const day = el("div", "daylight");
-        day.style.left = `${left - twilight}%`;
-        day.style.width = `${width + 2 * twilight}%`;
-        day.style.setProperty("--fade", `${(twilight / (width + 2 * twilight)) * 100}%`);
-        parts.push(day);
-      }
-      if (m.area && m.horizon) {
+      // Under the rain: the sky, lit as the sun's elevation says, glowing
+      // near the horizon at dawn and dusk, and the day's sunlight between the
+      // sun's track and the horizon.
+      const sun = m.sun;
+      if (sun) {
+        const hz = sun.horizon;
+        const byTime = (id: string, cls: string, key: "light" | "glow") =>
+          node(
+            "linearGradient",
+            { id, x1: 0, y1: 0, x2: 1, y2: 0 },
+            ...m.sky.map((k) => node("stop", { offset: k.offset, class: cls, "stop-opacity": k[key].toFixed(3) })),
+          );
         const sky = svg("sky");
-        const defs = node("defs", {});
-        const light = node("linearGradient", { id: "wx-sunlight", x1: 0, y1: 0, x2: 0, y2: 1 });
-        light.append(
-          node("stop", { offset: 0, class: "sunlight-top" }),
-          node("stop", { offset: 1, class: "sunlight-bottom" }),
+        sky.append(
+          node(
+            "defs",
+            {},
+            byTime("wx-light", "sky-stop", "light"),
+            byTime("wx-glow", "glow-stop", "glow"),
+            // The glow hugs the horizon.
+            node(
+              "linearGradient",
+              { id: "wx-glow-fade", x1: 0, y1: 0, x2: 0, y2: H, gradientUnits: "userSpaceOnUse" },
+              node("stop", { offset: 0, "stop-color": "#fff", "stop-opacity": 0 }),
+              node("stop", { offset: hz / H, "stop-color": "#fff", "stop-opacity": 1 }),
+              node("stop", { offset: 1, "stop-color": "#fff", "stop-opacity": 0.2 }),
+            ),
+            node("mask", { id: "wx-glow-mask" }, node("rect", { width: W, height: H, fill: "url(#wx-glow-fade)" })),
+            node(
+              "linearGradient",
+              { id: "wx-sunlight", x1: 0, y1: 4, x2: 0, y2: hz, gradientUnits: "userSpaceOnUse" },
+              node("stop", { offset: 0, class: "sunlight-top" }),
+              node("stop", { offset: 1, class: "sunlight-bottom" }),
+            ),
+            node("clipPath", { id: "wx-above" }, node("rect", { width: W, height: hz })),
+            node("clipPath", { id: "wx-below" }, node("rect", { y: hz, width: W, height: H - hz })),
+          ),
+          node("rect", { width: W, height: H, fill: "url(#wx-light)" }),
+          node("rect", { width: W, height: H, fill: "url(#wx-glow)", mask: "url(#wx-glow-mask)", class: "glow" }),
+          node("path", { d: sun.area, fill: "url(#wx-sunlight)", "clip-path": "url(#wx-above)" }),
         );
-        const glow = node("radialGradient", { id: "wx-glow" });
-        glow.append(node("stop", { offset: 0, class: "glow-in" }), node("stop", { offset: 1, class: "glow-out" }));
-        defs.append(light, glow);
-        sky.append(defs);
-        const { rise, set, y, reach } = m.horizon;
-        for (const x of [rise, set]) {
-          sky.append(node("ellipse", { cx: x, cy: y, rx: reach * 1.6, ry: H * 0.7, fill: "url(#wx-glow)" }));
-        }
-        sky.append(node("path", { d: m.area, fill: "url(#wx-sunlight)" }));
         parts.push(sky);
       }
 
@@ -312,11 +328,37 @@ defineWidget({
         parts.push(line);
       }
 
-      // The arc and the sun, over the rain.
-      const sun = svg("sun");
-      if (m.arc) sun.append(node("path", { d: m.arc, class: "arc" }));
-      if (m.now?.y != null) sun.append(node("circle", { cx: m.now.x, cy: m.now.y, r: 4, class: "sundot" }));
-      parts.push(sun);
+      // Over the rain: the horizon, the sun's track (dim below the horizon),
+      // its highest point and where it is now.
+      if (sun) {
+        const track = svg("track");
+        track.append(
+          node("line", { x1: 0, y1: sun.horizon, x2: W, y2: sun.horizon, class: "horizon" }),
+          node("path", { d: sun.path, class: "sunpath-night", "clip-path": "url(#wx-below)" }),
+          node("path", { d: sun.path, class: "sunpath", "clip-path": "url(#wx-above)" }),
+        );
+        if (m.now?.y != null) {
+          const up = (m.now.deg ?? 0) > 0;
+          // Deep in the night the sun is off the bottom of the strip: pin it there.
+          const cy = Math.min(m.now.y, H - 4);
+          track.append(node("circle", { cx: m.now.x, cy, r: up ? 4 : 3, class: up ? "sundot" : "sundot-night" }));
+        }
+        parts.push(track);
+
+        if (sun.peak) {
+          // The noon altitude, under the top of the track if there's room in the sunlight, else above it.
+          const peak = el("span", "peak", `${Math.round(sun.peak.deg)}°`);
+          peak.setAttribute("aria-hidden", "true");
+          peak.style.left = `${sun.peak.x}px`;
+          peak.style.top = `${sun.peak.y}px`;
+          if (sun.horizon - sun.peak.y < 24) peak.classList.add("above");
+          parts.push(peak);
+          box.setAttribute(
+            "aria-label",
+            `${box.getAttribute("aria-label") ?? ""} The sun is highest at ${Math.round(sun.peak.deg)}° at ${clock(sun.peak.t, s.timeZone, u)}.`,
+          );
+        }
+      }
       box.replaceChildren(...parts);
     };
 
