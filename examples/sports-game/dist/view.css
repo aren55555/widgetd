@@ -213,18 +213,20 @@
 }
 
 /* Hovering the card brings the chart forward, over the teams and scores,
-   at full strength, with bolder, glowing lines. */
-.card:hover .market {
+   at full strength, with bolder, glowing lines. "over" is set from pointer
+   events, not :hover, which can stay stuck when the pointer leaves the
+   card's iframe fast. */
+.card.over .market {
   z-index: 1;
   opacity: 1;
 }
 
-.card:hover .plot path.line {
+.card.over .plot path.line {
   stroke-width: 2px;
   filter: drop-shadow(0 0 3px var(--line)) brightness(1.25);
 }
 
-.card:hover .plot line.scored {
+.card.over .plot line.scored {
   opacity: 1;
 }
 

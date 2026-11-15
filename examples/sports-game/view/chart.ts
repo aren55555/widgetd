@@ -51,8 +51,9 @@ export class Chart {
   private timeFmt: Intl.DateTimeFormat;
 
   /**
-   * host gets the pointer events and the "hovering" class (it dims the
-   * card). onHover gets the time under the pointer, in Unix ms, or
+   * host gets the pointer events, the "over" class while the pointer is
+   * on it (it brings the chart forward), and the "hovering" class while the
+   * pointer is on the chart's data (it dims the card). onHover gets the time under the pointer, in Unix ms, or
    * undefined when there's none.
    */
   constructor(
@@ -77,10 +78,12 @@ export class Chart {
       hourCycle: prefs.hourCycle === HourCycle.H24 ? "h23" : "h12",
     });
     host.addEventListener("pointermove", (e) => {
+      host.classList.add("over");
       this.pointerX = e.clientX;
       this.drawHover();
     });
     const leave = () => {
+      host.classList.remove("over");
       this.pointerX = undefined;
       this.drawHover();
     };
