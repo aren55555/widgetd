@@ -9,6 +9,7 @@ import {
   aqiBand,
   clock,
   compass,
+  compassName,
   dayName,
   dayTitle,
   degrees,
@@ -17,6 +18,8 @@ import {
   placeOf,
   rain,
   speed,
+  speedIn,
+  sway,
   strip,
   TINTS,
   unitsFor,
@@ -81,6 +84,7 @@ describe("units", () => {
     expect(speed(10, f)).toBe("22 mph");
     expect(speed(10, c)).toBe("36 km/h");
     expect(speed(10, { ...c, speed: "m/s" })).toBe("10 m/s");
+    expect(speedIn(10, f)).toBe(22);
     expect(rain(9.4, f)).toBe("0.37 in");
     expect(rain(9.4, c)).toBe("9.4 mm");
     expect(rain(0, c)).toBe("None");
@@ -88,6 +92,14 @@ describe("units", () => {
 
   test("compass points", () => {
     expect([0, 44, 46, 180, 225, 359, 360, -90].map(compass)).toEqual(["N", "NE", "NE", "S", "SW", "N", "N", "W"]);
+    expect(compassName(225)).toBe("southwest");
+  });
+
+  test("the needle sways with the gusts", () => {
+    expect(sway(0.2, 5)).toBe(0); // calm
+    expect(sway(5, 5)).toBe(2); // steady
+    expect(sway(5, 10)).toBe(12);
+    expect(sway(2, 20)).toBe(15); // capped
   });
 });
 

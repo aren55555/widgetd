@@ -1,8 +1,8 @@
 // The weather card. The front: the place, the temperature now, the sky as
 // an icon and the air quality on one line, then four day tiles. Tapping a
 // day opens it: a 24-hour strip (the sky lit by where the sun really is,
-// the sun's height through the day, rain by the hour) and a grid of sky,
-// rain, wind and humidity. Left alone for 30 s, the card goes
+// the sun's height through the day, rain by the hour), a wind compass, and
+// the sky and humidity. Left alone for 30 s, the card goes
 // back to the four days. All the arithmetic is in model.ts.
 
 import { defineWidget } from "@widgetd/sdk";
@@ -19,7 +19,6 @@ import {
   Droplet,
   icon,
   Moon,
-  Navigation2,
   Sun,
   Sunrise,
   Sunset,
@@ -32,15 +31,16 @@ import {
   aqiBand,
   clock,
   compass,
+  compassName,
   conditionText,
   dayName,
   dayTitle,
   degrees,
   iconFor,
   placeOf,
-  rain,
-  speed,
+  speedIn,
   strip,
+  sway,
   TINTS,
   unitsFor,
   upcoming,
@@ -74,6 +74,96 @@ function weatherIcon(key: IconKey, size: number, label?: string): SVGSVGElement 
     if (t) el.setAttribute("class", `tint-${t}`);
   });
   return svg;
+}
+
+function svgNode(
+  name: string,
+  attrs: Record<string, string | number> = {},
+  ...kids: Array<Element | string>
+): SVGElement {
+  const n = document.createElementNS(SVG_NS, name);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+  n.append(...kids);
+  return n;
+}
+
+/**
+ * The day's wind as a compass: a needle pointing the way the wind blows,
+ * from a tail on the side it comes from, swaying as much as the day is
+ * gusty, with the speed in the middle. Beside it, the direction it comes
+ * from and the gusts.
+ */
+function windDial(d: Day, u: Units3): HTMLElement {
+  const n = speedIn(d.windMps, u);
+  const gust = speedIn(d.gustMps, u);
+  const calm = n === 0;
+  const cell = el("div", "wind");
+  cell.setAttribute("role", "img");
+  cell.setAttribute(
+    "aria-label",
+    calm
+      ? "Wind: calm"
+      : `Wind ${n} ${u.speed} from the ${compassName(d.windFromDeg)}` +
+          (gust > n ? `, gusts up to ${gust} ${u.speed}` : ""),
+  );
+
+  // Drawn on a 100-unit square centred on 0, so the needle turns about the middle.
+  const dial = svgNode("svg", { viewBox: "-50 -50 100 100", class: "dial", "aria-hidden": "true" });
+  // The ring and ticks are cut away behind each letter.
+  const cut = svgNode(
+    "mask",
+    { id: "wx-dial-cut" },
+    svgNode("rect", { x: -50, y: -50, width: 100, height: 100, fill: "#fff" }),
+  );
+  const ring = svgNode("g", { mask: "url(#wx-dial-cut)" }, svgNode("circle", { r: 44, class: "dial-ring" }));
+  dial.append(svgNode("defs", {}, cut), ring);
+  for (let a = 0; a < 360; a += 30) {
+    if (a % 90 === 0) continue; // the letters stand in for these
+    ring.append(svgNode("line", { y1: -44, y2: -39, class: "dial-tick", transform: `rotate(${a})` }));
+  }
+  for (const [a, letter] of [
+    [0, "N"],
+    [90, "E"],
+    [180, "S"],
+    [270, "W"],
+  ] as const) {
+    const rad = (a * Math.PI) / 180;
+    const x = 44 * Math.sin(rad);
+    const y = -44 * Math.cos(rad);
+    cut.append(svgNode("circle", { cx: x, cy: y, r: 7, fill: "#000" }));
+    dial.append(svgNode("text", { x, y, class: letter === "N" ? "dial-n" : "dial-pt" }, letter));
+  }
+  if (!calm) {
+    const needle = svgNode(
+      "g",
+      { class: "needle" },
+      svgNode("path", { d: "M0 -36 L-7 -22 L0 -25 L7 -22 Z", class: "needle-head" }),
+      svgNode("line", { y1: -24, y2: -19, class: "needle-shaft" }),
+      svgNode("line", { y1: 22, y2: 29, class: "needle-shaft" }),
+      svgNode("circle", { cy: 32.5, r: 3.5, class: "needle-tail" }),
+    );
+    needle.style.setProperty("--sway", `${sway(d.windMps, d.gustMps)}deg`);
+    dial.append(svgNode("g", { transform: `rotate(${(d.windFromDeg + 180) % 360})` }, needle));
+  }
+  dial.append(
+    calm
+      ? svgNode("text", { y: 0, class: "dial-calm" }, "Calm")
+      : svgNode(
+          "text",
+          { y: -2, class: "dial-speed" },
+          String(n),
+          svgNode("tspan", { x: 0, dy: 15, class: "dial-unit" }, u.speed),
+        ),
+  );
+
+  const text = el("div", "wind-text");
+  text.setAttribute("aria-hidden", "true");
+  if (!calm) {
+    text.append(el("b", "", compass(d.windFromDeg)));
+    if (gust > n) text.append(el("small", "", `gusts ${gust}`));
+  }
+  cell.append(dial, text);
+  return cell;
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = "", text = ""): HTMLElementTagNameMap[K] {
@@ -220,7 +310,9 @@ defineWidget({
         labels.append(l);
       }
 
-      // Four cells, each an icon and a value; the label shows above when there's room.
+      // Under the strip: the wind as a compass on the left, and the sky and
+      // humidity on the right, each an icon and a value with its label above
+      // when there's room. Rain needs no line of its own: the strip draws it.
       const stats = el("dl", "stats");
       const stat = (label: string, glyph: Element, value: string, note = "") => {
         const c = el("div", "stat");
@@ -234,16 +326,14 @@ defineWidget({
         c.append(k, v);
         return c;
       };
-      const arrow = icon(Navigation2, { size: 12 });
-      arrow.style.transform = `rotate(${(d.windFromDeg + 180) % 360}deg)`;
       stats.append(
         stat("Sky", weatherIcon(iconFor(d.condition), 13), conditionText(d.condition)),
-        stat("Rain", weatherIcon("rain", 13), rain(d.precipMm, u), d.precipChance ? `${d.precipChance}%` : ""),
-        stat("Wind", arrow, `${speed(d.windMps, u)} ${compass(d.windFromDeg)}`),
         stat("Humidity", icon(Droplet, { size: 12 }), `${d.humidity}%`),
       );
+      const lower = el("div", "lower");
+      lower.append(windDial(d, u), stats);
 
-      detail.replaceChildren(drain, top, box, labels, stats);
+      detail.replaceChildren(drain, top, box, labels, lower);
       requestAnimationFrame(() => drawStrip(box, s, d, u, nowSec));
     };
 

@@ -39,11 +39,12 @@ export function unitsFor(override: Units, prefs: DisplayPrefs): Units3 {
 
 export const degrees = (c: number, u: Units3): string => `${Math.round(u.temp === "F" ? (c * 9) / 5 + 32 : c)}°`;
 
-export function speed(mps: number, u: Units3): string {
-  if (u.speed === "mph") return `${Math.round(mps * 2.236936)} mph`;
-  if (u.speed === "m/s") return `${Math.round(mps)} m/s`;
-  return `${Math.round(mps * 3.6)} km/h`;
+/** A wind speed in the screen's unit, rounded. */
+export function speedIn(mps: number, u: Units3): number {
+  return Math.round(u.speed === "mph" ? mps * 2.236936 : u.speed === "m/s" ? mps : mps * 3.6);
 }
+
+export const speed = (mps: number, u: Units3): string => `${speedIn(mps, u)} ${u.speed}`;
 
 export function rain(mm: number, u: Units3): string {
   if (mm < 0.05) return "None";
@@ -53,6 +54,20 @@ export function rain(mm: number, u: Units3): string {
 const POINTS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 /** "SW" for a wind from 225°. */
 export const compass = (deg: number): string => POINTS[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+
+const NAMES = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
+/** "southwest" for a wind from 225°, for a screen reader. */
+export const compassName = (deg: number): string => NAMES[POINTS.indexOf(compass(deg))];
+
+/**
+ * How far either way, in degrees, the compass needle sways: a steady wind
+ * barely moves it, a gusty one swings it. Nothing at all when it's calm.
+ */
+export function sway(windMps: number, gustMps: number): number {
+  if (windMps < 0.5) return 0;
+  const gustiness = Math.max(0, gustMps - windMps) / windMps;
+  return Math.round(Math.min(15, 2 + gustiness * 10));
+}
 
 // ── Icons ────────────────────────────────────────────────────────────────
 
