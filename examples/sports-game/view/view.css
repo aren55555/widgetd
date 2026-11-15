@@ -24,6 +24,7 @@
 }
 
 .teams {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -107,9 +108,9 @@
 
 /* The score, as on a US scoreboard: lit seven-segment digits over the
    faint shapes of the unlit ones, in a black panel. --seg is the lit
-   colour: amber, or green for the winner. */
+   colour: the team's (--score, set inline), else amber. */
 .score {
-  --seg: #ffb020;
+  --seg: var(--score, #ffb020);
   display: flex;
   margin-left: 10px;
   padding: 4px 5px;
@@ -139,8 +140,42 @@
   filter: drop-shadow(0 0 2px color-mix(in oklab, var(--seg) 60%, transparent));
 }
 
-.team.winner .score {
-  --seg: var(--wd-up, #4ade80);
+/* A final score is marked FINAL, written down the gutter between the scores
+   and the card's right edge (the .game's right padding). */
+.final-mark {
+  display: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  width: 14px;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--wd-ink-muted, #a1a1aa);
+  transition: opacity 0.12s;
+}
+
+.final .final-mark {
+  display: flex;
+}
+
+/* Hovering the chart dims it with the rest; where the scores are as they
+   stood then, before the end, it goes. */
+.hovering .final-mark {
+  opacity: 0.35;
+}
+
+.hovering.past .final-mark {
+  opacity: 0;
+}
+
+/* Once there's a winner, the loser's score dims. */
+.teams:has(.winner) .team:not(.winner) .segments {
+  opacity: 0.45;
 }
 
 .status {
@@ -239,10 +274,13 @@
   opacity: 0.35;
 }
 
-/* Hovering where the score is known: it stays bright, as it stood then,
-   in the plain amber (no one had won yet). */
+/* Hovering where the score is known: it stays bright, as it stood then
+   (no one had won yet). */
 .hovering.past .game .score {
-  --seg: #ffb020;
+  opacity: 1;
+}
+
+.hovering.past .game .team .segments {
   opacity: 1;
 }
 
@@ -295,8 +333,6 @@
   background: var(--line);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
 }
-
-
 
 .hover .when {
   position: absolute;

@@ -9,7 +9,7 @@ import { creditLine, lineColors, scoreAt, startLabel, teamColor, TYPICAL_MS } fr
 defineWidget({
   state: StateSchema,
   mount({ root, prefs }) {
-    root.innerHTML = `<div class="card"><div class="game"><div class="teams"></div><div class="status"></div></div></div>`;
+    root.innerHTML = `<div class="card"><div class="game"><div class="teams"><span class="final-mark" aria-hidden="true">FINAL</span></div><div class="status"></div></div></div>`;
     const card = root.querySelector<HTMLElement>(".card")!;
     const game = root.querySelector<HTMLElement>(".game")!;
     const teams = root.querySelector<HTMLElement>(".teams")!;
@@ -67,12 +67,14 @@ defineWidget({
         },
       );
       game.classList.toggle("charted", !!m);
+      game.classList.toggle("final", s.phase === State_Phase.FINAL);
 
       const opts = (t: Team, color: string, prices: number[] | undefined): RowOpts => ({
         mine: t.abbreviation === s.mine,
         winner: s.phase === State_Phase.FINAL && t.winner,
         score: pre ? "" : t.score,
         record: pre ? t.record : "", // once it starts, the score and the market say more
+        color,
         swatch: m ? color : undefined,
         pct: live && prices?.length ? `${prices[prices.length - 1]}%` : "",
       });
@@ -106,6 +108,8 @@ interface RowOpts {
   winner: boolean;
   score: string;
   record: string;
+  /** The team's colour, distinct from the other's: its score is lit in it. */
+  color: string;
   swatch?: string;
   pct: string;
 }
@@ -136,6 +140,7 @@ class TeamRow {
     r.classList.toggle("winner", o.winner);
     setVar(r, "--team", teamColor(t.color));
     setVar(r, "--line", o.swatch);
+    setVar(r, "--score", o.color);
     // Only a different logo reloads the image.
     if (t.logo && this.logo.getAttribute("src") !== t.logo) this.logo.src = t.logo;
     if (!t.logo) this.logo.removeAttribute("src");
