@@ -537,7 +537,16 @@ class WidgetBoard extends HTMLElement {
 
   private render() {
     if (this.grid.parentNode !== this.body) this.body.replaceChildren(this.grid, this.footer);
-    this.grid.append(this.addTile); // always last
+    // Always last, but moved only when it isn't: moving a node resets the
+    // scroll of everything in it, and this runs on every live frame, so the
+    // widget picker inside it would jump back to its top.
+    if (this.grid.lastChild !== this.addTile) this.grid.append(this.addTile);
+  }
+
+  /** Adds a tile to the grid, ahead of the add tile so that one stays put. */
+  private place(tile: HTMLElement) {
+    if (this.addTile.parentNode === this.grid) this.grid.insertBefore(tile, this.addTile);
+    else this.grid.append(tile);
   }
 
   /** Handle one frame; false means the board missed something and must resync. */
@@ -623,7 +632,7 @@ class WidgetBoard extends HTMLElement {
       last: stored?.cursor,
     };
     this.cards.set(id, card);
-    this.grid.append(el);
+    this.place(el);
   }
 
   // ---- instances, placeholders, set-up codes ----
@@ -670,8 +679,7 @@ class WidgetBoard extends HTMLElement {
     }
     if (!entry.tile) {
       entry.tile = tile;
-      this.grid.append(tile);
-      this.grid.append(this.addTile);
+      this.place(tile);
     }
     if (this.justAdded === id) {
       this.justAdded = "";
