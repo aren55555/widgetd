@@ -98,12 +98,15 @@ func (w *loadedWidget) usedProviders() []string {
 	return out
 }
 
-// wantedLocked is the union of the scopes the configured instances bound
-// to an account use. Callers hold s.mu.
+// wantedLocked is the union of the scopes the instances bound to an
+// account use. That includes an instance not configured yet: its settings
+// form may need the account (a widget listing your calendars to pick from),
+// so binding it is what asks for its scopes, not saving its settings.
+// Callers hold s.mu.
 func (s *Server) wantedLocked(a *account) []string {
 	set := map[string]bool{}
 	for _, in := range s.instances {
-		if in.binding(a.Provider) != a.ID || !in.configured || in.deleting.Load() || in.quarantine != "" {
+		if in.binding(a.Provider) != a.ID || in.deleting.Load() || in.quarantine != "" {
 			continue
 		}
 		for _, sc := range in.w.scopesFor(a.Provider) {

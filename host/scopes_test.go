@@ -227,3 +227,44 @@ func TestRejectedWithNothingToBlame(t *testing.T) {
 		t.Fatalf("account error = %q", h.srv.accountError("idp"))
 	}
 }
+
+// An account bound to a widget that isn't set up yet is asked for that
+// widget's scopes: its settings form may need them (listing calendars to
+// pick from), so they can't wait for the settings to be saved.
+func TestUnconfiguredInstanceWantsItsScopes(t *testing.T) {
+	cSpec := widget.Spec{
+		Name: "wc", Version: "1",
+		Files:   []protoreflect.FileDescriptor{testwidgetv1.File_testwidget_v1_testwidget_proto},
+		Config:  &testwidgetv1.Config{},
+		View:    testSpec(nil).View,
+		Run:     func(ctx context.Context, _ widget.Host) error { <-ctx.Done(); return ctx.Err() },
+		Network: widget.NetworkRequest{Hosts: []string{"api.example.com"}},
+		Uses:    []widget.Use{{Provider: "idp", Scopes: []string{"c"}}},
+	}
+	h := newAccountHarness(t, cSpec)
+	// Signed in from the admin page for no widget: identity alone.
+	acct := h.newAccount("", "me@home", "Personal")
+	in, err := h.srv.addInstance("wc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.bind(in.id, acct)
+
+	h.srv.mu.Lock()
+	want := h.srv.wantedLocked(h.acct(acct))
+	h.srv.mu.Unlock()
+	if !slices.Contains(want, "c") {
+		t.Fatalf("wanted = %v: an unconfigured widget's scopes should count", want)
+	}
+	if code, body := h.signInAgain(acct, "me@home", h.adminCookie()); code != 200 {
+		t.Fatalf("signing in again: %d %s", code, body)
+	}
+	if !covers(h.acct(acct).Token.Granted, []string{"c"}) {
+		t.Fatalf("granted = %v, want c", h.acct(acct).Token.Granted)
+	}
+	// Its settings form can now use the account.
+	u, _ := url.Parse("https://api.example.com/c/calendars")
+	if _, _, _, err := h.srv.authorization(context.Background(), in, http.MethodGet, u); err != nil {
+		t.Fatalf("signing a request from the unconfigured widget: %v", err)
+	}
+}

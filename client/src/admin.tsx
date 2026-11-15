@@ -415,7 +415,7 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
   const st = createStatus();
   const secrets: Secrets = { fields: new Set(form.secretFields), set: new Set(form.secretsSet), clear: new Set() };
 
-  let config: { form: ConfigForm; bytes: () => Uint8Array } | undefined;
+  let config: { form: ConfigForm; bytes: () => Uint8Array; noChoices: () => string } | undefined;
   if (form.configType) {
     const registry = createFileRegistry(fromBinary(FileDescriptorSetSchema, form.schema));
     const desc = registry.getMessage(form.configType);
@@ -425,6 +425,9 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
     // which depend on what's been picked so far: ask again after each edit
     // settles. Only a field whose list changed is redrawn.
     const [choices, setChoices] = createSignal<Choices>(new Map());
+    // Why there are no pick-lists, if asking failed: the fields still work
+    // as free text, but an empty list with no reason looks broken.
+    const [noChoices, setNoChoices] = createSignal("");
     let asked = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const refreshChoices = async () => {
@@ -435,9 +438,11 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
         const next: Choices = new Map(
           res.fields.map((f) => [f.field, f.choices.map((c) => ({ value: c.value, label: c.label }))]),
         );
+        setNoChoices("");
         if (!sameChoices(choices(), next)) setChoices(next);
-      } catch {
+      } catch (e) {
         // Choices are a convenience: without them, fields stay free text.
+        if (mine === asked) setNoChoices(errorText(e));
       }
     };
     const configForm = createConfigForm(desc, msg, {
@@ -451,7 +456,7 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
     });
     onCleanup(() => clearTimeout(timer));
     void refreshChoices();
-    config = { form: configForm, bytes: () => toBinary(desc, msg) };
+    config = { form: configForm, bytes: () => toBinary(desc, msg), noChoices };
   }
 
   const save = st.run(async (say) => {
@@ -491,6 +496,9 @@ function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse
           aria-label="Name"
         />
       </label>
+      <Show when={config?.noChoices()}>
+        {(why) => <p class="text-sm text-amber-600">⚠ Couldn't load the options to pick from: {why()}.</p>}
+      </Show>
       <div>{config ? config.form.view : <p class={ui.muted}>This widget has no settings.</p>}</div>
       <button class={ui.btn.primary} disabled={st.busy()} onClick={save}>
         {form.status?.state === InstanceStatus_State.NEEDS_CONFIG ? "Add to screens" : "Save"}
