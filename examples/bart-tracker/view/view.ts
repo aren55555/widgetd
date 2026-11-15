@@ -1,6 +1,6 @@
 // The tracker's view: a two-track strip map of the line between the pair's
 // stations, with the trains on it, over a split-flap departure board, one
-// column each way. The look was settled in spikes/bart-tracker (DESIGN.md).
+// column each way.
 //
 // The server sends absolute times every 20 s or so; between states the view
 // moves the trains and counts down from its own clock.

@@ -1,7 +1,6 @@
 /* Barlow Condensed, from @fontsource/barlow-condensed@5.3.0; licence: fonts/barlow-condensed-LICENSE.txt */
 @font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:block;src:url(fonts/barlow-condensed-latin-700-normal.woff2) format("woff2")}
-/* The tracker's look, settled in spikes/bart-tracker (see its DESIGN.md):
-   a near-black departure board with a two-track strip map above it. */
+/* The tracker's look: a near-black departure board with a two-track strip map above it. */
 
 .wrap {
   --surface: #0d0d0f;
