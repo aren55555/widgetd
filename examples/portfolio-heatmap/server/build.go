@@ -31,6 +31,13 @@ type position struct {
 type quote struct {
 	Price  float64
 	DayPct float64
+	// Day is the day Price is from ("2006-01-02"): the trading day for a
+	// stock, the UTC day for a coin.
+	Day string
+	// PrevClose is a stock's close on PrevDay, the trading day before Day.
+	// Unset for a coin.
+	PrevDay   string
+	PrevClose float64
 }
 
 // holding is a symbol summed over every account that holds it.
@@ -41,9 +48,10 @@ type holding struct {
 }
 
 // build turns positions and quotes into the card: each symbol's weight in
-// the portfolio, its change today and its total return. Short positions
-// and anything worth nothing are left out.
-func build(asOf time.Time, positions []position, quotes map[string]quote) *pb.State {
+// the portfolio, its change today, its total return and its month (from
+// closes, by symbol, up to today). Short positions and anything worth
+// nothing are left out.
+func build(asOf time.Time, positions []position, quotes map[string]quote, closes map[string][]point, today time.Time) *pb.State {
 	bySym := map[string]*holding{}
 	var order []string
 	for _, p := range positions {
@@ -123,6 +131,14 @@ func build(asOf time.Time, positions []position, quotes map[string]quote) *pb.St
 		}
 		if r.h.costKnown && r.h.cost > 0 {
 			out.TotalPct = pct((r.value-r.h.cost)/r.h.cost*100, 1000000)
+		}
+		var live float64
+		var liveDay string
+		if r.hasQ {
+			live, liveDay = r.q.Price, r.q.Day
+		}
+		if m, from := monthPct(closes[r.h.Symbol], live, liveDay, today); m != nil {
+			out.MonthPct, out.MonthFromUnixMs = m, from.UnixMilli()
 		}
 		st.Holdings = append(st.Holdings, out)
 	}

@@ -45,7 +45,7 @@ func TestBuild(t *testing.T) {
 		"VOO": {Price: 500, DayPct: -0.333},
 		"BTC": {Price: 110000, DayPct: 2.5}, // 1100
 	}
-	st := build(asOf, ps, quotes)
+	st := build(asOf, ps, quotes, nil, asOf)
 	valid(t, st)
 	if st.GetAsOfUnixMs() != asOf.UnixMilli() {
 		t.Errorf("as of %d", st.GetAsOfUnixMs())
@@ -86,7 +86,7 @@ func TestBuild(t *testing.T) {
 }
 
 func TestBuildEmpty(t *testing.T) {
-	st := build(asOf, nil, nil)
+	st := build(asOf, nil, nil, nil, asOf)
 	valid(t, st)
 	if len(st.GetHoldings()) != 0 {
 		t.Errorf("holdings from nothing: %v", st.GetHoldings())

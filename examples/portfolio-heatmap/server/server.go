@@ -2,8 +2,8 @@
 // the display's brokerage holdings through SnapTrade (read-only, signed by
 // the host) every few minutes, and quotes for them every minute: Finnhub
 // for stocks and funds, Coinbase for crypto. It sends each holding's
-// weight in the portfolio and its percentage moves, never a price, a share
-// count or a dollar amount.
+// weight in the portfolio and its percentage moves, today and over the past
+// month (see history.go), never a price, a share count or a dollar amount.
 package server
 
 import (
@@ -45,6 +45,7 @@ func Run(ctx context.Context, h widget.Host) error {
 		asOf      time.Time
 		readAt    time.Time
 		quotes    = map[string]quote{}
+		hist      = newHistory(h.KV())
 		last      *pb.State
 	)
 	for {
@@ -64,8 +65,8 @@ func Run(ctx context.Context, h widget.Host) error {
 		if positions != nil {
 			// Finnhub's calls are spaced out within the round, so a round
 			// never asks for more than its free tier allows.
-			readQuotes(ctx, h, positions, quotes)
-			st := build(asOf, positions, quotes)
+			readQuotes(ctx, h, positions, quotes, hist)
+			st := build(asOf, positions, quotes, hist.closes, time.Now())
 			if !proto.Equal(st, last) {
 				if err := card.Snapshot(st); err != nil {
 					return err
@@ -82,8 +83,9 @@ func Run(ctx context.Context, h widget.Host) error {
 }
 
 // readQuotes refreshes quotes for every held symbol, keeping the last good
-// one when a read fails.
-func readQuotes(ctx context.Context, h widget.Host, positions []position, quotes map[string]quote) {
+// one when a read fails. Along the way it keeps each stock's previous
+// close, and reads each coin's month of candles once a day, for the charts.
+func readQuotes(ctx context.Context, h widget.Host, positions []position, quotes map[string]quote, hist *history) {
 	seen := map[string]bool{}
 	calls := 0
 	for _, p := range positions {
@@ -91,6 +93,9 @@ func readQuotes(ctx context.Context, h widget.Host, positions []position, quotes
 			continue
 		}
 		seen[p.Symbol] = true
+		if _, err := hist.series(p.Symbol); err != nil { // its stored closes, the first time
+			h.Logger().Warn("portfolio-heatmap: can't read stored closes", "symbol", p.Symbol, "err", err)
+		}
 		var (
 			q   quote
 			ok  bool
@@ -99,6 +104,14 @@ func readQuotes(ctx context.Context, h widget.Host, positions []position, quotes
 		switch {
 		case p.Crypto:
 			q, ok, err = coinbaseQuote(ctx, h, p.Symbol)
+			if today := time.Now().UTC().Format(dayLayout); err == nil && ok && hist.candlesOn[p.Symbol] != today {
+				pts, cerr := coinbaseMonth(ctx, h, p.Symbol, time.Now())
+				if cerr != nil {
+					h.Logger().Warn("portfolio-heatmap: candles failed", "symbol", p.Symbol, "err", cerr)
+				} else {
+					hist.setCandles(p.Symbol, today, pts)
+				}
+			}
 		default:
 			if calls > 0 {
 				select {
@@ -118,6 +131,9 @@ func readQuotes(ctx context.Context, h widget.Host, positions []position, quotes
 			h.Logger().Warn("portfolio-heatmap: quote failed", "symbol", p.Symbol, "err", err)
 		case ok:
 			quotes[p.Symbol] = q
+			if err := hist.recordClose(p.Symbol, q.PrevDay, q.PrevClose); err != nil {
+				h.Logger().Warn("portfolio-heatmap: can't keep a close", "symbol", p.Symbol, "err", err)
+			}
 		default:
 			delete(quotes, p.Symbol)
 		}

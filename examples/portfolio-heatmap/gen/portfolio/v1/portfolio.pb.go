@@ -80,10 +80,19 @@ type Holding struct {
 	DayPct *float64 `protobuf:"fixed64,4,opt,name=day_pct,json=dayPct,proto3,oneof" json:"day_pct,omitempty"`
 	// Return on the position since it was bought, in percent. Unset when the
 	// brokerage gives no cost basis.
-	TotalPct      *float64 `protobuf:"fixed64,5,opt,name=total_pct,json=totalPct,proto3,oneof" json:"total_pct,omitempty"`
-	Crypto        bool     `protobuf:"varint,6,opt,name=crypto,proto3" json:"crypto,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	TotalPct *float64 `protobuf:"fixed64,5,opt,name=total_pct,json=totalPct,proto3,oneof" json:"total_pct,omitempty"`
+	Crypto   bool     `protobuf:"varint,6,opt,name=crypto,proto3" json:"crypto,omitempty"`
+	// The past month, for the chart: the price at each day's close as the
+	// percent change from the first, oldest first, ending with the latest
+	// price. Percentages, not prices, like everything else here. Shorter
+	// than a month while the widget is still collecting a stock's closes
+	// (one a day); empty with fewer than two.
+	MonthPct []float32 `protobuf:"fixed32,7,rep,packed,name=month_pct,json=monthPct,proto3" json:"month_pct,omitempty"`
+	// The day of month_pct's first point: Unix ms, midnight UTC. Unset when
+	// it is empty.
+	MonthFromUnixMs int64 `protobuf:"varint,8,opt,name=month_from_unix_ms,json=monthFromUnixMs,proto3" json:"month_from_unix_ms,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Holding) Reset() {
@@ -156,6 +165,20 @@ func (x *Holding) GetCrypto() bool {
 		return x.Crypto
 	}
 	return false
+}
+
+func (x *Holding) GetMonthPct() []float32 {
+	if x != nil {
+		return x.MonthPct
+	}
+	return nil
+}
+
+func (x *Holding) GetMonthFromUnixMs() int64 {
+	if x != nil {
+		return x.MonthFromUnixMs
+	}
+	return 0
 }
 
 type State struct {
@@ -261,7 +284,7 @@ var File_portfolio_v1_portfolio_proto protoreflect.FileDescriptor
 
 const file_portfolio_v1_portfolio_proto_rawDesc = "" +
 	"\n" +
-	"\x1cportfolio/v1/portfolio.proto\x12\fportfolio.v1\x1a\x1bbuf/validate/validate.proto\"\x9a\x02\n" +
+	"\x1cportfolio/v1/portfolio.proto\x12\fportfolio.v1\x1a\x1bbuf/validate/validate.proto\"\x87\x03\n" +
 	"\aHolding\x12!\n" +
 	"\x06symbol\x18\x01 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x18\x18R\x06symbol\x12\x1b\n" +
 	"\x04name\x18\x02 \x01(\tB\a\xbaH\x04r\x02\x18xR\x04name\x12'\n" +
@@ -269,7 +292,10 @@ const file_portfolio_v1_portfolio_proto_rawDesc = "" +
 	"\xbaH\a\x1a\x05\x18\x90N(\x00R\bweightBp\x127\n" +
 	"\aday_pct\x18\x04 \x01(\x01B\x19\xbaH\x16\x12\x14@\x01\x19\x00\x00\x00\x00\x00j\xf8@)\x00\x00\x00\x00\x00\x00Y\xc0H\x00R\x06dayPct\x88\x01\x01\x12;\n" +
 	"\ttotal_pct\x18\x05 \x01(\x01B\x19\xbaH\x16\x12\x14@\x01\x19\x00\x00\x00\x00\x80\x84.A)\x00\x00\x00\x00\x00\x00Y\xc0H\x01R\btotalPct\x88\x01\x01\x12\x16\n" +
-	"\x06crypto\x18\x06 \x01(\bR\x06cryptoB\n" +
+	"\x06crypto\x18\x06 \x01(\bR\x06crypto\x125\n" +
+	"\tmonth_pct\x18\a \x03(\x02B\x18\xbaH\x15\x92\x01\x12\x10(\"\x0e\n" +
+	"\f@\x01\x1d\x00P\xc3G-\x00\x00\xc8\xc2R\bmonthPct\x124\n" +
+	"\x12month_from_unix_ms\x18\b \x01(\x03B\a\xbaH\x04\"\x02(\x00R\x0fmonthFromUnixMsB\n" +
 	"\n" +
 	"\b_day_pctB\f\n" +
 	"\n" +

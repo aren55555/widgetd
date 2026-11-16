@@ -177,3 +177,42 @@ export function label(symbol: string, w: number, h: number): Label {
   const pctPx = pctOnly ? Math.min(11, h * 0.6) : Math.max(9, Math.min(size * 0.62, (w - 6) / 3.6));
   return { sym: both, pct: both || pctOnly, symPx: size, pctPx };
 }
+
+// ---- the month chart on an opened tile ----
+
+/** A sparkline's paths in a w×h box: the line, the area under it down to 0 %, and where 0 % is. */
+export interface Spark {
+  line: string;
+  area: string;
+  zeroY: number;
+}
+
+/**
+ * Paths for `values` (percent changes, oldest first, the first 0) spread
+ * evenly across a w×h box, with `pad` above and below. The range always
+ * includes 0, so the start is on the chart. Undefined with fewer than two.
+ */
+export function spark(values: readonly number[], w: number, h: number, pad = 4): Spark | undefined {
+  if (values.length < 2) return undefined;
+  const lo = Math.min(0, ...values);
+  let hi = Math.max(0, ...values);
+  if (hi === lo) hi = lo + 1; // flat: a line along the middle
+  const y = (v: number) => pad + (1 - (v - lo) / (hi - lo)) * (h - 2 * pad);
+  const x = (i: number) => (i / (values.length - 1)) * w;
+  const r = (n: number) => Math.round(n * 100) / 100;
+  const pts = values.map((v, i) => `${r(x(i))},${r(y(v))}`);
+  const zeroY = r(y(0));
+  return {
+    line: `M${pts.join("L")}`,
+    area: `M0,${zeroY}L${pts.join("L")}L${r(w)},${zeroY}Z`,
+    zeroY,
+  };
+}
+
+/** What the chart's caption says about its span: "past month", or "since 3 Nov" while it is still filling in. */
+export function spanLabel(fromUnixMs: number, nowMs: number, locale?: string): string {
+  const days = (nowMs - fromUnixMs) / 86_400_000;
+  if (days >= 27) return "past month";
+  const d = new Date(fromUnixMs).toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: "UTC" });
+  return `since ${d}`;
+}

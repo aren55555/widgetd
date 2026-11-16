@@ -11,7 +11,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file portfolio/v1/portfolio.proto.
  */
 export const file_portfolio_v1_portfolio: GenFile = /*@__PURE__*/
-  fileDesc("Chxwb3J0Zm9saW8vdjEvcG9ydGZvbGlvLnByb3RvEgxwb3J0Zm9saW8udjEi6AEKB0hvbGRpbmcSGQoGc3ltYm9sGAEgASgJQgm6SAZyBBABGBgSFQoEbmFtZRgCIAEoCUIHukgEcgIYeBIdCgl3ZWlnaHRfYnAYAyABKAVCCrpIBxoFGJBOKAASLwoHZGF5X3BjdBgEIAEoAUIZukgWEhRAARkAAAAAAGr4QCkAAAAAAABZwEgAiAEBEjEKCXRvdGFsX3BjdBgFIAEoAUIZukgWEhRAARkAAAAAgIQuQSkAAAAAAABZwEgBiAEBEg4KBmNyeXB0bxgGIAEoCEIKCghfZGF5X3BjdEIMCgpfdG90YWxfcGN0IlIKBVN0YXRlEjIKCGhvbGRpbmdzGAEgAygLMhUucG9ydGZvbGlvLnYxLkhvbGRpbmdCCbpIBpIBAxCsAhIVCg1hc19vZl91bml4X21zGAIgASgDIjMKBUxvY2FsEioKBG1vZGUYASABKA4yEi5wb3J0Zm9saW8udjEuTW9kZUIIukgFggECEAEqJAoETW9kZRIMCghNT0RFX0RBWRAAEg4KCk1PREVfVE9UQUwQAULJAQoQY29tLnBvcnRmb2xpby52MUIOUG9ydGZvbGlvUHJvdG9QAVpUZ2l0aHViLmNvbS9hcmVuNTU1NTUvd2lkZ2V0ZC9leGFtcGxlcy9wb3J0Zm9saW8taGVhdG1hcC9nZW4vcG9ydGZvbGlvL3YxO3BvcnRmb2xpb3YxogIDUFhYqgIMUG9ydGZvbGlvLlYxygIMUG9ydGZvbGlvXFYx4gIYUG9ydGZvbGlvXFYxXEdQQk1ldGFkYXRh6gINUG9ydGZvbGlvOjpWMWIGcHJvdG8z", [file_buf_validate_validate]);
+  fileDesc("Chxwb3J0Zm9saW8vdjEvcG9ydGZvbGlvLnByb3RvEgxwb3J0Zm9saW8udjEiugIKB0hvbGRpbmcSGQoGc3ltYm9sGAEgASgJQgm6SAZyBBABGBgSFQoEbmFtZRgCIAEoCUIHukgEcgIYeBIdCgl3ZWlnaHRfYnAYAyABKAVCCrpIBxoFGJBOKAASLwoHZGF5X3BjdBgEIAEoAUIZukgWEhRAARkAAAAAAGr4QCkAAAAAAABZwEgAiAEBEjEKCXRvdGFsX3BjdBgFIAEoAUIZukgWEhRAARkAAAAAgIQuQSkAAAAAAABZwEgBiAEBEg4KBmNyeXB0bxgGIAEoCBIrCgltb250aF9wY3QYByADKAJCGLpIFZIBEhAoIg4KDEABHQBQw0ctAADIwhIjChJtb250aF9mcm9tX3VuaXhfbXMYCCABKANCB7pIBCICKABCCgoIX2RheV9wY3RCDAoKX3RvdGFsX3BjdCJSCgVTdGF0ZRIyCghob2xkaW5ncxgBIAMoCzIVLnBvcnRmb2xpby52MS5Ib2xkaW5nQgm6SAaSAQMQrAISFQoNYXNfb2ZfdW5peF9tcxgCIAEoAyIzCgVMb2NhbBIqCgRtb2RlGAEgASgOMhIucG9ydGZvbGlvLnYxLk1vZGVCCLpIBYIBAhABKiQKBE1vZGUSDAoITU9ERV9EQVkQABIOCgpNT0RFX1RPVEFMEAFCyQEKEGNvbS5wb3J0Zm9saW8udjFCDlBvcnRmb2xpb1Byb3RvUAFaVGdpdGh1Yi5jb20vYXJlbjU1NTU1L3dpZGdldGQvZXhhbXBsZXMvcG9ydGZvbGlvLWhlYXRtYXAvZ2VuL3BvcnRmb2xpby92MTtwb3J0Zm9saW92MaICA1BYWKoCDFBvcnRmb2xpby5WMcoCDFBvcnRmb2xpb1xWMeICGFBvcnRmb2xpb1xWMVxHUEJNZXRhZGF0YeoCDVBvcnRmb2xpbzo6VjFiBnByb3RvMw", [file_buf_validate_validate]);
 
 /**
  * @generated from message portfolio.v1.Holding
@@ -56,6 +56,25 @@ export type Holding = Message<"portfolio.v1.Holding"> & {
    * @generated from field: bool crypto = 6;
    */
   crypto: boolean;
+
+  /**
+   * The past month, for the chart: the price at each day's close as the
+   * percent change from the first, oldest first, ending with the latest
+   * price. Percentages, not prices, like everything else here. Shorter
+   * than a month while the widget is still collecting a stock's closes
+   * (one a day); empty with fewer than two.
+   *
+   * @generated from field: repeated float month_pct = 7;
+   */
+  monthPct: number[];
+
+  /**
+   * The day of month_pct's first point: Unix ms, midnight UTC. Unset when
+   * it is empty.
+   *
+   * @generated from field: int64 month_from_unix_ms = 8;
+   */
+  monthFromUnixMs: bigint;
 };
 
 /**

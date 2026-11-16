@@ -229,6 +229,60 @@
   color: var(--muted);
   font-size: 12px;
 }
+.chart {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chart.none {
+  justify-content: center;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+.chart-cap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.chart-cap b {
+  font-size: 14px;
+}
+.chart-cap small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.plot {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: visible;
+}
+.plot .line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.plot .area {
+  fill: currentColor;
+  opacity: 0.12;
+}
+.plot .zero {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  opacity: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+.tiny .chart-cap b {
+  font-size: 12px;
+}
 .stats {
   margin-top: auto;
   display: flex;

@@ -9,8 +9,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/aren55555/widgetd/sdk/go/widget"
 )
@@ -108,6 +110,7 @@ func finnhubQuote(ctx context.Context, h widget.Host, symbol string) (q quote, o
 		C  num `json:"c"`
 		DP num `json:"dp"`
 		PC num `json:"pc"`
+		T  num `json:"t"` // the last trade, Unix seconds
 	}
 	err = getJSON(ctx, h, finnhubAPI+"/quote?symbol="+url.QueryEscape(symbol), true, &r)
 	var fe *forbiddenError
@@ -120,7 +123,14 @@ func finnhubQuote(ctx context.Context, h widget.Host, symbol string) (q quote, o
 	if r.C <= 0 || r.PC <= 0 {
 		return quote{}, false, nil
 	}
-	return quote{Price: float64(r.C), DayPct: float64(r.DP)}, true, nil
+	q = quote{Price: float64(r.C), DayPct: float64(r.DP)}
+	if r.T > 0 {
+		day := tradingDay(time.Unix(int64(r.T), 0))
+		q.Day = day.Format(dayLayout)
+		q.PrevDay = dayBefore(day).Format(dayLayout)
+		q.PrevClose = float64(r.PC)
+	}
+	return q, true, nil
 }
 
 // coinbaseQuote reads a coin's price and its change over 24 hours, in US
@@ -142,7 +152,40 @@ func coinbaseQuote(ctx context.Context, h widget.Host, symbol string) (q quote, 
 	if r.Open <= 0 || r.Last <= 0 {
 		return quote{}, false, nil
 	}
-	return quote{Price: float64(r.Last), DayPct: float64((r.Last - r.Open) / r.Open * 100)}, true, nil
+	return quote{
+		Price:  float64(r.Last),
+		DayPct: float64((r.Last - r.Open) / r.Open * 100),
+		Day:    time.Now().UTC().Format(dayLayout),
+	}, true, nil
+}
+
+// coinbaseMonth reads a coin's daily closes in US dollars over the past
+// month, oldest first, from Coinbase's public candles (UTC days; today's
+// is still moving). Nil when Coinbase has no USD market for it.
+func coinbaseMonth(ctx context.Context, h widget.Host, symbol string, now time.Time) ([]point, error) {
+	base, _, _ := strings.Cut(symbol, "-")
+	start := now.UTC().AddDate(0, 0, -monthDays-1)
+	u := coinbaseAPI + "/products/" + url.PathEscape(base+"-USD") + "/candles?granularity=86400&start=" +
+		url.QueryEscape(start.Format(time.RFC3339)) + "&end=" + url.QueryEscape(now.UTC().Format(time.RFC3339))
+	// Each candle is [time, low, high, open, close, volume], newest first.
+	var rows [][]num
+	err := getJSON(ctx, h, u, false, &rows)
+	var nf *notFoundError
+	if errors.As(err, &nf) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	pts := make([]point, 0, len(rows))
+	for _, r := range rows {
+		if len(r) < 5 || r[0] <= 0 || r[4] <= 0 {
+			continue
+		}
+		pts = append(pts, point{Day: time.Unix(int64(r[0]), 0).UTC().Format(dayLayout), Price: float64(r[4])})
+	}
+	slices.SortFunc(pts, func(a, b point) int { return strings.Compare(a.Day, b.Day) })
+	return slices.CompactFunc(pts, func(a, b point) bool { return a.Day == b.Day }), nil
 }
 
 // notFoundError is a 404 from a quote source.

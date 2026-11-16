@@ -2,7 +2,20 @@ import { create } from "@bufbuild/protobuf";
 import { describe, expect, test } from "bun:test";
 
 import { HoldingSchema, type Holding } from "./gen/portfolio/v1/portfolio_pb.ts";
-import { CAP, css, edge, fill, fmt, label, portfolioMove, squarify, UNKNOWN, weight } from "./model.ts";
+import {
+  CAP,
+  css,
+  edge,
+  fill,
+  fmt,
+  label,
+  portfolioMove,
+  spanLabel,
+  spark,
+  squarify,
+  UNKNOWN,
+  weight,
+} from "./model.ts";
 
 const h = (symbol: string, weightBp: number, dayPct?: number, totalPct?: number): Holding =>
   create(HoldingSchema, { symbol, weightBp, dayPct, totalPct });
@@ -109,5 +122,34 @@ describe("label", () => {
   test("a sliver shows colour alone", () => {
     const l = label("AAPL", 12, 12);
     expect(l.sym || l.pct).toBe(false);
+  });
+});
+
+describe("spark", () => {
+  test("spreads points across the box, with 0 % inside the range", () => {
+    const s = spark([0, 10, -10, 5], 300, 100, 0);
+    expect(s?.line).toBe("M0,50L100,0L200,100L300,25");
+    expect(s?.zeroY).toBe(50);
+    expect(s?.area).toBe("M0,50L0,50L100,0L200,100L300,25L300,50Z");
+  });
+  test("a rise all month puts 0 % at the bottom", () => {
+    expect(spark([0, 5, 10], 100, 100, 0)?.zeroY).toBe(100);
+  });
+  test("a flat month is a line, not a division by zero", () => {
+    expect(spark([0, 0], 100, 100, 0)?.line).toBe("M0,100L100,100");
+  });
+  test("nothing to draw with under two points", () => {
+    expect(spark([0], 100, 100)).toBeUndefined();
+  });
+});
+
+describe("spanLabel", () => {
+  const day = 86_400_000;
+  const now = Date.UTC(2026, 10, 13, 15);
+  test("a full month says so", () => {
+    expect(spanLabel(now - 30 * day, now)).toBe("past month");
+  });
+  test("a month still filling in says when it starts", () => {
+    expect(spanLabel(Date.UTC(2026, 10, 3), now, "en-GB")).toBe("since 3 Nov");
   });
 });

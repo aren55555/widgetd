@@ -14,7 +14,21 @@ import {
   type Holding,
   type State,
 } from "./gen/portfolio/v1/portfolio_pb.ts";
-import { CAP, css, edge, fill, fmt, label, moveOf, portfolioMove, squarify, weight, type Mode } from "./model.ts";
+import {
+  CAP,
+  css,
+  edge,
+  fill,
+  fmt,
+  label,
+  moveOf,
+  portfolioMove,
+  spanLabel,
+  spark,
+  squarify,
+  weight,
+  type Mode,
+} from "./model.ts";
 
 /** How long an open tile stays open untouched. */
 const IDLE_MS = 30_000;
@@ -25,6 +39,16 @@ const WORDS: Record<Mode, { short: string; long: string }> = {
   day: { short: "Today", long: "today" },
   total: { short: "Total", long: "all time" },
 };
+
+/** The chart's drawing box; the SVG stretches it to fit, keeping its strokes' widths. */
+const CHART_W = 300;
+const CHART_H = 100;
+
+function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string>): SVGElementTagNameMap[K] {
+  const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  return n;
+}
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
   const n = document.createElement(tag);
@@ -57,7 +81,7 @@ interface Open {
 defineWidget({
   state: StateSchema,
   local: LocalSchema,
-  mount({ root, local }) {
+  mount({ root, local, prefs }) {
     root.style.setProperty("--hair", `${1 / (window.devicePixelRatio || 1)}px`);
     const card = el("div", "pf");
     const head = el("div", "head");
@@ -287,7 +311,40 @@ defineWidget({
       stat("Weight", weight(h.weightBp));
       stat(h.crypto ? "24 h" : "Today", fmt(h.dayPct), upDown(h.dayPct));
       stat("Total return", fmt(h.totalPct, 1), upDown(h.totalPct));
-      body.replaceChildren(top, big, stats);
+      body.replaceChildren(top, big, monthChart(h), stats);
+    }
+
+    /** The past month on the back of a tile: a line over the area to 0 %, and its change. */
+    function monthChart(h: Holding): HTMLElement {
+      const box = el("div", "chart");
+      const values = h.monthPct;
+      const s = spark(values, CHART_W, CHART_H);
+      const last = values.at(-1);
+      if (!s || last === undefined) {
+        box.classList.add("none");
+        box.textContent = h.crypto
+          ? "No price history for this coin."
+          : "Collecting price history: the chart fills in a day at a time.";
+        return box;
+      }
+      const cap = el("div", "chart-cap");
+      cap.append(
+        el("b", upDown(last), fmt(last, Math.abs(last) >= 100 ? 0 : 1)),
+        el("small", undefined, spanLabel(Number(h.monthFromUnixMs), Date.now(), prefs.locale)),
+      );
+      const plot = svg("svg", {
+        viewBox: `0 0 ${String(CHART_W)} ${String(CHART_H)}`,
+        preserveAspectRatio: "none",
+        class: `plot ${upDown(last)}`,
+        "aria-hidden": "true",
+      });
+      plot.append(
+        svg("path", { d: s.area, class: "area" }),
+        svg("line", { x1: "0", x2: String(CHART_W), y1: String(s.zeroY), y2: String(s.zeroY), class: "zero" }),
+        svg("path", { d: s.line, class: "line" }),
+      );
+      box.append(cap, plot);
+      return box;
     }
 
     const onKey = (e: KeyboardEvent) => {

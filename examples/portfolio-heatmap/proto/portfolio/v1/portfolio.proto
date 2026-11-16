@@ -21,6 +21,20 @@ message Holding {
   // brokerage gives no cost basis.
   optional double total_pct = 5 [(buf.validate.field).double = {gte: -100, lte: 1000000, finite: true}];
   bool crypto = 6;
+  // The past month, for the chart: the price at each day's close as the
+  // percent change from the first, oldest first, ending with the latest
+  // price. Percentages, not prices, like everything else here. Shorter
+  // than a month while the widget is still collecting a stock's closes
+  // (one a day); empty with fewer than two.
+  repeated float month_pct = 7 [(buf.validate.field).repeated = {
+    max_items: 40
+    items: {
+      float: {gte: -100, lte: 100000, finite: true}
+    }
+  }];
+  // The day of month_pct's first point: Unix ms, midnight UTC. Unset when
+  // it is empty.
+  int64 month_from_unix_ms = 8 [(buf.validate.field).int64.gte = 0];
 }
 
 message State {
