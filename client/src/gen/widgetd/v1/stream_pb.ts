@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file widgetd/v1/stream.proto.
  */
 export const file_widgetd_v1_stream: GenFile = /*@__PURE__*/
-  fileDesc("Chd3aWRnZXRkL3YxL3N0cmVhbS5wcm90bxIKd2lkZ2V0ZC52MSJFChFTZW5kQWN0aW9uUmVxdWVzdBIPCgdjYXJkX2lkGAEgASgJEhAKCHR5cGVfdXJsGAIgASgJEg0KBXZhbHVlGAMgASgMIhQKElNlbmRBY3Rpb25SZXNwb25zZSIkCgZDdXJzb3ISDQoFZXBvY2gYASABKAQSCwoDc2VxGAIgASgEIk0KBlJlc3VtZRIPCgdjYXJkX2lkGAEgASgJEg4KBmRpZ2VzdBgCIAEoCRIiCgZjdXJzb3IYAyABKAsyEi53aWRnZXRkLnYxLkN1cnNvciI6ChRTdHJlYW1XaWRnZXRzUmVxdWVzdBIiCgZyZXN1bWUYASADKAsyEi53aWRnZXRkLnYxLlJlc3VtZSI/ChVTdHJlYW1XaWRnZXRzUmVzcG9uc2USJgoFZnJhbWUYASABKAsyFy53aWRnZXRkLnYxLldpZGdldEZyYW1lIrICCgtXaWRnZXRGcmFtZRITCgtpbnN0YW5jZV9pZBgBIAEoCRIPCgdjYXJkX2lkGAIgASgJEiYKB21vdW50ZWQYAyABKAsyEy53aWRnZXRkLnYxLk1vdW50ZWRIABInCghzbmFwc2hvdBgEIAEoCzITLndpZGdldGQudjEuUGF5bG9hZEgAEiQKBWRlbHRhGAUgASgLMhMud2lkZ2V0ZC52MS5QYXlsb2FkSAASKgoJdW5tb3VudGVkGAYgASgLMhUud2lkZ2V0ZC52MS5Vbm1vdW50ZWRIABIiCgVmYXVsdBgHIAEoCzIRLndpZGdldGQudjEuRmF1bHRIABIuCghpbnN0YW5jZRgIIAEoCzIaLndpZGdldGQudjEuSW5zdGFuY2VTdGF0dXNIAEIGCgRib2R5IpEDCg5JbnN0YW5jZVN0YXR1cxIvCgVzdGF0ZRgBIAEoDjIgLndpZGdldGQudjEuSW5zdGFuY2VTdGF0dXMuU3RhdGUSDgoGd2lkZ2V0GAIgASgJEg0KBXRpdGxlGAMgASgJEg8KB21lc3NhZ2UYBCABKAkSDwoHcmVtb3ZlZBgFIAEoCBIQCghwcm92aWRlchgGIAEoCRIPCgd3YXJuaW5nGAcgASgJEg8KB2FjY291bnQYCCABKAkSFQoNYWNjb3VudF9sYWJlbBgJIAEoCRIeCgRpY29uGAogASgLMhAud2lkZ2V0ZC52MS5JY29uEhAKCHNob3J0X2lkGAsgASgJIo8BCgVTdGF0ZRIVChFTVEFURV9VTlNQRUNJRklFRBAAEhYKElNUQVRFX05FRURTX0NPTkZJRxABEhEKDVNUQVRFX1JVTk5JTkcQAhIRCg1TVEFURV9GQVVMVEVEEAMSGAoUU1RBVEVfSU5WQUxJRF9DT05GSUcQBBIXChNTVEFURV9ORUVEU19TSUdOX0lOEAUiOwoESWNvbhIMCgRuYW1lGAEgASgJEiUKBnNoYXBlcxgCIAMoCzIVLndpZGdldGQudjEuSWNvblNoYXBlIncKCUljb25TaGFwZRILCgN0YWcYASABKAkSLwoFYXR0cnMYAiADKAsyIC53aWRnZXRkLnYxLkljb25TaGFwZS5BdHRyc0VudHJ5GiwKCkF0dHJzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASI6CglXaWRnZXRSZWYSDAoEbmFtZRgBIAEoCRIPCgd2ZXJzaW9uGAIgASgJEg4KBmRpZ2VzdBgDIAEoCSKWAgoHTW91bnRlZBIlCgZ3aWRnZXQYASABKAsyFS53aWRnZXRkLnYxLldpZGdldFJlZhIRCglmcmFtZV91cmwYAiABKAkSEgoKc3RhdGVfdHlwZRgDIAEoCRISCgpkZWx0YV90eXBlGAQgASgJEiIKBmxheW91dBgFIAEoCzISLndpZGdldGQudjEuTGF5b3V0EjEKDXZpc2libGVfdW50aWwYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg0KBXRpdGxlGAcgASgJEhMKC2FjdGlvbl90eXBlGAggASgJEh4KBGljb24YCSABKAsyEC53aWRnZXRkLnYxLkljb25KBAgKEAtSCHNob3J0X2lkIiQKBkxheW91dBIMCgRjb2xzGAEgASgNEgwKBHJvd3MYAiABKA0icAoHUGF5bG9hZBIQCgh0eXBlX3VybBgBIAEoCRINCgV2YWx1ZRgCIAEoDBIiCgZjdXJzb3IYAyABKAsyEi53aWRnZXRkLnYxLkN1cnNvchIgCgRwcmV2GAQgASgLMhIud2lkZ2V0ZC52MS5DdXJzb3IiGgoJVW5tb3VudGVkEg0KBXB1cmdlGAEgASgIIhgKBUZhdWx0Eg8KB21lc3NhZ2UYASABKAkyugEKE1dpZGdldFN0cmVhbVNlcnZpY2USVgoNU3RyZWFtV2lkZ2V0cxIgLndpZGdldGQudjEuU3RyZWFtV2lkZ2V0c1JlcXVlc3QaIS53aWRnZXRkLnYxLlN0cmVhbVdpZGdldHNSZXNwb25zZTABEksKClNlbmRBY3Rpb24SHS53aWRnZXRkLnYxLlNlbmRBY3Rpb25SZXF1ZXN0Gh4ud2lkZ2V0ZC52MS5TZW5kQWN0aW9uUmVzcG9uc2VCN1o1Z2l0aHViLmNvbS9hcmVuNTU1NTUvd2lkZ2V0ZC9nZW4vd2lkZ2V0ZC92MTt3aWRnZXRkdjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("Chd3aWRnZXRkL3YxL3N0cmVhbS5wcm90bxIKd2lkZ2V0ZC52MSJFChFTZW5kQWN0aW9uUmVxdWVzdBIPCgdjYXJkX2lkGAEgASgJEhAKCHR5cGVfdXJsGAIgASgJEg0KBXZhbHVlGAMgASgMIhQKElNlbmRBY3Rpb25SZXNwb25zZSK+AgoHVmlld0xvZxIPCgdjYXJkX2lkGAEgASgJEigKBWxldmVsGAIgASgOMhkud2lkZ2V0ZC52MS5WaWV3TG9nLkxldmVsEg8KB21lc3NhZ2UYAyABKAkSLQoFYXR0cnMYBCADKAsyHi53aWRnZXRkLnYxLlZpZXdMb2cuQXR0cnNFbnRyeRIoCgR0aW1lGAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBosCgpBdHRyc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiYAoFTGV2ZWwSFQoRTEVWRUxfVU5TUEVDSUZJRUQQABIPCgtMRVZFTF9ERUJVRxABEg4KCkxFVkVMX0lORk8QAhIOCgpMRVZFTF9XQVJOEAMSDwoLTEVWRUxfRVJST1IQBCJFCg9TZW5kTG9nc1JlcXVlc3QSIQoEbG9ncxgBIAMoCzITLndpZGdldGQudjEuVmlld0xvZxIPCgdkcm9wcGVkGAIgASgNIhIKEFNlbmRMb2dzUmVzcG9uc2UiJAoGQ3Vyc29yEg0KBWVwb2NoGAEgASgEEgsKA3NlcRgCIAEoBCJNCgZSZXN1bWUSDwoHY2FyZF9pZBgBIAEoCRIOCgZkaWdlc3QYAiABKAkSIgoGY3Vyc29yGAMgASgLMhIud2lkZ2V0ZC52MS5DdXJzb3IiOgoUU3RyZWFtV2lkZ2V0c1JlcXVlc3QSIgoGcmVzdW1lGAEgAygLMhIud2lkZ2V0ZC52MS5SZXN1bWUiPwoVU3RyZWFtV2lkZ2V0c1Jlc3BvbnNlEiYKBWZyYW1lGAEgASgLMhcud2lkZ2V0ZC52MS5XaWRnZXRGcmFtZSKyAgoLV2lkZ2V0RnJhbWUSEwoLaW5zdGFuY2VfaWQYASABKAkSDwoHY2FyZF9pZBgCIAEoCRImCgdtb3VudGVkGAMgASgLMhMud2lkZ2V0ZC52MS5Nb3VudGVkSAASJwoIc25hcHNob3QYBCABKAsyEy53aWRnZXRkLnYxLlBheWxvYWRIABIkCgVkZWx0YRgFIAEoCzITLndpZGdldGQudjEuUGF5bG9hZEgAEioKCXVubW91bnRlZBgGIAEoCzIVLndpZGdldGQudjEuVW5tb3VudGVkSAASIgoFZmF1bHQYByABKAsyES53aWRnZXRkLnYxLkZhdWx0SAASLgoIaW5zdGFuY2UYCCABKAsyGi53aWRnZXRkLnYxLkluc3RhbmNlU3RhdHVzSABCBgoEYm9keSKRAwoOSW5zdGFuY2VTdGF0dXMSLwoFc3RhdGUYASABKA4yIC53aWRnZXRkLnYxLkluc3RhbmNlU3RhdHVzLlN0YXRlEg4KBndpZGdldBgCIAEoCRINCgV0aXRsZRgDIAEoCRIPCgdtZXNzYWdlGAQgASgJEg8KB3JlbW92ZWQYBSABKAgSEAoIcHJvdmlkZXIYBiABKAkSDwoHd2FybmluZxgHIAEoCRIPCgdhY2NvdW50GAggASgJEhUKDWFjY291bnRfbGFiZWwYCSABKAkSHgoEaWNvbhgKIAEoCzIQLndpZGdldGQudjEuSWNvbhIQCghzaG9ydF9pZBgLIAEoCSKPAQoFU3RhdGUSFQoRU1RBVEVfVU5TUEVDSUZJRUQQABIWChJTVEFURV9ORUVEU19DT05GSUcQARIRCg1TVEFURV9SVU5OSU5HEAISEQoNU1RBVEVfRkFVTFRFRBADEhgKFFNUQVRFX0lOVkFMSURfQ09ORklHEAQSFwoTU1RBVEVfTkVFRFNfU0lHTl9JThAFIjsKBEljb24SDAoEbmFtZRgBIAEoCRIlCgZzaGFwZXMYAiADKAsyFS53aWRnZXRkLnYxLkljb25TaGFwZSJ3CglJY29uU2hhcGUSCwoDdGFnGAEgASgJEi8KBWF0dHJzGAIgAygLMiAud2lkZ2V0ZC52MS5JY29uU2hhcGUuQXR0cnNFbnRyeRosCgpBdHRyc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiOgoJV2lkZ2V0UmVmEgwKBG5hbWUYASABKAkSDwoHdmVyc2lvbhgCIAEoCRIOCgZkaWdlc3QYAyABKAkilgIKB01vdW50ZWQSJQoGd2lkZ2V0GAEgASgLMhUud2lkZ2V0ZC52MS5XaWRnZXRSZWYSEQoJZnJhbWVfdXJsGAIgASgJEhIKCnN0YXRlX3R5cGUYAyABKAkSEgoKZGVsdGFfdHlwZRgEIAEoCRIiCgZsYXlvdXQYBSABKAsyEi53aWRnZXRkLnYxLkxheW91dBIxCg12aXNpYmxlX3VudGlsGAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBINCgV0aXRsZRgHIAEoCRITCgthY3Rpb25fdHlwZRgIIAEoCRIeCgRpY29uGAkgASgLMhAud2lkZ2V0ZC52MS5JY29uSgQIChALUghzaG9ydF9pZCIkCgZMYXlvdXQSDAoEY29scxgBIAEoDRIMCgRyb3dzGAIgASgNInAKB1BheWxvYWQSEAoIdHlwZV91cmwYASABKAkSDQoFdmFsdWUYAiABKAwSIgoGY3Vyc29yGAMgASgLMhIud2lkZ2V0ZC52MS5DdXJzb3ISIAoEcHJldhgEIAEoCzISLndpZGdldGQudjEuQ3Vyc29yIhoKCVVubW91bnRlZBINCgVwdXJnZRgBIAEoCCIYCgVGYXVsdBIPCgdtZXNzYWdlGAEgASgJMoECChNXaWRnZXRTdHJlYW1TZXJ2aWNlElYKDVN0cmVhbVdpZGdldHMSIC53aWRnZXRkLnYxLlN0cmVhbVdpZGdldHNSZXF1ZXN0GiEud2lkZ2V0ZC52MS5TdHJlYW1XaWRnZXRzUmVzcG9uc2UwARJLCgpTZW5kQWN0aW9uEh0ud2lkZ2V0ZC52MS5TZW5kQWN0aW9uUmVxdWVzdBoeLndpZGdldGQudjEuU2VuZEFjdGlvblJlc3BvbnNlEkUKCFNlbmRMb2dzEhsud2lkZ2V0ZC52MS5TZW5kTG9nc1JlcXVlc3QaHC53aWRnZXRkLnYxLlNlbmRMb2dzUmVzcG9uc2VCN1o1Z2l0aHViLmNvbS9hcmVuNTU1NTUvd2lkZ2V0ZC9nZW4vd2lkZ2V0ZC92MTt3aWRnZXRkdjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message widgetd.v1.SendActionRequest
@@ -55,6 +55,126 @@ export const SendActionResponseSchema: GenMessage<SendActionResponse> = /*@__PUR
   messageDesc(file_widgetd_v1_stream, 1);
 
 /**
+ * ViewLog is one line a card's view logged.
+ *
+ * @generated from message widgetd.v1.ViewLog
+ */
+export type ViewLog = Message<"widgetd.v1.ViewLog"> & {
+  /**
+   * @generated from field: string card_id = 1;
+   */
+  cardId: string;
+
+  /**
+   * @generated from field: widgetd.v1.ViewLog.Level level = 2;
+   */
+  level: ViewLog_Level;
+
+  /**
+   * @generated from field: string message = 3;
+   */
+  message: string;
+
+  /**
+   * Whatever the view attached, e.g. {"stack": "…"}. Logged under a "view"
+   * group, so they can't stand in for the host's own keys.
+   *
+   * @generated from field: map<string, string> attrs = 4;
+   */
+  attrs: { [key: string]: string };
+
+  /**
+   * When the screen got the line from the card, by the screen's clock. The
+   * host logs it as screen_time; its own record time is when the line
+   * arrived, up to a batch later.
+   *
+   * @generated from field: google.protobuf.Timestamp time = 5;
+   */
+  time?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message widgetd.v1.ViewLog.
+ * Use `create(ViewLogSchema)` to create a new message.
+ */
+export const ViewLogSchema: GenMessage<ViewLog> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_stream, 2);
+
+/**
+ * @generated from enum widgetd.v1.ViewLog.Level
+ */
+export enum ViewLog_Level {
+  /**
+   * @generated from enum value: LEVEL_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: LEVEL_DEBUG = 1;
+   */
+  DEBUG = 1,
+
+  /**
+   * @generated from enum value: LEVEL_INFO = 2;
+   */
+  INFO = 2,
+
+  /**
+   * @generated from enum value: LEVEL_WARN = 3;
+   */
+  WARN = 3,
+
+  /**
+   * @generated from enum value: LEVEL_ERROR = 4;
+   */
+  ERROR = 4,
+}
+
+/**
+ * Describes the enum widgetd.v1.ViewLog.Level.
+ */
+export const ViewLog_LevelSchema: GenEnum<ViewLog_Level> = /*@__PURE__*/
+  enumDesc(file_widgetd_v1_stream, 2, 0);
+
+/**
+ * @generated from message widgetd.v1.SendLogsRequest
+ */
+export type SendLogsRequest = Message<"widgetd.v1.SendLogsRequest"> & {
+  /**
+   * @generated from field: repeated widgetd.v1.ViewLog logs = 1;
+   */
+  logs: ViewLog[];
+
+  /**
+   * How many lines the screen dropped since its last batch, because they
+   * came faster than it sends them.
+   *
+   * @generated from field: uint32 dropped = 2;
+   */
+  dropped: number;
+};
+
+/**
+ * Describes the message widgetd.v1.SendLogsRequest.
+ * Use `create(SendLogsRequestSchema)` to create a new message.
+ */
+export const SendLogsRequestSchema: GenMessage<SendLogsRequest> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_stream, 3);
+
+/**
+ * @generated from message widgetd.v1.SendLogsResponse
+ */
+export type SendLogsResponse = Message<"widgetd.v1.SendLogsResponse"> & {
+};
+
+/**
+ * Describes the message widgetd.v1.SendLogsResponse.
+ * Use `create(SendLogsResponseSchema)` to create a new message.
+ */
+export const SendLogsResponseSchema: GenMessage<SendLogsResponse> = /*@__PURE__*/
+  messageDesc(file_widgetd_v1_stream, 4);
+
+/**
  * Cursor orders the updates of one card. `seq` increases with every snapshot
  * or delta; `epoch` changes whenever the instance behind the card restarts,
  * which invalidates every cursor issued before it.
@@ -78,7 +198,7 @@ export type Cursor = Message<"widgetd.v1.Cursor"> & {
  * Use `create(CursorSchema)` to create a new message.
  */
 export const CursorSchema: GenMessage<Cursor> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 2);
+  messageDesc(file_widgetd_v1_stream, 5);
 
 /**
  * Resume tells the server what the client already holds for a card, so a
@@ -111,7 +231,7 @@ export type Resume = Message<"widgetd.v1.Resume"> & {
  * Use `create(ResumeSchema)` to create a new message.
  */
 export const ResumeSchema: GenMessage<Resume> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 3);
+  messageDesc(file_widgetd_v1_stream, 6);
 
 /**
  * @generated from message widgetd.v1.StreamWidgetsRequest
@@ -128,7 +248,7 @@ export type StreamWidgetsRequest = Message<"widgetd.v1.StreamWidgetsRequest"> & 
  * Use `create(StreamWidgetsRequestSchema)` to create a new message.
  */
 export const StreamWidgetsRequestSchema: GenMessage<StreamWidgetsRequest> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 4);
+  messageDesc(file_widgetd_v1_stream, 7);
 
 /**
  * An unset `frame` is a keepalive: one is sent as soon as the stream opens and
@@ -148,7 +268,7 @@ export type StreamWidgetsResponse = Message<"widgetd.v1.StreamWidgetsResponse"> 
  * Use `create(StreamWidgetsResponseSchema)` to create a new message.
  */
 export const StreamWidgetsResponseSchema: GenMessage<StreamWidgetsResponse> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 5);
+  messageDesc(file_widgetd_v1_stream, 8);
 
 /**
  * @generated from message widgetd.v1.WidgetFrame
@@ -221,7 +341,7 @@ export type WidgetFrame = Message<"widgetd.v1.WidgetFrame"> & {
  * Use `create(WidgetFrameSchema)` to create a new message.
  */
 export const WidgetFrameSchema: GenMessage<WidgetFrame> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 6);
+  messageDesc(file_widgetd_v1_stream, 9);
 
 /**
  * @generated from message widgetd.v1.InstanceStatus
@@ -306,7 +426,7 @@ export type InstanceStatus = Message<"widgetd.v1.InstanceStatus"> & {
  * Use `create(InstanceStatusSchema)` to create a new message.
  */
 export const InstanceStatusSchema: GenMessage<InstanceStatus> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 7);
+  messageDesc(file_widgetd_v1_stream, 10);
 
 /**
  * @generated from enum widgetd.v1.InstanceStatus.State
@@ -359,7 +479,7 @@ export enum InstanceStatus_State {
  * Describes the enum widgetd.v1.InstanceStatus.State.
  */
 export const InstanceStatus_StateSchema: GenEnum<InstanceStatus_State> = /*@__PURE__*/
-  enumDesc(file_widgetd_v1_stream, 7, 0);
+  enumDesc(file_widgetd_v1_stream, 10, 0);
 
 /**
  * Icon is a widget's icon (`icon` in its widget.toml): a Lucide icon as
@@ -389,7 +509,7 @@ export type Icon = Message<"widgetd.v1.Icon"> & {
  * Use `create(IconSchema)` to create a new message.
  */
 export const IconSchema: GenMessage<Icon> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 8);
+  messageDesc(file_widgetd_v1_stream, 11);
 
 /**
  * @generated from message widgetd.v1.IconShape
@@ -415,7 +535,7 @@ export type IconShape = Message<"widgetd.v1.IconShape"> & {
  * Use `create(IconShapeSchema)` to create a new message.
  */
 export const IconShapeSchema: GenMessage<IconShape> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 9);
+  messageDesc(file_widgetd_v1_stream, 12);
 
 /**
  * @generated from message widgetd.v1.WidgetRef
@@ -445,7 +565,7 @@ export type WidgetRef = Message<"widgetd.v1.WidgetRef"> & {
  * Use `create(WidgetRefSchema)` to create a new message.
  */
 export const WidgetRefSchema: GenMessage<WidgetRef> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 10);
+  messageDesc(file_widgetd_v1_stream, 13);
 
 /**
  * Mounted announces a card. It is always sent before the card's first payload.
@@ -515,7 +635,7 @@ export type Mounted = Message<"widgetd.v1.Mounted"> & {
  * Use `create(MountedSchema)` to create a new message.
  */
 export const MountedSchema: GenMessage<Mounted> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 11);
+  messageDesc(file_widgetd_v1_stream, 14);
 
 /**
  * Layout is a size hint in grid units.
@@ -539,7 +659,7 @@ export type Layout = Message<"widgetd.v1.Layout"> & {
  * Use `create(LayoutSchema)` to create a new message.
  */
 export const LayoutSchema: GenMessage<Layout> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 12);
+  messageDesc(file_widgetd_v1_stream, 15);
 
 /**
  * @generated from message widgetd.v1.Payload
@@ -576,7 +696,7 @@ export type Payload = Message<"widgetd.v1.Payload"> & {
  * Use `create(PayloadSchema)` to create a new message.
  */
 export const PayloadSchema: GenMessage<Payload> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 13);
+  messageDesc(file_widgetd_v1_stream, 16);
 
 /**
  * @generated from message widgetd.v1.Unmounted
@@ -596,7 +716,7 @@ export type Unmounted = Message<"widgetd.v1.Unmounted"> & {
  * Use `create(UnmountedSchema)` to create a new message.
  */
 export const UnmountedSchema: GenMessage<Unmounted> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 14);
+  messageDesc(file_widgetd_v1_stream, 17);
 
 /**
  * @generated from message widgetd.v1.Fault
@@ -613,7 +733,7 @@ export type Fault = Message<"widgetd.v1.Fault"> & {
  * Use `create(FaultSchema)` to create a new message.
  */
 export const FaultSchema: GenMessage<Fault> = /*@__PURE__*/
-  messageDesc(file_widgetd_v1_stream, 15);
+  messageDesc(file_widgetd_v1_stream, 18);
 
 /**
  * WidgetStreamService is the one pipe every card on a screen shares. A screen
@@ -642,6 +762,21 @@ export const WidgetStreamService: GenService<{
     methodKind: "unary";
     input: typeof SendActionRequestSchema;
     output: typeof SendActionResponseSchema;
+  },
+  /**
+   * Lines cards' views logged (ctx.log, and anything they threw), batched
+   * by the screen. Screens only, as for StreamWidgets. The host writes each
+   * line to its log tagged with the instance, widget, card and screen, so an
+   * operator can find one instance's lines, or every instance of a widget.
+   * Lines are capped in length and rate-limited per instance; the excess is
+   * dropped, never refused.
+   *
+   * @generated from rpc widgetd.v1.WidgetStreamService.SendLogs
+   */
+  sendLogs: {
+    methodKind: "unary";
+    input: typeof SendLogsRequestSchema;
+    output: typeof SendLogsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_widgetd_v1_stream, 0);

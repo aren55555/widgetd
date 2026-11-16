@@ -7,10 +7,12 @@
 import { create, toBinary, fromBinary, type DescMessage, type Message, type MessageShape } from "@bufbuild/protobuf";
 import type { Cursor, FromFrame, Local as LocalBytes, ToFrame } from "./bridge.ts";
 import { decodeChecked, typeUrlOf, validated } from "./checks.ts";
+import { makeLogger, type WidgetLogger } from "./log.ts";
 import { browserEnv, PreferencesSchema, resolvePrefs, type DisplayPrefs } from "./prefs.ts";
 
 export { decodeChecked, validated, typeUrlOf } from "./checks.ts";
-export type { Cursor } from "./bridge.ts";
+export type { Cursor, LogLevel } from "./bridge.ts";
+export type { LogAttrs, WidgetLogger } from "./log.ts";
 export {
   DistanceUnit,
   HourCycle,
@@ -66,6 +68,14 @@ export interface WidgetContext<L = never> {
    * here, and again by the host, before the widget sees it.
    */
   act(action: Message): void;
+  /**
+   * Write to the server's log. Lines are filed under this card's instance
+   * and widget (tagged source=view), so an operator can find them; attrs
+   * are sent as strings. The card's frame sends `console` calls and
+   * anything the view throws and doesn't catch the same way. Lines are
+   * rate-limited: log events, not every frame.
+   */
+  readonly log: WidgetLogger;
 }
 
 export interface View<S, D> {
@@ -341,10 +351,11 @@ function start<SD extends DescMessage, DD extends DescMessage, LD extends DescMe
     const r = await call({ t: "local-set", local });
     if (r.error) throw new Error(r.error);
   };
+  const log = makeLogger(send);
   const core = new CardCore(
     def,
     send,
-    (local, prefs) => def.mount({ cardId, root, storage, act, local, prefs }),
+    (local, prefs) => def.mount({ cardId, root, storage, act, local, prefs, log }),
     persist,
   );
 

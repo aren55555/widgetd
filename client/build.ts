@@ -47,3 +47,17 @@ if (!result.success) {
   for (const log of result.logs) console.error(log);
   process.exit(1);
 }
+
+// The card frame's bootstrap: the host inlines it into each card's document
+// ahead of the widget's view.js, so it is a classic script, not a module.
+const frame = await Bun.build({
+  entrypoints: ["src/frame.ts"],
+  outdir: "dist",
+  target: "browser",
+  format: "iife",
+  minify: true,
+});
+if (!frame.success) {
+  for (const log of frame.logs) console.error(log);
+  process.exit(1);
+}

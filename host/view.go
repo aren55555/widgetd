@@ -1,6 +1,9 @@
 package host
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -8,12 +11,44 @@ import (
 	"net/http"
 	"path"
 	"strings"
+
+	"github.com/aren55555/widgetd/client"
 )
 
+// frameBoot is the script every card frame runs before the widget's own
+// code (client/src/frame.ts): it sends the frame's console, and anything the
+// view throws, to the server's log. It is inlined, so the frame needs no
+// extra request, and allowed by its hash alone.
+var frameBoot = mustFrameBoot()
+
+type bootScript struct {
+	js template.JS
+	// csp is its CSP source, "'sha256-…'"; version is a short hash for URLs.
+	csp, version string
+}
+
+func mustFrameBoot() bootScript {
+	b, err := fs.ReadFile(client.Dist, "dist/frame.js")
+	if err != nil {
+		panic("widgetd: client/dist/frame.js is missing; run just client-build: " + err.Error())
+	}
+	js := strings.TrimSpace(string(b))
+	if strings.Contains(strings.ToLower(js), "</script") {
+		panic("widgetd: client/dist/frame.js can't be inlined: it contains </script")
+	}
+	sum := sha256.Sum256([]byte(js))
+	return bootScript{
+		js:      template.JS(js), //nolint:gosec // G203: our own bundle, embedded at build time
+		csp:     "'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'",
+		version: hex.EncodeToString(sum[:])[:12],
+	}
+}
+
 // frameURL is where a widget's card document is served. It is keyed by
-// digest, so it never changes for a given build and can be cached forever.
+// digest, so it never changes for a given build and can be cached forever;
+// the query names the frame bootstrap, which is part of the document too.
 func (s *Server) frameURL(w *loadedWidget) string {
-	return s.base + "frame/" + w.spec.Name + "/" + w.digest
+	return s.base + "frame/" + w.spec.Name + "/" + w.digest + "?b=" + frameBoot.version
 }
 
 // requestOrigin is the origin the browser used to reach us. A card frame is
@@ -32,6 +67,7 @@ var frameTmpl = template.Must(template.New("frame").Parse(`<!doctype html>
 <style>html,body{margin:0;height:100%;background:transparent;overflow:hidden}#root{height:100%}</style>
 {{if .CSS}}<link rel="stylesheet" href="{{.Assets}}view.css">{{end}}
 </head><body><div id="root"></div>
+<script>{{.Boot}}</script>
 <script src="{{.Assets}}view.js"></script>
 </body></html>`))
 
@@ -57,7 +93,8 @@ func (s *Server) serveFrame(w http.ResponseWriter, r *http.Request, name, digest
 	_ = frameTmpl.Execute(w, struct { // headers are sent: a failure means the client went away
 		Assets string
 		CSS    bool
-	}{assets, cssErr == nil})
+		Boot   template.JS
+	}{assets, cssErr == nil, frameBoot.js})
 }
 
 // assetTypes are the types of view files Go's built-in table doesn't know,
@@ -135,11 +172,12 @@ func (s *Server) routes(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// frameCSP is a card frame's whole policy: its own bundle, images from the
-// hosts its widget was granted, and no connections of any kind.
+// frameCSP is a card frame's whole policy: its own bundle and the frame
+// bootstrap, images from the hosts its widget was granted, and no
+// connections of any kind.
 func frameCSP(assets string, imageHosts []string) string {
 	img := strings.Join(append([]string{assets, "data:"}, imageHosts...), " ")
-	return fmt.Sprintf("default-src 'none'; script-src %[1]s; style-src %[1]s 'unsafe-inline'; img-src %[2]s; font-src %[1]s; connect-src 'none'; form-action 'none'; base-uri 'none'", assets, img)
+	return fmt.Sprintf("default-src 'none'; script-src %[1]s %[3]s; style-src %[1]s 'unsafe-inline'; img-src %[2]s; font-src %[1]s; connect-src 'none'; form-action 'none'; base-uri 'none'", assets, img, frameBoot.csp)
 }
 
 // phonePages are the routes of the admin app (client/src/admin.ts) that a

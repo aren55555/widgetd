@@ -57,7 +57,14 @@ export type FromFrame =
   /** Save (or with null, remove) the card's typed local value. Answered with "storage". */
   | { t: "local-set"; id: number; local: Local | null }
   /** Something the viewer did, for the widget's server half: the card's action type. */
-  | { t: "action"; typeUrl: string; value: Uint8Array };
+  | { t: "action"; typeUrl: string; value: Uint8Array }
+  /** A line for the server's log, filed under the card's instance and widget. */
+  | { t: "log"; level: LogLevel; message: string; attrs: Record<string, string> };
+
+/** How serious a logged line is. */
+export type LogLevel = "debug" | "info" | "warn" | "error";
+
+export const LOG_LEVELS: readonly LogLevel[] = ["debug", "info", "warn", "error"];
 
 export const isFromFrame = (v: unknown): v is FromFrame =>
   typeof v === "object" && v !== null && typeof (v as { t?: unknown }).t === "string";

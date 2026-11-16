@@ -152,8 +152,9 @@ func (s *Server) loadInstances() error {
 func (s *Server) newInstance(id string, w *loadedWidget, label string, created time.Time) *instance {
 	return &instance{
 		id: id, w: w, srv: s, label: label, created: created,
-		log:     s.log.With("instance", id),
-		fetcher: newFetcher(w.policy.Load(), s.transport),
+		log:      s.log.With("instance", id, "widget", w.spec.Name),
+		fetcher:  newFetcher(w.policy.Load(), s.transport),
+		viewLogs: newViewLogLimiter(),
 	}
 }
 

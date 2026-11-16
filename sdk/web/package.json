@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./bridge": "./src/bridge.ts",
+    "./log": "./src/log.ts",
     "./checks": "./src/checks.ts",
     "./prefs": "./src/prefs.ts",
     "./icons": "./src/icons/index.ts",

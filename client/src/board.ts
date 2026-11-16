@@ -33,6 +33,7 @@ import {
   type WidgetFrame,
 } from "./gen/widgetd/v1/stream_pb.ts";
 import { CardStore } from "./lib/store.ts";
+import { LogQueue } from "./lib/logs.ts";
 import {
   deltaFollows,
   gridSpan,
@@ -242,6 +243,9 @@ class WidgetBoard extends HTMLElement {
   private grid = document.createElement("div");
   private store = new CardStore(localStorage);
   private cards = new Map<string, CardHost>();
+  /** What views logged, until it is sent (see sendLogsSoon). */
+  private logs = new LogQueue();
+  private logTimer: ReturnType<typeof setTimeout> | undefined;
   private instances = new Map<string, { status: InstanceStatus; tile?: HTMLElement }>();
   private addTile = document.createElement("section");
   /** An instance this screen just added: show its set-up code as soon as it appears. */
@@ -315,6 +319,8 @@ class WidgetBoard extends HTMLElement {
     clearTimeout(this.offlineTimer);
     this.offlineSince = undefined;
     clearTimeout(this.saveTimer);
+    clearTimeout(this.logTimer);
+    this.sendLogs();
     window.removeEventListener("message", this.onMessage);
     window.removeEventListener("keydown", this.onKey);
   }
@@ -1167,6 +1173,10 @@ class WidgetBoard extends HTMLElement {
             );
         }
         return;
+      case "log":
+        this.logs.push(card.id, m);
+        this.sendLogsSoon();
+        return;
       case "storage-get":
         reply({ t: "storage", id: m.id, value: this.store.viewGet(card.id, String(m.key)) });
         return;
@@ -1197,6 +1207,38 @@ class WidgetBoard extends HTMLElement {
     }
   };
   /* eslint-enable @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unnecessary-type-conversion */
+
+  /**
+   * Send what views logged in a moment, so a burst goes in one call; at
+   * once if a batch has piled up.
+   */
+  private sendLogsSoon() {
+    if (this.logs.size >= 50) {
+      clearTimeout(this.logTimer);
+      this.logTimer = undefined;
+      this.sendLogs();
+      return;
+    }
+    this.logTimer ??= setTimeout(() => {
+      this.logTimer = undefined;
+      this.sendLogs();
+    }, 2000);
+  }
+
+  /**
+   * Send one batch, and schedule the rest. A batch that fails is dropped:
+   * logs are worth a try, not a retry loop.
+   */
+  private sendLogs() {
+    const batch = this.logs.take();
+    if (!batch) return;
+    if (this.logs.size > 0 && !this.stopped) this.sendLogsSoon();
+    createClient(WidgetStreamService, this.transport())
+      .sendLogs(batch)
+      .catch(() => {
+        /* dropped: see above */
+      });
+  }
 }
 
 /** A titled list of settings rows, each value over its source. */

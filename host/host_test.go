@@ -30,6 +30,12 @@ type harness struct {
 
 func newHarness(t *testing.T, mods ...func(*widget.Spec)) *harness {
 	t.Helper()
+	return newHarnessOpts(t, nil, mods...)
+}
+
+// newHarnessOpts is newHarness with a chance to change the server's Options.
+func newHarnessOpts(t *testing.T, opt func(*Options), mods ...func(*widget.Spec)) *harness {
+	t.Helper()
 	h := &harness{t: t, hosts: make(chan widget.Host, 4)}
 	spec := widget.Spec{
 		Name:    "test",
@@ -46,12 +52,16 @@ func newHarness(t *testing.T, mods ...func(*widget.Spec)) *harness {
 	for _, mod := range mods {
 		mod(&spec)
 	}
-	srv, err := New(Options{
+	opts := Options{
 		StateDir:  t.TempDir(),
 		PublicURL: "http://localhost",
 		Widgets:   []widget.Spec{spec},
 		Instances: []Instance{{ID: "one", Widget: "test", Config: &testwidgetv1.Config{Label: "hi"}}},
-	})
+	}
+	if opt != nil {
+		opt(&opts)
+	}
+	srv, err := New(opts)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -44,6 +45,8 @@ type instance struct {
 	fetcher  *fetcher
 	created  time.Time
 	restartN atomic.Int64
+	// viewLogs limits the lines its views may log (see SendLogs).
+	viewLogs *rate.Limiter
 
 	mu         sync.Mutex
 	label      string

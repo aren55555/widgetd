@@ -16,6 +16,14 @@ service WidgetStreamService {
   // to the widget's server half. Screens only, as for StreamWidgets. The
   // value must be the card's declared action type, and pass its rules.
   rpc SendAction(SendActionRequest) returns (SendActionResponse);
+
+  // Lines cards' views logged (ctx.log, and anything they threw), batched
+  // by the screen. Screens only, as for StreamWidgets. The host writes each
+  // line to its log tagged with the instance, widget, card and screen, so an
+  // operator can find one instance's lines, or every instance of a widget.
+  // Lines are capped in length and rate-limited per instance; the excess is
+  // dropped, never refused.
+  rpc SendLogs(SendLogsRequest) returns (SendLogsResponse);
 }
 
 message SendActionRequest {
@@ -25,6 +33,36 @@ message SendActionRequest {
 }
 
 message SendActionResponse {}
+
+// ViewLog is one line a card's view logged.
+message ViewLog {
+  enum Level {
+    LEVEL_UNSPECIFIED = 0;
+    LEVEL_DEBUG = 1;
+    LEVEL_INFO = 2;
+    LEVEL_WARN = 3;
+    LEVEL_ERROR = 4;
+  }
+  string card_id = 1;
+  Level level = 2;
+  string message = 3;
+  // Whatever the view attached, e.g. {"stack": "…"}. Logged under a "view"
+  // group, so they can't stand in for the host's own keys.
+  map<string, string> attrs = 4;
+  // When the screen got the line from the card, by the screen's clock. The
+  // host logs it as screen_time; its own record time is when the line
+  // arrived, up to a batch later.
+  google.protobuf.Timestamp time = 5;
+}
+
+message SendLogsRequest {
+  repeated ViewLog logs = 1;
+  // How many lines the screen dropped since its last batch, because they
+  // came faster than it sends them.
+  uint32 dropped = 2;
+}
+
+message SendLogsResponse {}
 
 // Cursor orders the updates of one card. `seq` increases with every snapshot
 // or delta; `epoch` changes whenever the instance behind the card restarts,

@@ -39,6 +39,9 @@ const (
 	// WidgetStreamServiceSendActionProcedure is the fully-qualified name of the WidgetStreamService's
 	// SendAction RPC.
 	WidgetStreamServiceSendActionProcedure = "/widgetd.v1.WidgetStreamService/SendAction"
+	// WidgetStreamServiceSendLogsProcedure is the fully-qualified name of the WidgetStreamService's
+	// SendLogs RPC.
+	WidgetStreamServiceSendLogsProcedure = "/widgetd.v1.WidgetStreamService/SendLogs"
 )
 
 // WidgetStreamServiceClient is a client for the widgetd.v1.WidgetStreamService service.
@@ -48,6 +51,13 @@ type WidgetStreamServiceClient interface {
 	// to the widget's server half. Screens only, as for StreamWidgets. The
 	// value must be the card's declared action type, and pass its rules.
 	SendAction(context.Context, *connect.Request[v1.SendActionRequest]) (*connect.Response[v1.SendActionResponse], error)
+	// Lines cards' views logged (ctx.log, and anything they threw), batched
+	// by the screen. Screens only, as for StreamWidgets. The host writes each
+	// line to its log tagged with the instance, widget, card and screen, so an
+	// operator can find one instance's lines, or every instance of a widget.
+	// Lines are capped in length and rate-limited per instance; the excess is
+	// dropped, never refused.
+	SendLogs(context.Context, *connect.Request[v1.SendLogsRequest]) (*connect.Response[v1.SendLogsResponse], error)
 }
 
 // NewWidgetStreamServiceClient constructs a client for the widgetd.v1.WidgetStreamService service.
@@ -73,6 +83,12 @@ func NewWidgetStreamServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(widgetStreamServiceMethods.ByName("SendAction")),
 			connect.WithClientOptions(opts...),
 		),
+		sendLogs: connect.NewClient[v1.SendLogsRequest, v1.SendLogsResponse](
+			httpClient,
+			baseURL+WidgetStreamServiceSendLogsProcedure,
+			connect.WithSchema(widgetStreamServiceMethods.ByName("SendLogs")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -80,6 +96,7 @@ func NewWidgetStreamServiceClient(httpClient connect.HTTPClient, baseURL string,
 type widgetStreamServiceClient struct {
 	streamWidgets *connect.Client[v1.StreamWidgetsRequest, v1.StreamWidgetsResponse]
 	sendAction    *connect.Client[v1.SendActionRequest, v1.SendActionResponse]
+	sendLogs      *connect.Client[v1.SendLogsRequest, v1.SendLogsResponse]
 }
 
 // StreamWidgets calls widgetd.v1.WidgetStreamService.StreamWidgets.
@@ -92,6 +109,11 @@ func (c *widgetStreamServiceClient) SendAction(ctx context.Context, req *connect
 	return c.sendAction.CallUnary(ctx, req)
 }
 
+// SendLogs calls widgetd.v1.WidgetStreamService.SendLogs.
+func (c *widgetStreamServiceClient) SendLogs(ctx context.Context, req *connect.Request[v1.SendLogsRequest]) (*connect.Response[v1.SendLogsResponse], error) {
+	return c.sendLogs.CallUnary(ctx, req)
+}
+
 // WidgetStreamServiceHandler is an implementation of the widgetd.v1.WidgetStreamService service.
 type WidgetStreamServiceHandler interface {
 	StreamWidgets(context.Context, *connect.Request[v1.StreamWidgetsRequest], *connect.ServerStream[v1.StreamWidgetsResponse]) error
@@ -99,6 +121,13 @@ type WidgetStreamServiceHandler interface {
 	// to the widget's server half. Screens only, as for StreamWidgets. The
 	// value must be the card's declared action type, and pass its rules.
 	SendAction(context.Context, *connect.Request[v1.SendActionRequest]) (*connect.Response[v1.SendActionResponse], error)
+	// Lines cards' views logged (ctx.log, and anything they threw), batched
+	// by the screen. Screens only, as for StreamWidgets. The host writes each
+	// line to its log tagged with the instance, widget, card and screen, so an
+	// operator can find one instance's lines, or every instance of a widget.
+	// Lines are capped in length and rate-limited per instance; the excess is
+	// dropped, never refused.
+	SendLogs(context.Context, *connect.Request[v1.SendLogsRequest]) (*connect.Response[v1.SendLogsResponse], error)
 }
 
 // NewWidgetStreamServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -120,12 +149,20 @@ func NewWidgetStreamServiceHandler(svc WidgetStreamServiceHandler, opts ...conne
 		connect.WithSchema(widgetStreamServiceMethods.ByName("SendAction")),
 		connect.WithHandlerOptions(opts...),
 	)
+	widgetStreamServiceSendLogsHandler := connect.NewUnaryHandler(
+		WidgetStreamServiceSendLogsProcedure,
+		svc.SendLogs,
+		connect.WithSchema(widgetStreamServiceMethods.ByName("SendLogs")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/widgetd.v1.WidgetStreamService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case WidgetStreamServiceStreamWidgetsProcedure:
 			widgetStreamServiceStreamWidgetsHandler.ServeHTTP(w, r)
 		case WidgetStreamServiceSendActionProcedure:
 			widgetStreamServiceSendActionHandler.ServeHTTP(w, r)
+		case WidgetStreamServiceSendLogsProcedure:
+			widgetStreamServiceSendLogsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -141,4 +178,8 @@ func (UnimplementedWidgetStreamServiceHandler) StreamWidgets(context.Context, *c
 
 func (UnimplementedWidgetStreamServiceHandler) SendAction(context.Context, *connect.Request[v1.SendActionRequest]) (*connect.Response[v1.SendActionResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetStreamService.SendAction is not implemented"))
+}
+
+func (UnimplementedWidgetStreamServiceHandler) SendLogs(context.Context, *connect.Request[v1.SendLogsRequest]) (*connect.Response[v1.SendLogsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetStreamService.SendLogs is not implemented"))
 }
