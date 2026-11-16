@@ -1,9 +1,9 @@
 // Package server is the portfolio-heatmap widget's server half. It reads
 // the display's brokerage holdings through SnapTrade (read-only, signed by
 // the host) every few minutes, and quotes for them every minute: Finnhub
-// for stocks and funds, Coinbase for crypto. It sends each holding's
-// weight in the portfolio and its percentage moves, today and over the past
-// month (see history.go), never a price, a share count or a dollar amount.
+// for stocks and funds, Coinbase for crypto, and once a day each holding's
+// past month (see history.go). It sends each holding's weight in the
+// portfolio and its percentage moves, today and over the past month, never a price, a share count or a dollar amount.
 package server
 
 import (
@@ -83,8 +83,9 @@ func Run(ctx context.Context, h widget.Host) error {
 }
 
 // readQuotes refreshes quotes for every held symbol, keeping the last good
-// one when a read fails. Along the way it keeps each stock's previous
-// close, and reads each coin's month of candles once a day, for the charts.
+// one when a read fails. Along the way, for the charts, it reads each
+// symbol's month once a day (Yahoo for stocks, Coinbase for coins) and
+// keeps each stock's previous close.
 func readQuotes(ctx context.Context, h widget.Host, positions []position, quotes map[string]quote, hist *history) {
 	seen := map[string]bool{}
 	calls := 0
@@ -104,15 +105,11 @@ func readQuotes(ctx context.Context, h widget.Host, positions []position, quotes
 		switch {
 		case p.Crypto:
 			q, ok, err = coinbaseQuote(ctx, h, p.Symbol)
-			if today := time.Now().UTC().Format(dayLayout); err == nil && ok && hist.candlesOn[p.Symbol] != today {
-				pts, cerr := coinbaseMonth(ctx, h, p.Symbol, time.Now())
-				if cerr != nil {
-					h.Logger().Warn("portfolio-heatmap: candles failed", "symbol", p.Symbol, "err", cerr)
-				} else {
-					hist.setCandles(p.Symbol, today, pts)
-				}
+			if err == nil && ok {
+				readMonth(ctx, h, hist, p.Symbol, coinbaseMonth)
 			}
 		default:
+			readMonth(ctx, h, hist, p.Symbol, yahooMonth)
 			if calls > 0 {
 				select {
 				case <-ctx.Done():
@@ -143,4 +140,21 @@ func readQuotes(ctx context.Context, h widget.Host, positions []position, quotes
 			delete(quotes, s)
 		}
 	}
+}
+
+// readMonth reads symbol's month whole with read, if it's due.
+func readMonth(ctx context.Context, h widget.Host, hist *history, symbol string,
+	read func(context.Context, widget.Host, string, time.Time) ([]point, error),
+) {
+	now := time.Now()
+	if !hist.monthDue(symbol, now) {
+		return
+	}
+	pts, err := read(ctx, h, symbol, now)
+	if err != nil {
+		hist.monthFailed(symbol, now)
+		h.Logger().Warn("portfolio-heatmap: can't read the month", "symbol", symbol, "err", err)
+		return
+	}
+	hist.setMonth(symbol, now, pts)
 }

@@ -48,6 +48,26 @@ func TestCoinbaseMonth(t *testing.T) {
 	}
 }
 
+func TestYahooMonth(t *testing.T) {
+	// Bars stamped at 09:30 Eastern; one with a null close, one repeated.
+	open := func(d int) int64 { return time.Date(2026, 11, d, 14, 30, 0, 0, time.UTC).Unix() }
+	h := &fakeHost{body: fmt.Sprintf(`{"chart": {"result": [{
+		"timestamp": [%d, %d, %d, %d],
+		"indicators": {"quote": [{"close": [100, null, 104, 104]}]}
+	}], "error": null}}`, open(10), open(11), open(12), open(12))}
+	pts, err := yahooMonth(context.Background(), h, "BRK.B", time.Time{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []point{{"2026-11-10", 100}, {"2026-11-12", 104}}
+	if !slices.Equal(pts, want) {
+		t.Errorf("got %v, want %v", pts, want)
+	}
+	if !strings.HasSuffix(h.url, "/v8/finance/chart/BRK-B?range=1mo&interval=1d") {
+		t.Errorf("asked for %s", h.url)
+	}
+}
+
 func TestFinnhubQuoteDays(t *testing.T) {
 	// The last trade: Monday 16 Nov 2026, 15:59 Eastern.
 	last := time.Date(2026, 11, 16, 20, 59, 0, 0, time.UTC).Unix()

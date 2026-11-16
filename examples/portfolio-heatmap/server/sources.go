@@ -21,6 +21,7 @@ const (
 	snaptradeAPI = "https://api.snaptrade.com"
 	finnhubAPI   = "https://finnhub.io/api/v1"
 	coinbaseAPI  = "https://api.exchange.coinbase.com"
+	yahooAPI     = "https://query1.finance.yahoo.com/v8/finance/chart/"
 	userAgent    = "widgetd-portfolio-heatmap"
 )
 
@@ -183,6 +184,50 @@ func coinbaseMonth(ctx context.Context, h widget.Host, symbol string, now time.T
 			continue
 		}
 		pts = append(pts, point{Day: time.Unix(int64(r[0]), 0).UTC().Format(dayLayout), Price: float64(r[4])})
+	}
+	slices.SortFunc(pts, func(a, b point) int { return strings.Compare(a.Day, b.Day) })
+	return slices.CompactFunc(pts, func(a, b point) bool { return a.Day == b.Day }), nil
+}
+
+// yahooMonth reads a stock or fund's daily closes over the past month,
+// oldest first, from Yahoo Finance's public chart, which needs no key
+// (split-adjusted; during a session the last is today's, still moving).
+// Nil when Yahoo doesn't know the symbol.
+func yahooMonth(ctx context.Context, h widget.Host, symbol string, _ time.Time) ([]point, error) {
+	var r struct {
+		Chart struct {
+			Result []struct {
+				Timestamp  []int64 `json:"timestamp"`
+				Indicators struct {
+					Quote []struct {
+						Close []num `json:"close"`
+					} `json:"quote"`
+				} `json:"indicators"`
+			} `json:"result"`
+		} `json:"chart"`
+	}
+	// Yahoo writes a share class with a dash: BRK.B is BRK-B.
+	u := yahooAPI + url.PathEscape(strings.ReplaceAll(symbol, ".", "-")) + "?range=1mo&interval=1d"
+	err := getJSON(ctx, h, u, false, &r)
+	var nf *notFoundError
+	if errors.As(err, &nf) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if len(r.Chart.Result) == 0 || len(r.Chart.Result[0].Indicators.Quote) == 0 {
+		return nil, nil
+	}
+	res := r.Chart.Result[0]
+	closes := res.Indicators.Quote[0].Close
+	pts := make([]point, 0, len(res.Timestamp))
+	for i, t := range res.Timestamp {
+		// A bar's time is its session's open; a day with no trades has a null close.
+		if i >= len(closes) || t <= 0 || closes[i] <= 0 {
+			continue
+		}
+		pts = append(pts, point{Day: tradingDay(time.Unix(t, 0)).Format(dayLayout), Price: float64(closes[i])})
 	}
 	slices.SortFunc(pts, func(a, b point) int { return strings.Compare(a.Day, b.Day) })
 	return slices.CompactFunc(pts, func(a, b point) bool { return a.Day == b.Day }), nil

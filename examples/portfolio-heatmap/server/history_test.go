@@ -147,3 +147,24 @@ func TestBuildMonth(t *testing.T) {
 		t.Errorf("a stock with no closes yet has a chart: %v", fmt.Sprint(n.GetMonthPct()))
 	}
 }
+
+func TestMonthDue(t *testing.T) {
+	hs := newHistory(nil)
+	now := time.Date(2026, 11, 16, 15, 0, 0, 0, time.UTC)
+	if !hs.monthDue("GOOG", now) {
+		t.Fatal("a month never read is due")
+	}
+	hs.monthFailed("GOOG", now)
+	if hs.monthDue("GOOG", now.Add(monthRetry/2)) || !hs.monthDue("GOOG", now.Add(monthRetry)) {
+		t.Error("a failed read should wait monthRetry")
+	}
+	hs.closes["GOOG"] = []point{{"2026-11-13", 100}}
+	hs.setMonth("GOOG", now, nil)
+	if len(hs.closes["GOOG"]) != 1 {
+		t.Error("an empty month should keep the closes there are")
+	}
+	hs.setMonth("GOOG", now, []point{{"2026-10-20", 90}, {"2026-11-13", 100}})
+	if len(hs.closes["GOOG"]) != 2 || hs.monthDue("GOOG", now.Add(2*time.Hour)) || !hs.monthDue("GOOG", now.Add(10*time.Hour)) {
+		t.Error("a month read today is due again tomorrow")
+	}
+}

@@ -11,13 +11,16 @@ import (
 )
 
 // History for the chart on an opened tile: a month of daily closes per
-// holding. Free market data has no stock history, so the widget gathers
-// its own: every Finnhub quote carries the previous trading day's close,
-// which is kept in the instance's KV, one a day. A stock's chart fills in
-// over its first month. Crypto needs none of that: Coinbase's public daily
-// candles give the whole month at once.
+// holding, read whole once a day: Yahoo Finance's public chart for stocks
+// and funds (Finnhub's candles are paid), Coinbase's public daily candles
+// for crypto. Neither needs a key. In case Yahoo's unofficial endpoint
+// stops answering, the widget also keeps each stock's previous close from
+// every Finnhub quote in the instance's KV, one a day, and charts those
+// until Yahoo is back.
 
 const (
+	// monthRetry is how soon a month that failed to read is asked for again.
+	monthRetry = time.Hour
 	// monthDays is how far back a chart goes.
 	monthDays = 30
 	// keepCloses is how many closes a stock keeps: a month of trading days
@@ -38,12 +41,15 @@ type history struct {
 	kv     widget.KV
 	closes map[string][]point
 	loaded map[string]bool
-	// candlesOn is the UTC day each coin's candles were last read.
-	candlesOn map[string]string
+	// readOn is the UTC day each symbol's month was last read whole, and
+	// failedAt when reading it last failed.
+	readOn   map[string]string
+	failedAt map[string]time.Time
 }
 
 func newHistory(kv widget.KV) *history {
-	return &history{kv: kv, closes: map[string][]point{}, loaded: map[string]bool{}, candlesOn: map[string]string{}}
+	return &history{kv: kv, closes: map[string][]point{}, loaded: map[string]bool{},
+		readOn: map[string]string{}, failedAt: map[string]time.Time{}}
 }
 
 func closesKey(symbol string) string { return "closes/" + symbol }
@@ -116,12 +122,25 @@ func (hs *history) recordClose(symbol, day string, price float64) error {
 	return nil
 }
 
-// setCandles replaces a coin's closes with ones read from its candles.
+// monthDue is whether symbol's month should be read whole now: not yet
+// today (UTC), and not within monthRetry of a failure.
+func (hs *history) monthDue(symbol string, now time.Time) bool {
+	return hs.readOn[symbol] != now.UTC().Format(dayLayout) && now.Sub(hs.failedAt[symbol]) >= monthRetry
+}
+
+// monthFailed notes that reading symbol's month failed at now.
+func (hs *history) monthFailed(symbol string, now time.Time) { hs.failedAt[symbol] = now }
+
+// setMonth replaces symbol's closes with a month read whole. An empty
+// month (a source that doesn't know the symbol) keeps the ones there are.
 // They aren't stored: they can be read again whenever they're wanted.
-func (hs *history) setCandles(symbol, today string, pts []point) {
+func (hs *history) setMonth(symbol string, now time.Time, pts []point) {
+	hs.readOn[symbol] = now.UTC().Format(dayLayout)
+	if len(pts) == 0 {
+		return
+	}
 	hs.loaded[symbol] = true
 	hs.closes[symbol] = pts
-	hs.candlesOn[symbol] = today
 }
 
 // tradingDay is the US market day a Finnhub quote's time falls on. Every

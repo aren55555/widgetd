@@ -5,11 +5,12 @@ title   = "Portfolio heatmap"
 icon    = "layout-grid"
 
 # SnapTrade for the holdings and Finnhub for stock and fund quotes (both
-# signed by the host, see [[uses]]); Coinbase's public market data for crypto.
+# signed by the host, see [[uses]]); Yahoo Finance's public chart for stock
+# and fund history; Coinbase's public market data for crypto.
 [network]
-hosts   = ["api.snaptrade.com", "finnhub.io", "api.exchange.coinbase.com"]
+hosts   = ["api.snaptrade.com", "finnhub.io", "api.exchange.coinbase.com", "query1.finance.yahoo.com"]
 methods = ["GET"]
-why     = "Your holdings, read-only (SnapTrade), and their moves today and over the past month (Finnhub, Coinbase)"
+why     = "Your holdings, read-only (SnapTrade), and their moves today and over the past month (Finnhub, Yahoo Finance, Coinbase)"
 
 # The display's brokerage accounts, read-only. The host signs requests to
 # api.snaptrade.com; the widget never sees the SnapTrade user's secret, and
