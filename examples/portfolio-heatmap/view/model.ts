@@ -97,8 +97,9 @@ export interface Rect {
  * Lays items out in the box (x, y, w, h), each with area in proportion to
  * its value, as near square as it can. Items of no value are left out.
  * Returns rectangles in the items' order, largest value first.
+ * Items may not have their own x, y, w or h: the rectangle's would replace them.
  */
-export function squarify<T extends { v: number }>(
+export function squarify<T extends { v: number; x?: never; y?: never; w?: never; h?: never }>(
   items: readonly T[],
   x: number,
   y: number,

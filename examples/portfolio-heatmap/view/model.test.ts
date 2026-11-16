@@ -85,6 +85,9 @@ describe("squarify", () => {
         expect(ox > 1e-6 && oy > 1e-6).toBe(false);
       }
   });
+  test("keeps each item's own fields", () => {
+    expect(rects.map((r) => r.id).sort()).toEqual(items.map((i) => i.id));
+  });
   test("leaves out items of no value, and draws nothing in no space", () => {
     expect(squarify([{ v: 0 }, { v: 5 }], 0, 0, 10, 10)).toHaveLength(1);
     expect(squarify(items, 0, 0, 0, 100)).toHaveLength(0);

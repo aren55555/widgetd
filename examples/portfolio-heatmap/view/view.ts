@@ -123,7 +123,7 @@ defineWidget({
       const W = map.clientWidth;
       const H = map.clientHeight;
       const rects = squarify(
-        holdings.map((h) => ({ h, v: h.weightBp })),
+        holdings.map((holding) => ({ holding, v: holding.weightBp })),
         0,
         0,
         W,
@@ -131,7 +131,7 @@ defineWidget({
       );
       const seen = new Set<string>();
       for (const r of rects) {
-        const h = r.h;
+        const h = r.holding;
         seen.add(h.symbol);
         let t = tiles.get(h.symbol);
         if (!t) {
