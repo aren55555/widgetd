@@ -32,8 +32,10 @@ const (
 // names one instance and nothing else, and holding one grants nothing by
 // itself: the page it opens still needs an admin's passkey session to save.
 // What it adds is that the phone lands on the right instance, and that a
-// link photographed off a screen stops working after ten minutes, or once
-// used.
+// link photographed off a screen stops working: once used to save, or ten
+// minutes after it was shown or its page was last open. The page keeps it
+// alive while it's open (KeepConfigTicket), so the ten minutes start when
+// it's closed or left, to sign in to an account, say.
 type tickets struct {
 	mu sync.Mutex
 	m  map[string]ticket
@@ -61,15 +63,20 @@ func (t *tickets) issue(instanceID string) (string, time.Time) {
 	return tok, exp
 }
 
-func (t *tickets) lookup(tok string) (string, bool) {
+// lookup resolves a live ticket to its instance, and, since its page is
+// open, restarts its ten minutes. Call it only for an admin.
+func (t *tickets) lookup(tok string) (id string, expires time.Time, ok bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	now := time.Now()
 	for k, v := range t.m {
-		if subtle.ConstantTimeCompare([]byte(k), []byte(tok)) == 1 && time.Now().Before(v.expires) {
-			return v.instanceID, true
+		if subtle.ConstantTimeCompare([]byte(k), []byte(tok)) == 1 && now.Before(v.expires) {
+			v.expires = now.Add(configTicketTTL)
+			t.m[k] = v
+			return v.instanceID, v.expires, true
 		}
 	}
-	return "", false
+	return "", time.Time{}, false
 }
 
 func (t *tickets) consume(tok string) {
@@ -159,11 +166,26 @@ func (a *adminService) targetInstance(c caller, tok, id string) (*instance, erro
 		}
 		return a.srv.instance(id)
 	}
-	id, ok := a.srv.tickets.lookup(tok)
+	id, _, ok := a.srv.tickets.lookup(tok)
 	if !ok {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("this link has expired; scan the code on the screen again"))
+		return nil, errTicketExpired()
 	}
 	return a.srv.instance(id)
+}
+
+func errTicketExpired() error {
+	return connect.NewError(connect.CodeNotFound, errors.New("this link has expired; scan the code on the screen again"))
+}
+
+func (a *adminService) KeepConfigTicket(ctx context.Context, req *connect.Request[widgetdv1.KeepConfigTicketRequest]) (*connect.Response[widgetdv1.KeepConfigTicketResponse], error) {
+	if err := requireAdmin(a.caller(req)); err != nil {
+		return nil, err
+	}
+	_, exp, ok := a.srv.tickets.lookup(req.Msg.GetTicket())
+	if !ok {
+		return nil, errTicketExpired()
+	}
+	return connect.NewResponse(&widgetdv1.KeepConfigTicketResponse{ExpiresAt: timestamppb.New(exp)}), nil
 }
 
 func (a *adminService) GetConfigForm(ctx context.Context, req *connect.Request[widgetdv1.GetConfigFormRequest]) (*connect.Response[widgetdv1.GetConfigFormResponse], error) {

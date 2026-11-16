@@ -386,7 +386,7 @@ func TestExpiredTicket(t *testing.T) {
 	e.expires = time.Now().Add(-time.Second)
 	tk.m[tok] = e
 	tk.mu.Unlock()
-	if _, ok := tk.lookup(tok); ok {
+	if _, _, ok := tk.lookup(tok); ok {
 		t.Fatal("an expired ticket must not resolve")
 	}
 }
@@ -548,5 +548,64 @@ func TestSaveRunsVerify(t *testing.T) {
 	proto.Unmarshal(srv.instances["one"].config, &cfg)
 	if cfg.GetLabel() != "OK" {
 		t.Fatalf("saved %q, want the widget's tidied OK", cfg.GetLabel())
+	}
+}
+
+// While its page is open, a ticket stays alive: each call restarts its ten
+// minutes, so they run from when the page was closed or left, not from when
+// the screen showed the code. Saving still uses it up.
+func TestTicketKeptWhileOpen(t *testing.T) {
+	h := newHarness(t)
+	h.host()
+	ctx := context.Background()
+	c := h.adminClient()
+	device, admin := h.deviceCookie("d1"), h.adminCookie()
+	added, err := c.AddInstance(ctx, withCookie(&widgetdv1.AddInstanceRequest{Widget: "test"}, device))
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := added.Msg.GetInstanceId()
+	tk, err := c.RequestConfigTicket(ctx, withCookie(&widgetdv1.RequestConfigTicketRequest{InstanceId: id}, admin))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ticket := ticketOf(t, tk.Msg.GetUrl())
+	nearlyOut := func() {
+		h.srv.tickets.mu.Lock()
+		e := h.srv.tickets.m[ticket]
+		e.expires = time.Now().Add(time.Second)
+		h.srv.tickets.m[ticket] = e
+		h.srv.tickets.mu.Unlock()
+	}
+
+	// Only an admin keeps it.
+	if _, err := c.KeepConfigTicket(ctx, connect.NewRequest(&widgetdv1.KeepConfigTicketRequest{Ticket: ticket})); connect.CodeOf(err) != connect.CodeUnauthenticated && connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("keep without a session: %v", err)
+	}
+	nearlyOut()
+	kept, err := c.KeepConfigTicket(ctx, withCookie(&widgetdv1.KeepConfigTicketRequest{Ticket: ticket}, admin))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if left := time.Until(kept.Msg.GetExpiresAt().AsTime()); left < configTicketTTL-time.Minute || left > configTicketTTL {
+		t.Fatalf("kept for %v, want %v", left, configTicketTTL)
+	}
+	// Any use of the page counts, too.
+	nearlyOut()
+	if _, err := c.GetConfigForm(ctx, withCookie(&widgetdv1.GetConfigFormRequest{Ticket: ticket}, admin)); err != nil {
+		t.Fatal(err)
+	}
+	h.srv.tickets.mu.Lock()
+	left := time.Until(h.srv.tickets.m[ticket].expires)
+	h.srv.tickets.mu.Unlock()
+	if left < configTicketTTL-time.Minute {
+		t.Fatalf("opening the form should restart the ten minutes: %v left", left)
+	}
+
+	if _, err := c.SaveConfig(ctx, withCookie(&widgetdv1.SaveConfigRequest{Ticket: ticket, Config: cfgBytes(t, "ok")}, admin)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.KeepConfigTicket(ctx, withCookie(&widgetdv1.KeepConfigTicketRequest{Ticket: ticket}, admin)); connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatalf("a saved ticket can't be kept: %v", err)
 	}
 }

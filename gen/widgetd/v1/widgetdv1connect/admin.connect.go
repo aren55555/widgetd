@@ -42,6 +42,9 @@ const (
 	// WidgetAdminServiceRequestConfigTicketProcedure is the fully-qualified name of the
 	// WidgetAdminService's RequestConfigTicket RPC.
 	WidgetAdminServiceRequestConfigTicketProcedure = "/widgetd.v1.WidgetAdminService/RequestConfigTicket"
+	// WidgetAdminServiceKeepConfigTicketProcedure is the fully-qualified name of the
+	// WidgetAdminService's KeepConfigTicket RPC.
+	WidgetAdminServiceKeepConfigTicketProcedure = "/widgetd.v1.WidgetAdminService/KeepConfigTicket"
 	// WidgetAdminServiceGetConfigFormProcedure is the fully-qualified name of the WidgetAdminService's
 	// GetConfigForm RPC.
 	WidgetAdminServiceGetConfigFormProcedure = "/widgetd.v1.WidgetAdminService/GetConfigForm"
@@ -100,6 +103,11 @@ type WidgetAdminServiceClient interface {
 	// admin. The screen shows it as a QR code; the link alone grants nothing:
 	// saving needs an admin session.
 	RequestConfigTicket(context.Context, *connect.Request[v1.RequestConfigTicketRequest]) (*connect.Response[v1.RequestConfigTicketResponse], error)
+	// The configuration page for a ticket is still open. Admin. The page calls
+	// it every minute: a ticket expires ten minutes after the screen showed
+	// it, or after its page last called, so it lasts while someone is setting
+	// up, and a while after they leave (to sign in to an account, say).
+	KeepConfigTicket(context.Context, *connect.Request[v1.KeepConfigTicketRequest]) (*connect.Response[v1.KeepConfigTicketResponse], error)
 	// What the configuration page needs to render its form. Admin. The
 	// instance is named by a ticket (a phone that scanned a screen's QR code)
 	// or directly by id (the admin page's "Settings" link).
@@ -162,6 +170,12 @@ func NewWidgetAdminServiceClient(httpClient connect.HTTPClient, baseURL string, 
 			httpClient,
 			baseURL+WidgetAdminServiceRequestConfigTicketProcedure,
 			connect.WithSchema(widgetAdminServiceMethods.ByName("RequestConfigTicket")),
+			connect.WithClientOptions(opts...),
+		),
+		keepConfigTicket: connect.NewClient[v1.KeepConfigTicketRequest, v1.KeepConfigTicketResponse](
+			httpClient,
+			baseURL+WidgetAdminServiceKeepConfigTicketProcedure,
+			connect.WithSchema(widgetAdminServiceMethods.ByName("KeepConfigTicket")),
 			connect.WithClientOptions(opts...),
 		),
 		getConfigForm: connect.NewClient[v1.GetConfigFormRequest, v1.GetConfigFormResponse](
@@ -262,6 +276,7 @@ type widgetAdminServiceClient struct {
 	listWidgets         *connect.Client[v1.ListWidgetsRequest, v1.ListWidgetsResponse]
 	addInstance         *connect.Client[v1.AddInstanceRequest, v1.AddInstanceResponse]
 	requestConfigTicket *connect.Client[v1.RequestConfigTicketRequest, v1.RequestConfigTicketResponse]
+	keepConfigTicket    *connect.Client[v1.KeepConfigTicketRequest, v1.KeepConfigTicketResponse]
 	getConfigForm       *connect.Client[v1.GetConfigFormRequest, v1.GetConfigFormResponse]
 	getConfigChoices    *connect.Client[v1.GetConfigChoicesRequest, v1.GetConfigChoicesResponse]
 	saveConfig          *connect.Client[v1.SaveConfigRequest, v1.SaveConfigResponse]
@@ -292,6 +307,11 @@ func (c *widgetAdminServiceClient) AddInstance(ctx context.Context, req *connect
 // RequestConfigTicket calls widgetd.v1.WidgetAdminService.RequestConfigTicket.
 func (c *widgetAdminServiceClient) RequestConfigTicket(ctx context.Context, req *connect.Request[v1.RequestConfigTicketRequest]) (*connect.Response[v1.RequestConfigTicketResponse], error) {
 	return c.requestConfigTicket.CallUnary(ctx, req)
+}
+
+// KeepConfigTicket calls widgetd.v1.WidgetAdminService.KeepConfigTicket.
+func (c *widgetAdminServiceClient) KeepConfigTicket(ctx context.Context, req *connect.Request[v1.KeepConfigTicketRequest]) (*connect.Response[v1.KeepConfigTicketResponse], error) {
+	return c.keepConfigTicket.CallUnary(ctx, req)
 }
 
 // GetConfigForm calls widgetd.v1.WidgetAdminService.GetConfigForm.
@@ -380,6 +400,11 @@ type WidgetAdminServiceHandler interface {
 	// admin. The screen shows it as a QR code; the link alone grants nothing:
 	// saving needs an admin session.
 	RequestConfigTicket(context.Context, *connect.Request[v1.RequestConfigTicketRequest]) (*connect.Response[v1.RequestConfigTicketResponse], error)
+	// The configuration page for a ticket is still open. Admin. The page calls
+	// it every minute: a ticket expires ten minutes after the screen showed
+	// it, or after its page last called, so it lasts while someone is setting
+	// up, and a while after they leave (to sign in to an account, say).
+	KeepConfigTicket(context.Context, *connect.Request[v1.KeepConfigTicketRequest]) (*connect.Response[v1.KeepConfigTicketResponse], error)
 	// What the configuration page needs to render its form. Admin. The
 	// instance is named by a ticket (a phone that scanned a screen's QR code)
 	// or directly by id (the admin page's "Settings" link).
@@ -438,6 +463,12 @@ func NewWidgetAdminServiceHandler(svc WidgetAdminServiceHandler, opts ...connect
 		WidgetAdminServiceRequestConfigTicketProcedure,
 		svc.RequestConfigTicket,
 		connect.WithSchema(widgetAdminServiceMethods.ByName("RequestConfigTicket")),
+		connect.WithHandlerOptions(opts...),
+	)
+	widgetAdminServiceKeepConfigTicketHandler := connect.NewUnaryHandler(
+		WidgetAdminServiceKeepConfigTicketProcedure,
+		svc.KeepConfigTicket,
+		connect.WithSchema(widgetAdminServiceMethods.ByName("KeepConfigTicket")),
 		connect.WithHandlerOptions(opts...),
 	)
 	widgetAdminServiceGetConfigFormHandler := connect.NewUnaryHandler(
@@ -538,6 +569,8 @@ func NewWidgetAdminServiceHandler(svc WidgetAdminServiceHandler, opts ...connect
 			widgetAdminServiceAddInstanceHandler.ServeHTTP(w, r)
 		case WidgetAdminServiceRequestConfigTicketProcedure:
 			widgetAdminServiceRequestConfigTicketHandler.ServeHTTP(w, r)
+		case WidgetAdminServiceKeepConfigTicketProcedure:
+			widgetAdminServiceKeepConfigTicketHandler.ServeHTTP(w, r)
 		case WidgetAdminServiceGetConfigFormProcedure:
 			widgetAdminServiceGetConfigFormHandler.ServeHTTP(w, r)
 		case WidgetAdminServiceGetConfigChoicesProcedure:
@@ -587,6 +620,10 @@ func (UnimplementedWidgetAdminServiceHandler) AddInstance(context.Context, *conn
 
 func (UnimplementedWidgetAdminServiceHandler) RequestConfigTicket(context.Context, *connect.Request[v1.RequestConfigTicketRequest]) (*connect.Response[v1.RequestConfigTicketResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetAdminService.RequestConfigTicket is not implemented"))
+}
+
+func (UnimplementedWidgetAdminServiceHandler) KeepConfigTicket(context.Context, *connect.Request[v1.KeepConfigTicketRequest]) (*connect.Response[v1.KeepConfigTicketResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("widgetd.v1.WidgetAdminService.KeepConfigTicket is not implemented"))
 }
 
 func (UnimplementedWidgetAdminServiceHandler) GetConfigForm(context.Context, *connect.Request[v1.GetConfigFormRequest]) (*connect.Response[v1.GetConfigFormResponse], error) {

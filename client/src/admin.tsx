@@ -408,11 +408,38 @@ function Configure(props: { target: ConfigTarget; onSaved?: () => Promise<void> 
   return <Show when={form()}>{(f) => <ConfigEditor target={props.target} form={f()} onSaved={props.onSaved} />}</Show>;
 }
 
+/** How often an open QR settings page tells the host it's still open. */
+const KEEP_TICKET_MS = 60_000;
+
+/**
+ * Keep a QR ticket alive while its page is open: the host lets it lapse ten
+ * minutes after the last call, so they count from when the page was closed
+ * or left (to sign in to an account, say). Saving uses it up, so it stops then.
+ */
+function keepTicket(ticket: string, saved: () => boolean) {
+  const keep = () => {
+    if (saved()) return;
+    // Best effort: if it has lapsed, the next real call says so.
+    admin.keepConfigTicket({ ticket }).catch(() => undefined);
+  };
+  const timer = setInterval(keep, KEEP_TICKET_MS);
+  // A phone pauses a page it isn't showing: say so as soon as it's back.
+  const onVisible = () => {
+    if (document.visibilityState === "visible") keep();
+  };
+  document.addEventListener("visibilitychange", onVisible);
+  onCleanup(() => {
+    clearInterval(timer);
+    document.removeEventListener("visibilitychange", onVisible);
+  });
+}
+
 function ConfigEditor(props: { target: ConfigTarget; form: GetConfigFormResponse; onSaved?: () => Promise<void> }) {
   const { target, form, onSaved } = props;
   const w = form.widget!;
   const [label, setLabel] = createSignal(form.label);
   const [saved, setSaved] = createSignal(false);
+  if ("ticket" in target) keepTicket(target.ticket, saved);
   const st = createStatus();
   const secrets: Secrets = { fields: new Set(form.secretFields), set: new Set(form.secretsSet), clear: new Set() };
 

@@ -25,6 +25,12 @@ service WidgetAdminService {
   // saving needs an admin session.
   rpc RequestConfigTicket(RequestConfigTicketRequest) returns (RequestConfigTicketResponse);
 
+  // The configuration page for a ticket is still open. Admin. The page calls
+  // it every minute: a ticket expires ten minutes after the screen showed
+  // it, or after its page last called, so it lasts while someone is setting
+  // up, and a while after they leave (to sign in to an account, say).
+  rpc KeepConfigTicket(KeepConfigTicketRequest) returns (KeepConfigTicketResponse);
+
   // What the configuration page needs to render its form. Admin. The
   // instance is named by a ticket (a phone that scanned a screen's QR code)
   // or directly by id (the admin page's "Settings" link).
@@ -111,6 +117,14 @@ message RequestConfigTicketResponse {
   // What the QR code encodes: <public url><base>configure/<ticket>.
   string url = 1;
   google.protobuf.Timestamp expires_at = 2;
+}
+
+message KeepConfigTicketRequest {
+  string ticket = 1;
+}
+
+message KeepConfigTicketResponse {
+  google.protobuf.Timestamp expires_at = 1;
 }
 
 message GetConfigFormRequest {
